@@ -1,8 +1,10 @@
 
+from typing import DefaultDict, Set, List, Tuple
 import re
 import collections
 
-graph = collections.defaultdict(set)
+Graph = DefaultDict[str, Set[str]]
+graph = Graph()
 
 pattern = re.compile('Step (\w) must be finished before step (\w) can begin.')
 
@@ -18,7 +20,7 @@ Step F must be finished before step E can begin.
 
 # represent the list of dependencies
 
-with open('../input/007.txt') as f:
+with open('../input/07.txt') as f:
     for line in f:
         groups = pattern.match(line).groups()
         graph[groups[1]].add(groups[0])
@@ -53,7 +55,9 @@ available = all_nodes.difference(set(graph.keys()))
 ordering = []
 
 time = 0
-workers = []
+Time = int
+Node = int
+workers: List[Tuple[Time, Node]] = []
 NUMWORKERS = 5
 BASETIME = 60
 

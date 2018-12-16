@@ -3,6 +3,7 @@ bin/
 nimcache/
 
 nim/p???
+.mypy_cache
 
 *~
 *.swp
