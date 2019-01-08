@@ -2,7 +2,7 @@
 bin/
 nimcache/
 
-nim/p??
+nim/p??.out
 .mypy_cache
 
 *~

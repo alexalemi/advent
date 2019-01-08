@@ -1,9 +1,9 @@
 
-PROBLEMS := $(patsubst %.nim,%,$(wildcard *.nim))
+PROBLEMS := $(patsubst %.nim,%.out,$(wildcard *.nim))
 
 all: $(PROBLEMS)
 .PHONY: all
 
-%: *.nim
-	nim c -o:$@ $<
+%.out: *.nim
+	nim c -d:release -o:$@ $<
 
