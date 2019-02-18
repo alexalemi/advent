@@ -1,6 +1,6 @@
 import seqUtils, tables
 
-let data = toSeq(open("/home/alexalemi/Projects/advent/input/02.txt").lines)
+let data = toSeq(open("../input/02.txt").lines)
 
 proc checksum(data: seq[string]): int =
   var twos, threes = 0
