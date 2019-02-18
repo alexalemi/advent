@@ -4,7 +4,7 @@ import collections
 import datetime
 import re
 
-lines = open('../input/004.txt').readlines()
+lines = open('../input/04.txt').readlines()
 
 info = sorted(lines)
 # dates = [datetime.datetime.strptime(line[1:17], '%Y-%m-%d %H:%M') for line in lines]
