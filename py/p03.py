@@ -12,7 +12,7 @@ def get_order(line):
 
 
 orders = []
-with open('../input/003.txt') as f:
+with open('../input/03.txt') as f:
     for line in f:
         orders.append(get_order(line))
 
