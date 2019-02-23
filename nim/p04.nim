@@ -1,8 +1,9 @@
 # Advent of Code Day 4
 
-import sequtils, strutils, strscans, tables, algorithm
+import sequtils, strutils, strscans, tables, algorithm, os
 
-let data = toSeq(open("../input/04.txt").lines)
+let dataPath = currentSourcePath().parentDir.joinPath("../input/04.txt")
+let data = toSeq(open(dataPath).lines)
 
 type
   StatusKind = enum
