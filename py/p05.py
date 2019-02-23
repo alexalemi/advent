@@ -1,5 +1,5 @@
 
-text = open('../input/005.txt').read().strip()
+text = open('../input/05.txt').read().strip()
 
 print("Initial text length: ", len(text))
 

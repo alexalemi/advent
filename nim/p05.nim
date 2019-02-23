@@ -115,11 +115,7 @@ assert($"aaabbb".toDeque.clean('a') == "bbb")
 assert($"aaAAabbb".toDeque.clean('a') == "bbb")
 assert($"abcdefabcdef".toDeque.clean('a') == "bcdefbcdef")
 
-proc remover(x: Deque): auto =
-    return proc (y: char): Deque =
-        return x.clean(y)
-
-proc main = 
+proc main =
     let deque = toDeque(data)
 
     let simplified = deque.simplify

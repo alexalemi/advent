@@ -2,8 +2,11 @@
 PROBLEMS := $(patsubst %.nim,%.out,$(wildcard *.nim))
 
 all: $(PROBLEMS)
-.PHONY: all
+.PHONY: all runall
 
-%.out: *.nim
+runall: $(PROBLEMS)
+	for x in $(PROBLEMS); do ./$$x; done;
+
+%.out: %.nim
 	nim c -d:release -o:$@ $<
 
