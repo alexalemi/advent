@@ -122,7 +122,8 @@ proc main =
     let partOne = simplified.len
     echo &"partOne = {partOne}"
 
-    let partTwo = toSeq(items("abcdefghijklmnopqrstuvwxyz")).mapIt(simplified.clean(it).simplify.len).min
+    let partTwo = toSeq(items("abcdefghijklmnopqrstuvwxyz")).mapIt(
+            simplified.clean(it).simplify.len).min
     echo &"partTwo = {partTwo}"
 
 when isMainModule:

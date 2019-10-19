@@ -11,7 +11,7 @@ func sum[T](x: seq[T]): T =
     result += elem
 
 #[ now we need to find the first value that
-  repeats 
+  repeats
 ]#
 
 proc loopFinder(data: seq[int]): int =

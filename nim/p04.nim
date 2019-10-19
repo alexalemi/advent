@@ -1,6 +1,6 @@
 # Advent of Code Day 4
 
-import sequtils, strutils, strscans, tables, algorithm, os
+import sequtils, strscans, tables, algorithm, os
 
 let dataPath = currentSourcePath().parentDir.joinPath("../input/04.txt")
 let data = toSeq(open(dataPath).lines)
@@ -41,19 +41,26 @@ proc readLine(line: string): Datum =
   result.status = line[19..<line.len]
   case result.status[0]:
     of 'G':
-      result.kind = skStart
       if not scanf(result.status, "Guard #$i begins shift",
         result.guard):
-        raise newException(IOError, "Could not read Gaurd #")
+        raise newException(IOError, "Could not read Guard #")
+      return Datum(kind: skStart, year: result.year, month: result.month,
+        day: result.day, hour: result.hour, minute: result.minute,
+        status: result.status, guard: result.guard)
     of 'f':
-      result.kind = skSleep
+      return Datum(kind: skSleep, year: result.year, month: result.month,
+        day: result.day, hour: result.hour, minute: result.minute,
+        status: result.status)
     of 'w':
-      result.kind = skWake
+      return Datum(kind: skWake, year: result.year, month: result.month,
+        day: result.day, hour: result.hour, minute: result.minute,
+        status: result.status)
     else:
       raise newException(IOError, "Status not understood.")
 
 
-proc gatherData(data: seq[Datum]): tuple[time: CountTableRef[GuardID], minutes: TableRef[GuardID, array[60, int]]]  =
+proc gatherData(data: seq[Datum]): tuple[time: CountTableRef[GuardID],
+    minutes: TableRef[GuardID, array[60, int]]] =
   var currentGuard: GuardID
   var startTime: int
   var asleepTime = newCountTable[GuardID]()
@@ -74,8 +81,9 @@ proc gatherData(data: seq[Datum]): tuple[time: CountTableRef[GuardID], minutes: 
   return (time: asleepTime, minutes: asleepMinutes)
 
 
-proc mostAsleep(asleepTime: CountTableRef[GuardID], asleepMinutes: TableRef[GuardID, array[60, int]]): tuple[guard: GuardID, minute: int] =
-  let (maxGuard, time) = largest(asleepTime)
+proc mostAsleep(asleepTime: CountTableRef[GuardID], asleepMinutes: TableRef[
+    GuardID, array[60, int]]): tuple[guard: GuardID, minute: int] =
+  let (maxGuard, _) = largest(asleepTime)
   var maxMinute = -1
   var maxCount = 0
   for minute in 0..<60:
@@ -85,7 +93,8 @@ proc mostAsleep(asleepTime: CountTableRef[GuardID], asleepMinutes: TableRef[Guar
 
   return (guard: maxGuard, minute: maxMinute)
 
-proc mostMinute(asleepMinutes: TableRef[GuardID, array[60, int]]): tuple[guard: GuardID, minute: int] =
+proc mostMinute(asleepMinutes: TableRef[GuardID, array[60, int]]): tuple[
+    guard: GuardID, minute: int] =
   var maxGuard: GuardID
   var maxMinute: int
   var maxAmount: int
@@ -99,7 +108,8 @@ proc mostMinute(asleepMinutes: TableRef[GuardID, array[60, int]]): tuple[guard: 
   return (guard: maxGuard, minute: maxMinute)
 
 when isMainModule:
-  let (asleepTime, asleepMinutes) = gatherData(sorted[string](data, cmp).map(readLine))
+  let (asleepTime, asleepMinutes) = gatherData(
+         sorted[string](data, cmp).map(readLine))
   let answer1 = mostAsleep(asleepTime, asleepMinutes)
   echo("intermediate answer: ", answer1)
   echo("Answer1 = ", answer1.guard * answer1.minute)

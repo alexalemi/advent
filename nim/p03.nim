@@ -11,7 +11,8 @@ var
 type Datum = tuple[id, x, y, w, h: int]
 
 proc parseLine(line: string): Datum =
-  if not scanf(line, "#$i @ $i,$i: $ix$i", result.id, result.x, result.y, result.w, result.h):
+  if not scanf(line, "#$i @ $i,$i: $ix$i", result.id, result.x, result.y,
+      result.w, result.h):
     raise newException(IOError, "Cannot parse line")
 
 let datums = data.map(parseLine)
