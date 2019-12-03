@@ -1,8 +1,7 @@
 
-with open("../input/002") as f:
-    data = f.read()
+from utils import data19
 
-
+data = data19(2)
 
 def getcodes(s):
     return list(map(int, s.split(",")))
@@ -41,16 +40,15 @@ for inp, ans in tests:
     assert run(getcodes(inp), None, None) == ans, "Failed test {}:{}".format(inp, ans)
 
 codes = getcodes(data)
-ans = run(codes)
+ans = run(codes[:])
 print("Answer1: {}".format(ans))
 
 desired = 19690720
 
-for noun in range(100):
-    for verb in range(100):
-        if run(codes[:], noun, verb) == desired:
-            print("Answer2:", 100*noun + verb)
-            break
+for noun in range(1,100):
+  for verb in range(1,100):
+    if run(codes[:], noun, verb) == desired:
+      print("Answer2:", 100*noun + verb)
 
 
 

@@ -1,12 +1,13 @@
 
+from utils import data19
+
 def fuel(mass):
     return max(0, mass // 3 - 2)
 
-with open("../input/001", "r") as f:
-    modules = [int(x) for x in f]
+modules = [int(x) for x in data19(1).splitlines()]
+
 
 fuels = [fuel(mass) for mass in modules]
-
 
 print(f"Answer1: {sum(fuels)}")
 

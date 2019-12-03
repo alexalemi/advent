@@ -1,6 +1,7 @@
 
 bin/
 nimcache/
+__pycache__
 
 nim/p??
 nim/p??.out

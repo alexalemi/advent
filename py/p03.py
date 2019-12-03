@@ -1,4 +1,5 @@
 import math
+from utils import data19
 
 
 tests = [
@@ -91,8 +92,7 @@ def process2(inp):
                 distance = newdist
     return distance
 
-with open("../input/003.txt") as f:
-    data = f.read()
+data = data19(3)
 
 if __name__ == "__main__":
     for case, ans in tests:
