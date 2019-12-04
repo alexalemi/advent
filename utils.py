@@ -172,16 +172,15 @@ if __name__ == "__main__":
   data = get_leaderboard()
   events = recent_events(data)
 
-  print("\n\nRECENT EVENTS\n===========================")
-  for x in events[:15]:
-      print(f"{x.name} solved {x.year}-{x.day}-{x.star} {(TODAY-x.time).total_seconds()/(60*60):.2f} hours ago at {x.time}")
-
-
   score = global_score(events)
   leaderboard = total_leaderboard(events)
 
-  print("\n\nLEADERBOARD\n==============================")
+  print("\nLEADERBOARD\n==============================")
   for (name, pts) in sorted(score.items(), key=lambda x: x[1], reverse=True):
       print(f"{pts:4d} pts - {leaderboard[name]:3d} stars - {name}")
+
+  print("\n\nRECENT EVENTS\n===========================")
+  for x in events[:15]:
+      print(f"{x.name} solved {x.year}-{x.day}-{x.star} {(TODAY-x.time).total_seconds()/(60*60):.2f} hours ago at {x.time}")
 
 
