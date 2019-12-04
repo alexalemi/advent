@@ -8,11 +8,18 @@ import os
 from pathlib import Path
 import pytz
 import sys
+from itertools import tee
 
 logging.basicConfig(level=logging.INFO)
 
 EAST_COAST = pytz.timezone("America/New_York")
 TODAY = datetime.datetime.today().astimezone(EAST_COAST)
+
+def pairwise(iterable):
+    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)
 
 with open(Path(__file__).resolve().parent / "token.txt") as f:
   TOKEN = f.read().strip()
