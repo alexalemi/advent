@@ -120,7 +120,7 @@ def get_leaderboard(force=False):
                       logging.error(f"Request failed with code: {code}??")
                       sys.exit(1)
   else:
-      logging.info("Not enough time as elapsed to justify a new call.")
+    logging.info(f"Not enough time as elapsed to justify a new call. {(900 - (TODAY - modtime).total_seconds())/60:0.1f} minutes left.")
   with open(LEADERBOARD) as f:
       data = [json.loads(line) for line in f]
       return data
