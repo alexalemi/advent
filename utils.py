@@ -11,13 +11,16 @@ import pytz
 import sys
 from itertools import tee
 import itertools
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 logging.basicConfig(level=logging.INFO)
 
 EAST_COAST = pytz.timezone("America/New_York")
 TODAY = datetime.datetime.now().astimezone(EAST_COAST)
 YEARS = [2015, 2016, 2017, 2018, 2019]
+
+REPLACED_NAMES = {'pleonasticperson': 'Colin Clement'}
+IGNORED_NAMES = {'pleonasticperson'}
 
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
@@ -124,6 +127,10 @@ def get_leaderboard(force=False):
 
 Event = namedtuple('Event', 'name time year day star')
 
+
+def canonicalize_name(name):
+    return REPLACED_NAMES.get(name, name)
+
 def recent_events(data):
     """Print a summary of recent events."""
     events = []
@@ -133,20 +140,30 @@ def recent_events(data):
             name = member['name']
             for day, level in member['completion_day_level'].items():
                 for star, data in level.items():
-                    events.append(Event(
-                        name=name,
-                        time=datetime.datetime.fromtimestamp(float(data['get_star_ts'])).astimezone(EAST_COAST),
-                        year=int(year),
-                        day=int(day),
-                        star=int(star)))
+                    if name not in IGNORED_NAMES:
+                        events.append(Event(
+                            name=canonicalize_name(name),
+                            time=datetime.datetime.fromtimestamp(float(data['get_star_ts'])).astimezone(EAST_COAST),
+                            year=int(year),
+                            day=int(day),
+                            star=int(star)))
     return sorted(events, key=lambda x: x.time, reverse=True)
 
 
 def total_leaderboard(events):
     events = sorted(events, key=lambda x: x.name)
     byname = itertools.groupby(events, key=lambda x: x.name)
-    totals = {name: sum(1 for x in events) for name, events in byname}
-    return sorted(totals.items(), key=lambda x: x[1], reverse=True)
+    return {name: sum(1 for x in events) for name, events in byname}
+
+def global_score(events):
+    starid = lambda x: (x.year, x.day, x.star)
+    N = len({x.name for x in events})
+    stargroups = itertools.groupby(sorted(events, key=starid), key=starid)
+    points = ((event.name, N-i) for star, events in stargroups for (i, event) in enumerate(events))
+    total_score = defaultdict(int)
+    for name, pts in points:
+        total_score[name] += pts
+    return total_score
 
 
 if __name__ == "__main__":
@@ -155,15 +172,16 @@ if __name__ == "__main__":
   data = get_leaderboard()
   events = recent_events(data)
 
-  print("\n\nRECENT EVENTS\n========================")
+  print("\n\nRECENT EVENTS\n===========================")
   for x in events[:15]:
       print(f"{x.name} solved {x.year}-{x.day}-{x.star} {(TODAY-x.time).total_seconds()/(60*60):.2f} hours ago at {x.time}")
 
 
+  score = global_score(events)
   leaderboard = total_leaderboard(events)
 
-  print("\n\nLEADERBOARD\n==========================")
-  for name, total in leaderboard:
-      print(f"{total:3d} - {name}")
+  print("\n\nLEADERBOARD\n==============================")
+  for (name, pts) in sorted(score.items(), key=lambda x: x[1], reverse=True):
+      print(f"{pts:4d} pts - {leaderboard[name]:3d} stars - {name}")
 
 
