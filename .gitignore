@@ -3,8 +3,8 @@ bin/
 nimcache/
 __pycache__
 
-nim/p??
-nim/p??.out
+*/nim/p??
+*/nim/p??.out
 .mypy_cache
 
 *~
