@@ -60,15 +60,17 @@ when isMainModule:
   # echo run("3,3,1108,-1,8,3,4,3,99".toCodes, @[9])
   # echo run("3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9".toCodes, @[1])
   # echo run("3,3,1105,-1,9,1101,0,0,12,4,12,99,1".toCodes, @[1])
-  #
   
-  let ans1 = run(data.toCodes, @[1])
-  echo ans1
-  echo "Answer1: ", ans1[ans1.high]
+  # let ans1 = run(data.toCodes, @[1])
+  # echo ans1
+  # echo "Answer1: ", ans1[ans1.high]
 
-  let ans2 = run(data.toCodes, @[5])
-  echo ans2
-  echo "Answer2: ", ans2[ans2.high]
+  # let ans2 = run(data.toCodes, @[5])
+  # echo ans2
+  # echo "Answer2: ", ans2[ans2.high]
+  
+  import os
+
 
 
 
