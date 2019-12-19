@@ -1,5 +1,10 @@
 from utils import data19
-from intcode import run
+import io
+import itertools
+import intcode
+import pintcode
+import threading
+import queue
 
 data = data19(7)
 
@@ -11,28 +16,70 @@ tests = [
 
 def answer1(inp):
     prog, inps = inp
-    prog = [int(x) for x in prog.split(",")]
+    prog = intcode.getcodes(prog)
+    inps = intcode.getcodes(inps)
     out = 0
-    for i, inp in enumerate(inps.split(",")):
-        print(i, inp, out)
-        outs = run(prog[:], [int(inp), out])
-        print("outs = ", outs)
+    for i, inp in enumerate(inps):
+        # print(i, inp, out)
+        outs = intcode.run(prog[:], [inp, out])
+        # print("outs = ", outs)
         out = outs[0]
     return out
 
-tests2 = []
+tests2 = [
+        (("3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5", "9,8,7,6,5"), 139629729),
+        (("3,52,1001,52,-5,52,3,53,1,52,56,54,1007,54,5,55,1005,55,26,1001,54,-5,54,1105,1,12,1,53,54,53,1008,54,0,55,1001,55,1,55,2,53,55,53,4,53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10", "9,7,8,5,6"), 18216)]
+
+def seeded_gen(seeds, g):
+    for s in seeds:
+        yield s
+    yield from g
 
 def answer2(inp):
-    return None
+    prog, inps = inp
+    prog = intcode.getcodes(prog)
+
+    queues = [queue.Queue() for _ in range(6)]
+    inps = intcode.getcodes(inps)
+    for l, i in enumerate(inps):
+        queues[l].put(i)
+    queues[0].put(0)
+
+    threads = [threading.Thread(target=pintcode.interpret,
+        args=(prog[:], queues[i], queues[(i+1)])) for i in range(5)]
+    for t in threads:
+        t.start()
+
+    outs = []
+    def shuttle(q1, q2):
+        while True:
+            x = q1.get()
+            if x is None:
+                break
+            outs.append(x)
+            q2.put(x)
+
+    threads.append(threading.Thread(target=shuttle,
+        args=(queues[-1], queues[0])))
+    threads[-1].start()
+
+    for t in threads[:-1]:
+        t.join()
+    queues[-1].put(None)
+    for t in threads:
+        t.join()
+
+    return outs[-1]
 
 if __name__ == "__main__":
   for inp, ans in tests:
     myans = answer1(inp)
     assert myans == ans, f"Failed on {inp} == {ans}, got {myans}"
-  print("Answer1:", answer1(data))
+
+  print("Answer1:", max([answer1((data, ','.join(map(str,x)))) for x in itertools.permutations(range(5))]))
 
   for inp, ans in tests2:
-    myans = answer2(inp)
-    assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
+     myans = answer2(inp)
+     assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
 
-  print("Answer2:", answer2(data))
+  print("Answer2:", max([answer2((data, ','.join(map(str,x)))) for x in itertools.permutations([5,6,7,8,9])]))
