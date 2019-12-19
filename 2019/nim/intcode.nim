@@ -1,4 +1,4 @@
-import strUtils, seqUtils, math, streams, os
+import strUtils, seqUtils, math, streams
 
 type Word = uint64
 
@@ -78,10 +78,16 @@ proc interpret*(code: string) =
 # macro compileFile*(filename: string) =
 #   interpret(staticRead(filename.strVal))
 
-const data = staticRead("fibonacci.intcode")
 
 when isMainModule:
-  interpret(data)
+  # interpret(data)
+
+  const data = staticRead("fibonacci.intcode")
+  echo interpret("3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0", "4\n0")
+
+  echo interpret("3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0", "3\n4")
+
+  echo interpret("3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0", "2\n43")
 
 #[
   import docopt, tables, strutils
