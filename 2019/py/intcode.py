@@ -17,17 +17,48 @@ def getcodes(s):
     return list(map(int, s.strip().split(",")))
 
 class Computer:
+    """Intcode Computer.
+    
+    The main method is `run` which will run the computer until
+    the next stopping condition, either a halt (code 99) or 
+    and input command if the computer is currently out of inputs.
+    This will additionally return all of the newly generated outputs.
+
+    Two status conditions can be checked, `finished` is True
+    only after the Computer has terminated.  `waiting` is True
+    if we are stuck at an input.  To restart the Computer, call `run`
+    with some additional inputs.
+
+    Other helpful properties include `processed_inputs` which will
+    contain a list of all inputs processed, `inputs` which shows the yet to
+    be processed inputs.  `outputs` contains all the outputs ever generated.
+    """
+
     def __init__(self, codes, inps=None):
+        if isinstance(codes, str):
+            # Try to be friendly and convert a string to a list of codes
+            codes = getcodes(codes)
         self.codes = codes[:]
         self.initial_codes = codes[:]
         self.finished = False
         self.waiting = False
         self.outputs = []
+        if isinstance(inps, str):
+            # Convert a string of inputs to a list of codes
+            inps = getcodes(inps)
         self.inputs = inps or []
         self.processed_inputs = []
         self.loc = 0
 
     def run(self, *inps):
+        """Run the computer until it either halts or requests a missing input.
+
+        Arguments:
+            *inps: Optional inputs to add to the list of current inputs.
+
+        Returns:
+            new_outputs: A list of the outputs generated until a stopping condition.
+        """
         newouts = []
         for i in inps:
             self.inputs.append(i)
@@ -35,11 +66,13 @@ class Computer:
             self.waiting = False
 
         def readparam(mode, loc):
+            """Helper function to read parameters according to mode."""
             pmode = mode % 10
             mode = mode // 10
             p = self.codes[loc]
             if pmode == 0:  # position mode
                 p = self.codes[p]
+            # otherwise, we are in direct mode
             return p, mode
 
         while True:
@@ -47,7 +80,7 @@ class Computer:
             op = current_code % 100
             mode = current_code // 100
 
-            if op == 99:
+            if op == 99:  # Halt
                 self.finished = True
                 return newouts
 
