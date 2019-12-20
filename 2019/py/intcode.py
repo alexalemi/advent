@@ -16,79 +16,101 @@ Code = int
 def getcodes(s):
     return list(map(int, s.strip().split(",")))
 
+class Computer:
+    def __init__(self, codes, inps=None):
+        self.codes = codes[:]
+        self.initial_codes = codes[:]
+        self.finished = False
+        self.waiting = False
+        self.outputs = []
+        self.inputs = inps or []
+        self.processed_inputs = []
+        self.loc = 0
+
+    def run(self, *inps):
+        newouts = []
+        for i in inps:
+            self.inputs.append(i)
+        if len(self.inputs) > 0:
+            self.waiting = False
+
+        def readparam(mode, loc):
+            pmode = mode % 10
+            mode = mode // 10
+            p = self.codes[loc]
+            if pmode == 0:  # position mode
+                p = self.codes[p]
+            return p, mode
+
+        while True:
+            current_code = self.codes[self.loc]
+            op = current_code % 100
+            mode = current_code // 100
+
+            if op == 99:
+                self.finished = True
+                return newouts
+
+            # Read one parameter
+            p1, mode = readparam(mode, self.loc+1)
+
+            if op == 3:  # INPUT
+                if not self.inputs:
+                    self.waiting = True
+                    return newouts
+                nextinp = self.inputs[0]
+                self.processed_inputs.append(nextinp)
+                self.inputs = self.inputs[1:]
+                self.codes[self.codes[self.loc+1]] = nextinp
+                self.loc += 2
+                continue
+
+            elif op == 4:  # OUTPUT
+                newouts.append(p1)
+                self.outputs.append(p1)
+                self.loc += 2
+                continue
+
+            p2, mode = readparam(mode, self.loc+2)
+            if op == 5:  # jump-if-true
+                if p1 != 0:
+                    self.loc = p2
+                else:
+                    self.loc += 3
+                continue
+
+            if op == 6:  # jump-if-false
+                if p1 == 0:
+                    self.loc = p2
+                else:
+                    self.loc += 3
+                continue
+
+            if op == 7:  # less than
+                self.codes[self.codes[self.loc+3]] = 1 * (p1 < p2)
+                self.loc += 4
+                continue
+
+            if op == 8:
+                self.codes[self.codes[self.loc+3]] = 1 * (p1 == p2)
+                self.loc += 4
+                continue
+
+            if op == 1:  # ADD
+                self.codes[self.codes[self.loc+3]] = p1 + p2
+                self.loc += 4
+                continue
+
+            if op == 2:  # MUL
+                self.codes[self.codes[self.loc+3]] = p1 * p2
+                self.loc += 4
+                continue
+
+            raise NotImplementedError(f"Don't understand code {op}!")
+
+
 def run(codes: List[Code], inp: List[Code]):
-    return list(interpret(codes, iter(inp)))
-    
-def interpret(codes: List[Code], inp):
-    loc = 0
-
-    def readparam(mode, loc):
-        pmode = mode % 10
-        mode = mode // 10
-        p = codes[loc]
-        if pmode == 0:  # position mode
-            p = codes[p]
-        return p, mode
-
-    while True:
-        current_code = codes[loc]
-        op = current_code % 100
-        mode = current_code // 100
-
-        if op == 99:
-            return
-
-        # Read one parameter
-        p1, mode = readparam(mode, loc+1)
-
-        if op == 3:  # INPUT
-            codes[codes[loc+1]] = next(inp)
-            loc += 2
-            continue
-
-        elif op == 4:  # OUTPUT
-            yield p1
-            loc += 2
-            continue
-
-        p2, mode = readparam(mode, loc+2)
-        if op == 5:  # jump-if-true
-            if p1 != 0:
-                loc = p2
-            else:
-                loc += 3
-            continue
-
-        if op == 6:  # jump-if-false
-            if p1 == 0:
-                loc = p2
-            else:
-                loc += 3
-            continue
-
-        if op == 7:  # less than
-            codes[codes[loc+3]] = 1 * (p1 < p2)
-            loc += 4
-            continue
-
-        if op == 8:
-            codes[codes[loc+3]] = 1 * (p1 == p2)
-            loc += 4
-            continue
-
-        if op == 1:  # ADD
-            codes[codes[loc+3]] = p1 + p2
-            loc += 4
-            continue
-
-        if op == 2:  # MUL
-            codes[codes[loc+3]] = p1 * p2
-            loc += 4
-            continue
-
-        raise NotImplementedError(f"Don't understand code {op}!")
-            
-    return 
+    return Computer(codes).run(*inp)
 
 
 if __name__ == "__main__":

@@ -38,38 +38,15 @@ def seeded_gen(seeds, g):
 def answer2(inp):
     prog, inps = inp
     prog = intcode.getcodes(prog)
-
-    queues = [queue.Queue() for _ in range(6)]
     inps = intcode.getcodes(inps)
-    for l, i in enumerate(inps):
-        queues[l].put(i)
-    queues[0].put(0)
 
-    threads = [threading.Thread(target=pintcode.interpret,
-        args=(prog[:], queues[i], queues[(i+1)])) for i in range(5)]
-    for t in threads:
-        t.start()
-
-    outs = []
-    def shuttle(q1, q2):
-        while True:
-            x = q1.get()
-            if x is None:
-                break
-            outs.append(x)
-            q2.put(x)
-
-    threads.append(threading.Thread(target=shuttle,
-        args=(queues[-1], queues[0])))
-    threads[-1].start()
-
-    for t in threads[:-1]:
-        t.join()
-    queues[-1].put(None)
-    for t in threads:
-        t.join()
-
-    return outs[-1]
+    computers = [intcode.Computer(prog[:], [i]) for i in inps]
+    current = 0
+    out = [0]
+    while not all(c.finished for c in computers):
+        out = computers[current].run(*out)
+        current = (current + 1) % 5
+    return computers[-1].outputs[-1]
 
 if __name__ == "__main__":
   for inp, ans in tests:

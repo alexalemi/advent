@@ -1,6 +1,6 @@
-import strUtils, seqUtils
+import strUtils, seqUtils, os
 
-const data = staticRead("../input/002")
+const data = staticRead(currentSourcePath.parentDir() / "../input/02.txt")
 
 const testCases = [
   ("1,9,10,3,2,3,11,0,99,30,40,50", 3500),
@@ -49,7 +49,7 @@ when isMainModule:
 
   echo "Answer1: ", run(data, 12, 2)
 
-  const answer2 = partTwo()
+  let answer2 = partTwo()
   echo "Answer2: ", answer2
 
 

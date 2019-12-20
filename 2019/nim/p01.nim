@@ -1,8 +1,8 @@
-import seqUtils, strUtils, math
+import seqUtils, strUtils, math, os
 
 func fuel(mass: seq[int]): seq[int] = mass.mapIt(max(0, it div 3 - 2))
 
-let mass = toSeq(lines("../input/01.txt")).map(parseInt).fuel
+let mass = toSeq(lines(currentSourcePath.parentDir() / "../input/01.txt")).map(parseInt).fuel
 
 when isMainModule:
   echo "Answer1: ", mass.sum
