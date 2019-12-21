@@ -2,8 +2,8 @@
 import logging
 from utils import data19
 from collections import namedtuple
+from collections import defaultdict
 from typing import Callable, NamedTuple, List, IO
-from enum import Enum
 import sys
 import io
 
@@ -38,7 +38,9 @@ class Computer:
         if isinstance(codes, str):
             # Try to be friendly and convert a string to a list of codes
             codes = getcodes(codes)
-        self.codes = codes[:]
+        self.codes = defaultdict(int)
+        for i, v in enumerate(codes[:]):
+            self.codes[i] = v
         self.initial_codes = codes[:]
         self.finished = False
         self.waiting = False
@@ -49,6 +51,7 @@ class Computer:
         self.inputs = inps or []
         self.processed_inputs = []
         self.loc = 0
+        self.relative_base = 0
 
     def run(self, *inps):
         """Run the computer until it either halts or requests a missing input.
@@ -69,11 +72,16 @@ class Computer:
             """Helper function to read parameters according to mode."""
             pmode = mode % 10
             mode = mode // 10
-            p = self.codes[loc]
+            loc = self.codes[loc]
             if pmode == 0:  # position mode
-                p = self.codes[p]
+                value = self.codes[loc]
+            elif pmode == 1:  # immediate mode
+                value = loc
+            elif pmode == 2:  # relative mode
+                loc = self.relative_base + loc
+                value = self.codes[loc]
             # otherwise, we are in direct mode
-            return p, mode
+            return value, loc, mode
 
         while True:
             current_code = self.codes[self.loc]
@@ -85,7 +93,7 @@ class Computer:
                 return newouts
 
             # Read one parameter
-            p1, mode = readparam(mode, self.loc+1)
+            p1, pos1, mode = readparam(mode, self.loc+1)
 
             if op == 3:  # INPUT
                 if not self.inputs:
@@ -94,7 +102,12 @@ class Computer:
                 nextinp = self.inputs[0]
                 self.processed_inputs.append(nextinp)
                 self.inputs = self.inputs[1:]
-                self.codes[self.codes[self.loc+1]] = nextinp
+                self.codes[pos1] = nextinp
+                self.loc += 2
+                continue
+
+            elif op == 9:  # Relative
+                self.relative_base += p1
                 self.loc += 2
                 continue
 
@@ -104,7 +117,8 @@ class Computer:
                 self.loc += 2
                 continue
 
-            p2, mode = readparam(mode, self.loc+2)
+            p2, pos2, mode = readparam(mode, self.loc+2)
+
             if op == 5:  # jump-if-true
                 if p1 != 0:
                     self.loc = p2
@@ -112,30 +126,33 @@ class Computer:
                     self.loc += 3
                 continue
 
-            if op == 6:  # jump-if-false
+
+            elif op == 6:  # jump-if-false
                 if p1 == 0:
                     self.loc = p2
                 else:
                     self.loc += 3
                 continue
 
+            p3, pos3, mode = readparam(mode, self.loc+3)
+
             if op == 7:  # less than
-                self.codes[self.codes[self.loc+3]] = 1 * (p1 < p2)
+                self.codes[pos3] = 1 * (p1 < p2)
                 self.loc += 4
                 continue
 
-            if op == 8:
-                self.codes[self.codes[self.loc+3]] = 1 * (p1 == p2)
+            elif op == 8:  # Equals
+                self.codes[pos3] = 1 * (p1 == p2)
                 self.loc += 4
                 continue
 
-            if op == 1:  # ADD
-                self.codes[self.codes[self.loc+3]] = p1 + p2
+            elif op == 1:  # ADD
+                self.codes[pos3] = p1 + p2
                 self.loc += 4
                 continue
 
-            if op == 2:  # MUL
-                self.codes[self.codes[self.loc+3]] = p1 * p2
+            elif op == 2:  # MUL
+                self.codes[pos3] = p1 * p2
                 self.loc += 4
                 continue
 
