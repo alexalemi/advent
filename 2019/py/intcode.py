@@ -9,8 +9,6 @@ import io
 
 logging.basicConfig(level=logging.DEBUG)
 
-data = data19(5)
-
 Code = int
 
 def getcodes(s):
