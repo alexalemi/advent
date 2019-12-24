@@ -20,3 +20,18 @@ fn main() {
 
     println!("Answer1: {}", day1(&data));
 }
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    #[test]
+    fn test_day1() {
+        assert_eq!(mass(&12), 2);
+        assert_eq!(mass(&14), 2);
+        assert_eq!(mass(&1969), 654);
+        assert_eq!(mass(&100756), 33583);
+
+    }
+}
