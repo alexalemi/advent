@@ -14,9 +14,10 @@ fn mass(module: &Module) -> Module {
 fn allmass(module: &Module) -> Module {
     let mut value:Module = *module;
     let mut total:Module = 0;
-    while value >= 0 {
+    value = value / 3 - 2;
+    while value > 0 {
+        total = total + value;
         value = value / 3 - 2;
-        total += value;
     }
     total
 }
@@ -56,7 +57,7 @@ mod tests {
     #[test]
     fn test_day2() {
         assert_eq!(allmass(&14), 2);
-        assert_eq!(mass(&1969), 966);
-        assert_eq!(mass(&100756), 50346);
+        assert_eq!(allmass(&1969), 966);
+        assert_eq!(allmass(&100756), 50346);
     }
 }
