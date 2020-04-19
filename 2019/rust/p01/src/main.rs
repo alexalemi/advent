@@ -8,12 +8,16 @@ fn parse(line: &str) -> Module {
 
 fn mass(module: &Module) -> Module {
     let ans = (module / 3) - 2;
-    if ans > 0 { ans } else { 0 }
+    if ans > 0 {
+        ans
+    } else {
+        0
+    }
 }
 
 fn allmass(module: &Module) -> Module {
-    let mut value:Module = *module;
-    let mut total:Module = 0;
+    let mut value: Module = *module;
+    let mut total: Module = 0;
     value = value / 3 - 2;
     while value > 0 {
         total = total + value;
@@ -22,23 +26,20 @@ fn allmass(module: &Module) -> Module {
     total
 }
 
-fn day1(data: &str) -> Module {
-    let modules: Vec<Module> = data.lines().map(parse).collect();
-    modules.iter().map(mass).sum()
+fn process(data: &str, mapper: fn(module: &Module) -> Module) -> Module {
+    data.lines()
+        .map(parse)
+        .collect::<Vec<Module>>()
+        .iter()
+        .map(mapper)
+        .sum()
 }
-
-fn day2(data: &str) -> Module {
-    let modules: Vec<Module> = data.lines().map(parse).collect();
-    modules.iter().map(allmass).sum()
-}
-
 
 fn main() {
-    let data = read_to_string("../../input/01.txt")
-        .expect("Something went wrong reading the file");
+    let data = read_to_string("../../input/01.txt").expect("Something went wrong reading the file");
 
-    println!("Answer1: {}", day1(&data));
-    println!("Answer1: {}", day2(&data));
+    println!("Answer1: {}", process(&data, mass));
+    println!("Answer1: {}", process(&data, allmass));
 }
 
 #[cfg(test)]
