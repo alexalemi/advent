@@ -6,10 +6,7 @@ type Program = Vec<Op>;
 const EXP_OUTPUT: Op = 19690720;
 
 fn load_program(progstring: &str) -> Program {
-    fn parse(line: &str) -> Op {
-        line.parse().expect("Line was not an integer")
-    }
-    progstring.trim().split(',').map(parse).collect()
+    progstring.trim().split(',').map(|l| l.parse().expect("Line was not an integer.")).collect()
 }
 
 fn run(prog: &mut Program) {
