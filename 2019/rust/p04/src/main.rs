@@ -40,12 +40,16 @@ fn only_two_adjacent(x: &i32) -> bool {
     run == 2
 }
 
+fn six_digit(x: &i32) -> bool {
+    x.to_string().len() == 6
+}
+
 fn valid(x: &i32) -> bool {
-    never_decrease(x) && two_adjacent(x)
+    six_digit(x) && never_decrease(x) && two_adjacent(x)
 }
 
 fn valid2(x: &i32) -> bool {
-    never_decrease(x) && only_two_adjacent(x)
+    six_digit(x) && never_decrease(x) && only_two_adjacent(x)
 }
 
 fn main() {
