@@ -1,14 +1,13 @@
+from utils import data16
 
-with open('input/01.txt') as f:
-    data = f.read()
-
+data = data16(1)
 
 def magnitude(x):
     return int(abs(x.real) + abs(x.imag))
 
 def read_direction(s):
+    s = s.strip()
     return (s[0], int(s[1:].strip()))
-
 
 def process(line):
     heading = 0 + 1j

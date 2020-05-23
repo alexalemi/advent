@@ -1,4 +1,4 @@
-
+from utils import data16
 
 numbers = {
         0+0j: '5',
@@ -56,9 +56,7 @@ numbers2 = {
         0+2j: '1'
         }
 
-
-with open("input/02.txt") as f:
-    data = f.readlines()
+data = data16(2).splitlines()
 
 if __name__ == "__main__":
 
