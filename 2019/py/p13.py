@@ -72,5 +72,5 @@ if __name__ == "__main__":
     myans = answer2(inp)
     assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
 
-  print("Answer2:", answer2(data))
+  print("Answer2:", answer2(data, True))
   
