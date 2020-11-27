@@ -55,7 +55,16 @@ tests = [
 7 XCVML => 6 RJRHP
 5 BHXH, 4 VRPVC => 5 LTCX""", 2210736)]
 
+
 def parse(inp):
+  """Process the text into the universe representation.
+
+  The keys are the result of the reactions,
+  the values are (yield, requirements) where yield
+  is how many of the thing is produced
+  and requirements is a dictionary with keys
+  set to be elements and values the required amounts.
+  """
   universe = {}
   for line in inp.splitlines():
     frm, to = line.split(" => ")
@@ -69,6 +78,7 @@ def parse(inp):
 
 
 def topo(universe):
+  """Simple topological sorting."""
   universe = universe.copy()
   ordered = ['ORE']
   def seen(reqs, prev):
@@ -84,13 +94,14 @@ def answer1(inp, target=1, debug=False):
   universe = parse(inp)
   needed = {"FUEL": target}
   ordered = topo(universe)
+  # in reverse topological order...
   for elem in reversed(ordered[1:]):
     if debug:
       print(f"elem={elem}, needed={needed}")
     if elem in needed:
       want = needed.pop(elem)
       n, reqs = universe[elem]
-      # m > (want - 1) / n
+      # m * n >= want
       m = (want - 1)//n + 1
       if debug:
         print(f"want={want}, n={n}, m={m}")
@@ -108,13 +119,17 @@ tests2 = [
     ]
 
 def answer2(inp):
+  # we know we can produce at least 1 trillion / required
   req = answer1(inp, 1)
   cutoff = 1_000_000_000_000
   start = cutoff // req
+
+  ## find an end point by doubling
   end = start
   while answer1(inp, end) <= cutoff:
     end *= 2
 
+  # bisection to find the answer
   while (end - start) > 1:
     guess = (end + start) // 2
     needed = answer1(inp, guess)
