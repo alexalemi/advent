@@ -85,6 +85,7 @@ def get_data(day=None, year=None):
       sys.exit(1)
 
 
+data20 = functools.partial(get_data, year=2020)
 data19 = functools.partial(get_data, year=2019)
 data18 = functools.partial(get_data, year=2018)
 data17 = functools.partial(get_data, year=2017)
