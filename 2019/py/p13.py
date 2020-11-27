@@ -2,6 +2,7 @@ import intcode
 from utils import data19
 import numpy as np
 import os
+import time
 
 data = data19(13)
 
@@ -20,7 +21,7 @@ def update(state, new):
   return state
 
 def render(state):
-  blocks = " █▬▭○"
+  blocks = " █░▭○"
   score = state[(-1,0)]
   for y in range(25):
     for x in range(41):
@@ -40,7 +41,7 @@ tests2 = []
 def cmp(a, b):
   return 1*(a > b) - 1*(a < b)
 
-def answer2(inp):
+def answer2(inp, show=False):
   prog = intcode.getcodes(inp)
   prog[0] = 2
   comp = intcode.Computer(prog)
@@ -49,8 +50,11 @@ def answer2(inp):
 
   while not comp.finished:
     state = update(state, new)
-    # os.system('clear')
-    # render(state)
+    if show:
+      os.system('clear')
+      render(state)
+      time.sleep(1/60)
+      
     ballpos = next(pos for pos, val in state.items() if val == 4)
     paddlepos = next(pos for pos, val in state.items() if val == 3)
     move = cmp(ballpos[0], paddlepos[0])
