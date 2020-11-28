@@ -94,6 +94,9 @@ data15 = functools.partial(get_data, year=2015)
 
 LEADERBOARD = Path(__file__).resolve().parent / "leaderboard.txt"
 
+FRIENDS = "173774"
+SAL =     "851286"
+
 def get_leaderboard(force=False):
   modtime = datetime.datetime.fromtimestamp(LEADERBOARD.stat().st_mtime).astimezone(EAST_COAST)
   if force or TODAY - modtime > datetime.timedelta(seconds=900):
@@ -101,7 +104,7 @@ def get_leaderboard(force=False):
       import urllib.error
       with open(LEADERBOARD, 'wb') as f:
           for year in YEARS:
-              url = f"https://adventofcode.com/{year}/leaderboard/private/view/173774.json"
+              url = f"https://adventofcode.com/{year}/leaderboard/private/view/{SAL}.json"
               req = urllib.request.Request(url)
               req.add_header("Cookie", f"session={TOKEN}")
               try:
