@@ -73,7 +73,7 @@ tests = [
 
 
 def parse(inp):
-    """Process the text into the universe representation.
+  """Process the text into the universe representation.
 
   The keys are the result of the reactions,
   the values are (yield, requirements) where yield
@@ -81,55 +81,55 @@ def parse(inp):
   and requirements is a dictionary with keys
   set to be elements and values the required amounts.
   """
-    universe = {}
-    for line in inp.splitlines():
-        frm, to = line.split(" => ")
-        n, product = to.split(" ")
-        reactants = {}
-        for line in frm.split(", "):
-            m, reactant = line.split(" ")
-            reactants[reactant] = int(m)
-        universe[product] = (int(n), reactants)
-    return universe
+  universe = {}
+  for line in inp.splitlines():
+    frm, to = line.split(" => ")
+    n, product = to.split(" ")
+    reactants = {}
+    for line in frm.split(", "):
+      m, reactant = line.split(" ")
+      reactants[reactant] = int(m)
+    universe[product] = (int(n), reactants)
+  return universe
 
 
 def topo(universe):
-    """Simple topological sorting."""
-    universe = universe.copy()
-    ordered = ["ORE"]
+  """Simple topological sorting."""
+  universe = universe.copy()
+  ordered = ["ORE"]
 
-    def seen(reqs, prev):
-        return set(reqs).issubset(set(prev))
+  def seen(reqs, prev):
+    return set(reqs).issubset(set(prev))
 
-    while universe:
-        elem = next(key for key, values in universe.items()
-                    if seen(values[1].keys(), ordered))
-        universe.pop(elem)
-        ordered.append(elem)
-    return ordered
+  while universe:
+    elem = next(key for key, values in universe.items()
+                if seen(values[1].keys(), ordered))
+    universe.pop(elem)
+    ordered.append(elem)
+  return ordered
 
 
 def answer1(inp, target=1, debug=False):
-    universe = parse(inp)
-    needed = {"FUEL": target}
-    ordered = topo(universe)
-    # in reverse topological order...
-    for elem in reversed(ordered[1:]):
-        if debug:
-            print(f"elem={elem}, needed={needed}")
-        if elem in needed:
-            want = needed.pop(elem)
-            n, reqs = universe[elem]
-            # m * n >= want
-            m = (want - 1) // n + 1
-            if debug:
-                print(f"want={want}, n={n}, m={m}")
-            for reactant in reqs:
-                needed[reactant] = needed.get(reactant, 0) + m * reqs[reactant]
+  universe = parse(inp)
+  needed = {"FUEL": target}
+  ordered = topo(universe)
+  # in reverse topological order...
+  for elem in reversed(ordered[1:]):
+    if debug:
+      print(f"elem={elem}, needed={needed}")
+    if elem in needed:
+      want = needed.pop(elem)
+      n, reqs = universe[elem]
+      # m * n >= want
+      m = (want - 1) // n + 1
+      if debug:
+        print(f"want={want}, n={n}, m={m}")
+      for reactant in reqs:
+        needed[reactant] = needed.get(reactant, 0) + m * reqs[reactant]
 
-    assert len(needed) == 1, "Only one thing left."
-    assert "ORE" in needed, "Ore is not last element."
-    return needed["ORE"]
+  assert len(needed) == 1, "Only one thing left."
+  assert "ORE" in needed, "Ore is not last element."
+  return needed["ORE"]
 
 
 tests2 = [
@@ -140,36 +140,36 @@ tests2 = [
 
 
 def answer2(inp):
-    # we know we can produce at least 1 trillion / required
-    req = answer1(inp, 1)
-    cutoff = 1_000_000_000_000
-    start = cutoff // req
+  # we know we can produce at least 1 trillion / required
+  req = answer1(inp, 1)
+  cutoff = 1_000_000_000_000
+  start = cutoff // req
 
-    ## find an end point by doubling
-    end = start
-    while answer1(inp, end) <= cutoff:
-        end *= 2
+  ## find an end point by doubling
+  end = start
+  while answer1(inp, end) <= cutoff:
+    end *= 2
 
-    # bisection to find the answer
-    while (end - start) > 1:
-        guess = (end + start) // 2
-        needed = answer1(inp, guess)
-        if needed > cutoff:
-            end = guess
-        else:
-            start = guess
+  # bisection to find the answer
+  while (end - start) > 1:
+    guess = (end + start) // 2
+    needed = answer1(inp, guess)
+    if needed > cutoff:
+      end = guess
+    else:
+      start = guess
 
-    return start
+  return start
 
 
 if __name__ == "__main__":
-    for inp, ans in tests:
-        myans = answer1(inp)
-        assert myans == ans, f"Failed on {inp} == {ans}, got {myans}"
-    print("Answer1:", answer1(data))
+  for inp, ans in tests:
+    myans = answer1(inp)
+    assert myans == ans, f"Failed on {inp} == {ans}, got {myans}"
+  print("Answer1:", answer1(data))
 
-    for inp, ans in tests2:
-        myans = answer2(inp)
-        assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
+  for inp, ans in tests2:
+    myans = answer2(inp)
+    assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
 
-    print("Answer2:", answer2(data))
+  print("Answer2:", answer2(data))

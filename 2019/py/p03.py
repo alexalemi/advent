@@ -13,69 +13,69 @@ tests = [
 
 
 def visit(path):
-    loc = (0, 0)
-    visited = set()
-    for part in path.split(","):
-        if part[0] == "R":
-            for i in range(int(part[1:])):
-                loc = (loc[0] + 1, loc[1])
-                visited.add(loc)
-        elif part[0] == "L":
-            for i in range(int(part[1:])):
-                loc = (loc[0] - 1, loc[1])
-                visited.add(loc)
-        elif part[0] == "D":
-            for i in range(int(part[1:])):
-                loc = (loc[0], loc[1] - 1)
-                visited.add(loc)
-        elif part[0] == "U":
-            for i in range(int(part[1:])):
-                loc = (loc[0], loc[1] + 1)
-                visited.add(loc)
-    return visited
+  loc = (0, 0)
+  visited = set()
+  for part in path.split(","):
+    if part[0] == "R":
+      for i in range(int(part[1:])):
+        loc = (loc[0] + 1, loc[1])
+        visited.add(loc)
+    elif part[0] == "L":
+      for i in range(int(part[1:])):
+        loc = (loc[0] - 1, loc[1])
+        visited.add(loc)
+    elif part[0] == "D":
+      for i in range(int(part[1:])):
+        loc = (loc[0], loc[1] - 1)
+        visited.add(loc)
+    elif part[0] == "U":
+      for i in range(int(part[1:])):
+        loc = (loc[0], loc[1] + 1)
+        visited.add(loc)
+  return visited
 
 
 def process(inp):
-    visited = set()
-    one, two = inp.strip().split("\n")
+  visited = set()
+  one, two = inp.strip().split("\n")
 
-    firstpart = visit(one)
-    secondpart = visit(two)
+  firstpart = visit(one)
+  secondpart = visit(two)
 
-    distance = math.inf
-    for loc in firstpart.intersection(secondpart):
-        newdist = abs(loc[0]) + abs(loc[1])
-        if newdist < distance:
-            distance = newdist
-    return distance
+  distance = math.inf
+  for loc in firstpart.intersection(secondpart):
+    newdist = abs(loc[0]) + abs(loc[1])
+    if newdist < distance:
+      distance = newdist
+  return distance
 
 
 def visit2(path):
-    loc = (0, 0)
-    step = 0
-    visited = {}
-    for part in path.split(","):
-        if part[0] == "R":
-            for i in range(int(part[1:])):
-                loc = (loc[0] + 1, loc[1])
-                step += 1
-                visited[loc] = step
-        elif part[0] == "L":
-            for i in range(int(part[1:])):
-                loc = (loc[0] - 1, loc[1])
-                step += 1
-                visited[loc] = step
-        elif part[0] == "D":
-            for i in range(int(part[1:])):
-                loc = (loc[0], loc[1] - 1)
-                step += 1
-                visited[loc] = step
-        elif part[0] == "U":
-            for i in range(int(part[1:])):
-                loc = (loc[0], loc[1] + 1)
-                step += 1
-                visited[loc] = step
-    return visited
+  loc = (0, 0)
+  step = 0
+  visited = {}
+  for part in path.split(","):
+    if part[0] == "R":
+      for i in range(int(part[1:])):
+        loc = (loc[0] + 1, loc[1])
+        step += 1
+        visited[loc] = step
+    elif part[0] == "L":
+      for i in range(int(part[1:])):
+        loc = (loc[0] - 1, loc[1])
+        step += 1
+        visited[loc] = step
+    elif part[0] == "D":
+      for i in range(int(part[1:])):
+        loc = (loc[0], loc[1] - 1)
+        step += 1
+        visited[loc] = step
+    elif part[0] == "U":
+      for i in range(int(part[1:])):
+        loc = (loc[0], loc[1] + 1)
+        step += 1
+        visited[loc] = step
+  return visited
 
 
 tests2 = [
@@ -90,30 +90,30 @@ tests2 = [
 
 
 def process2(inp):
-    visited = set()
-    one, two = inp.strip().split("\n")
+  visited = set()
+  one, two = inp.strip().split("\n")
 
-    firstpart = visit2(one)
-    secondpart = visit2(two)
+  firstpart = visit2(one)
+  secondpart = visit2(two)
 
-    distance = math.inf
-    for loc in firstpart:
-        if loc in secondpart:
-            newdist = firstpart[loc] + secondpart[loc]
-            if newdist < distance:
-                distance = newdist
-    return distance
+  distance = math.inf
+  for loc in firstpart:
+    if loc in secondpart:
+      newdist = firstpart[loc] + secondpart[loc]
+      if newdist < distance:
+        distance = newdist
+  return distance
 
 
 data = data19(3)
 
 if __name__ == "__main__":
-    for case, ans in tests:
-        assert process(case) == ans
+  for case, ans in tests:
+    assert process(case) == ans
 
-    print("Answer1: ", process(data))
+  print("Answer1: ", process(data))
 
-    for case, ans in tests2:
-        assert process2(case) == ans
+  for case, ans in tests2:
+    assert process2(case) == ans
 
-    print("Answer1: ", process2(data))
+  print("Answer1: ", process2(data))

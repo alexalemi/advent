@@ -17,19 +17,19 @@ tests = [
 
 
 def answer1(inp, x=None):
-    return intcode.Computer(intcode.getcodes(inp)).run(x)
+  return intcode.Computer(intcode.getcodes(inp)).run(x)
 
 
 tests2 = []
 
 if __name__ == "__main__":
-    for inp, ans in tests:
-        myans = answer1(inp)
-        assert myans == ans, f"Failed on {inp} == {ans}, got {myans}"
-    print("Answer1:", answer1(data, 1))
+  for inp, ans in tests:
+    myans = answer1(inp)
+    assert myans == ans, f"Failed on {inp} == {ans}, got {myans}"
+  print("Answer1:", answer1(data, 1))
 
-    for inp, ans in tests2:
-        myans = answer2(inp)
-        assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
+  for inp, ans in tests2:
+    myans = answer2(inp)
+    assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
 
-    print("Answer2:", answer1(data, 2))
+  print("Answer2:", answer1(data, 2))
