@@ -1,4 +1,3 @@
-
 import logging
 from utils import data19
 from collections import namedtuple
@@ -11,8 +10,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 Code = int
 
+
 def getcodes(s):
     return list(map(int, s.strip().split(",")))
+
 
 class Computer:
     """Intcode Computer.
@@ -91,7 +92,7 @@ class Computer:
                 return newouts
 
             # Read one parameter
-            p1, pos1, mode = readparam(mode, self.loc+1)
+            p1, pos1, mode = readparam(mode, self.loc + 1)
 
             if op == 3:  # INPUT
                 if not self.inputs:
@@ -115,7 +116,7 @@ class Computer:
                 self.loc += 2
                 continue
 
-            p2, pos2, mode = readparam(mode, self.loc+2)
+            p2, pos2, mode = readparam(mode, self.loc + 2)
 
             if op == 5:  # jump-if-true
                 if p1 != 0:
@@ -124,7 +125,6 @@ class Computer:
                     self.loc += 3
                 continue
 
-
             elif op == 6:  # jump-if-false
                 if p1 == 0:
                     self.loc = p2
@@ -132,7 +132,7 @@ class Computer:
                     self.loc += 3
                 continue
 
-            p3, pos3, mode = readparam(mode, self.loc+3)
+            p3, pos3, mode = readparam(mode, self.loc + 3)
 
             if op == 7:  # less than
                 self.codes[pos3] = 1 * (p1 < p2)
@@ -159,5 +159,3 @@ class Computer:
 
 def run(codes: List[Code], inp: List[Code]):
     return Computer(codes).run(*inp)
-
-
