@@ -34,9 +34,8 @@ def render(
         print()
 
 
-def reconstruct_path(
-    came_from: Dict[Location, Location], start: Location, goal: Location
-) -> List[Location]:
+def reconstruct_path(came_from: Dict[Location, Location], start: Location,
+                     goal: Location) -> List[Location]:
     current = goal
     path = []
     while current != start:

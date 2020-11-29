@@ -40,6 +40,7 @@ def unwrap(a):
 
 
 def gen_heuristic(b):
+
     def heuristic(a):
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
@@ -62,6 +63,7 @@ class World:
         self.distance[self.loc] = 0
 
     def shortest_path(self, start, new):
+
         def cost(cur, nxt):
             if unwrap(nxt) in self.walls:
                 return float("inf")
@@ -91,7 +93,8 @@ class World:
 
         path = self.shortest_path(self.loc, new)
         debug(f"path = {path}")
-        assert unwrap(path[0]) == self.loc, "Location doesn't match start of path."
+        assert unwrap(
+            path[0]) == self.loc, "Location doesn't match start of path."
         for next in path[1:]:
             next = unwrap(next)
             move = get_move(self.loc, next)
@@ -137,9 +140,8 @@ def run(inp, cond=None):
             if world.loc == new:
                 for x in neighbors(new):
                     if x not in world.walls and x not in world.distance:
-                        heapq.heappush(
-                            frontier, (world.distance[world.loc] + 1, wrap(x))
-                        )
+                        heapq.heappush(frontier,
+                                       (world.distance[world.loc] + 1, wrap(x)))
 
     return world
 
@@ -152,21 +154,11 @@ def render(world, path=[]):
     for y in range(ymin, ymax + 1):
         for x in range(xmin, xmax + 1):
             print(
-                "#"
-                if x + 1j * y in world.walls
-                else (
-                    "o"
-                    if x + 1j * y == world.oxygen
-                    else (
-                        "x"
-                        if x + 1j * y == 0
-                        else (
-                            "@"
-                            if x + 1j * y == world.loc
-                            else ("." if (x, y) in set(path) else " ")
-                        )
-                    )
-                ),
+                "#" if x + 1j * y in world.walls else
+                ("o" if x + 1j * y == world.oxygen else
+                 ("x" if x + 1j * y == 0 else
+                  ("@" if x + 1j * y == world.loc else
+                   ("." if (x, y) in set(path) else " ")))),
                 end="",
             )
         print()

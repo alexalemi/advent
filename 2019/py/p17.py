@@ -60,13 +60,13 @@ def split(commands, funcs):
     output = []
 
     def startswith(commands, func):
-        return commands[: len(func)] == func
+        return commands[:len(func)] == func
 
     while commands:
         for i, func in enumerate(funcs):
             if startswith(commands, func):
                 output.append(string.ascii_uppercase[i])
-                commands = commands[len(func) :]
+                commands = commands[len(func):]
                 break
         else:
             return None
@@ -74,20 +74,20 @@ def split(commands, funcs):
 
 
 def consume(commands, funcs):
+
     def startswith(commands, func):
-        return commands[: len(func)] == func
+        return commands[:len(func)] == func
 
     while True:
         for i, func in enumerate(funcs):
             if startswith(commands, func):
-                commands = commands[len(func) :]
+                commands = commands[len(func):]
                 break
         else:
             return commands
 
 
 scommands = "L,12,L,12,R,4,R,10,R,6,R,4,R,4,L,12,L,12,R,4,R,6,L,12,L,12,R,10,R,6,R,4,R,4,L,12,L,12,R,4,R,10,R,6,R,4,R,4,R,6,L,12,L,12,R,6,L,12,L,12,R,10,R,6,R,4,R,4"
-# scommands = "L,12,L,12,R,4,R,4,6,R,6,R,4,R,4,L,12,L,12,R,4,R,6,L,12,L,12,R,4,6,R,6,R,4,R,4,L,12,L,12,R,4,R,4,6,R,6,R,4,R,4,R,6,L,12,L,12,R,6,L,12,L,12,R,4,6,R,6,R,4,R,4"
 commands = scommands.split(",")
 
 

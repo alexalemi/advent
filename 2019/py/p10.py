@@ -129,7 +129,6 @@ tests2 = """.#....#####...#..
 ..#.....X...###..
 ..#.#.....#....##"""
 
-
 tests2 = [
     (0, (11, 12)),
     (1, (12, 1)),
@@ -147,9 +146,10 @@ tests2 = [
 
 def genremoval(inp, loc=(23, 20)):
     b = board(inp)
-    locs = [
-        (i, j) for i, row in enumerate(b) for j, elem in enumerate(row) if elem == "#"
-    ]
+    locs = [(i, j)
+            for i, row in enumerate(b)
+            for j, elem in enumerate(row)
+            if elem == "#"]
 
     x, y = loc
 
@@ -162,7 +162,7 @@ def genremoval(inp, loc=(23, 20)):
                 f = (i - y, j - x)
                 m = abs(gcd(*f)) or 1
                 ff = (f[0] / m, f[1] / m)
-                d = f[0] ** 2 + f[1] ** 2
+                d = f[0]**2 + f[1]**2
 
                 candlist = toremove.get(ff, [])
                 bisect.insort_left(candlist, (d, (i, j)))
@@ -172,9 +172,8 @@ def genremoval(inp, loc=(23, 20)):
 
 
 def score(frac, base=0.0):
-    angle = (math.atan2(frac[0], frac[1]) + 2 * math.pi - base + math.pi / 2) % (
-        2 * math.pi
-    )
+    angle = (math.atan2(frac[0], frac[1]) + 2 * math.pi - base +
+             math.pi / 2) % (2 * math.pi)
     if angle < 1e-6:
         return 2 * math.pi
     else:
@@ -216,9 +215,8 @@ if __name__ == "__main__":
 
     testplan = genplan(tests[-1][0], (11, 13))
     for inp, ans in tests2:
-        assert (
-            tuple(reversed(testplan[inp])) == ans
-        ), f"Failed on {inp} == {ans}, got {testplan[inp]}!"
+        assert (tuple(reversed(testplan[inp])) == ans
+               ), f"Failed on {inp} == {ans}, got {testplan[inp]}!"
 
     ans2 = genplan(data, (23, 20))
     print("Answer2:", ans2[199][1] * 100 + ans2[199][0])

@@ -21,10 +21,12 @@ class State(NamedTuple):
     @classmethod
     def from_string(cls, s):
         data = parse("\n".join(line for _ in range(4)), s)
-        return cls.init(np.array([data[i] for i in range(3 * 4)]).reshape((4, 3)))
+        return cls.init(
+            np.array([data[i] for i in range(3 * 4)]).reshape((4, 3)))
 
     def step(self):
-        dvs = np.sign(self.xs[:, None, :] - self.xs[None, :, :]).astype("int32").sum(0)
+        dvs = np.sign(self.xs[:, None, :] -
+                      self.xs[None, :, :]).astype("int32").sum(0)
         vs = self.vs + dvs
         xs = self.xs + vs
         return self.__class__(xs, vs)
@@ -50,6 +52,7 @@ xs = np.array([[-1, 0, 2], [2, -10, -7], [4, -8, 8], [3, 5, -1]])
 
 @jit
 def steps(state: State, n: int) -> State:
+
     def body(i, s):
         return s.step()
 
@@ -62,6 +65,7 @@ def equal(s1, s2):
 
 @jit
 def floyd(state: State):
+
     def cond_fun(cstate):
         tortoise, hare = cstate
         return ~equal(tortoise, hare)
@@ -70,9 +74,8 @@ def floyd(state: State):
         tortoise, hare = cstate
         return (tortoise.step(), hare.step().step())
 
-    tortoise, hare = jax.lax.while_loop(
-        cond_fun, body_fun, (state.step(), state.step().step())
-    )
+    tortoise, hare = jax.lax.while_loop(cond_fun, body_fun,
+                                        (state.step(), state.step().step()))
 
     def cond_fun(cstate):
         mu, tortoise, hare = cstate
@@ -82,7 +85,8 @@ def floyd(state: State):
         mu, tortoise, hare = cstate
         return (mu + 1, tortoise.step(), hare.step())
 
-    mu, tortoise, hare = jax.lax.while_loop(cond_fun, body_fun, (0, state, hare))
+    mu, tortoise, hare = jax.lax.while_loop(cond_fun, body_fun,
+                                            (0, state, hare))
 
     def cond_fun(cstate):
         lam, hare = cstate

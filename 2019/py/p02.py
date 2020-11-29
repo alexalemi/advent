@@ -17,11 +17,11 @@ def run(codes, noun=12, verb=2):
     while not done:
         current_code = codes[loc]
         if current_code == 1:
-            from1, from2, to = codes[loc + 1 : loc + 4]
+            from1, from2, to = codes[loc + 1:loc + 4]
             codes[to] = codes[from1] + codes[from2]
             loc += 4
         elif current_code == 2:
-            from1, from2, to = codes[loc + 1 : loc + 4]
+            from1, from2, to = codes[loc + 1:loc + 4]
             codes[to] = codes[from1] * codes[from2]
             loc += 4
         elif current_code == 99:
@@ -38,7 +38,8 @@ tests = (
 )
 
 for inp, ans in tests:
-    assert run(getcodes(inp), None, None) == ans, "Failed test {}:{}".format(inp, ans)
+    assert run(getcodes(inp), None,
+               None) == ans, "Failed test {}:{}".format(inp, ans)
 
 codes = getcodes(data)
 ans = run(codes[:])

@@ -58,7 +58,6 @@ def answer2(inp, x=None):
 
 tests2 = []
 
-
 if __name__ == "__main__":
     ans1 = answer1(data)
     print("Answer1:", ans1)
@@ -71,12 +70,10 @@ if __name__ == "__main__":
 
     s = ""
     for y in range(ymax, ymin - 1, -1):
-        s += "".join(
-            [
-                "█" if colors.get(x + y * 1j, 0) else " "
-                for x in range(xmax, xmin - 1, -1)
-            ]
-        )
+        s += "".join([
+            "█" if colors.get(x + y * 1j, 0) else " "
+            for x in range(xmax, xmin - 1, -1)
+        ])
         s += "\n"
 
     print("Answer2:")

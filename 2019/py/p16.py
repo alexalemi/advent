@@ -65,14 +65,14 @@ pattern = [0, 1, 0, -1]
 
 
 def kfft1(nums: List[int], i: int) -> int:
-    tot = sum(pattern[((j + 1) // (i + 1)) % 4] * nums[j] for j in range(len(nums)))
+    tot = sum(
+        pattern[((j + 1) // (i + 1)) % 4] * nums[j] for j in range(len(nums)))
     return abs(tot) % 10
 
 
 def kfft(nums: List[int], i: int, mul: int = 1, off: int = 1) -> int:
-    return sum(
-        pattern[((mul * j + off) // (i + 1)) % 4] * nums[j] for j in range(len(nums))
-    )
+    return sum(pattern[((mul * j + off) // (i + 1)) % 4] * nums[j]
+               for j in range(len(nums)))
 
 
 def ones(x):

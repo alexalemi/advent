@@ -85,12 +85,10 @@ if __name__ == "__main__":
 
     print(
         "Answer1:",
-        max(
-            [
-                answer1((data, ",".join(map(str, x))))
-                for x in itertools.permutations(range(5))
-            ]
-        ),
+        max([
+            answer1((data, ",".join(map(str, x))))
+            for x in itertools.permutations(range(5))
+        ]),
     )
 
     for inp, ans in tests2:
@@ -99,10 +97,8 @@ if __name__ == "__main__":
 
     print(
         "Answer2:",
-        max(
-            [
-                answer2((data, ",".join(map(str, x))))
-                for x in itertools.permutations([5, 6, 7, 8, 9])
-            ]
-        ),
+        max([
+            answer2((data, ",".join(map(str, x))))
+            for x in itertools.permutations([5, 6, 7, 8, 9])
+        ]),
     )

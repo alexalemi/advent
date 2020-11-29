@@ -31,7 +31,7 @@ class ParameterMode(Enum):
 
 
 def mode(modes: int, pk: int) -> ParameterMode:
-    return ParameterMode(modes // 10 ** pk % 10)
+    return ParameterMode(modes // 10**pk % 10)
 
 
 def value(state: State, mode: ParameterMode, param: int) -> int:
@@ -45,7 +45,8 @@ def value(state: State, mode: ParameterMode, param: int) -> int:
 
 def get_value(argnum: int):
     def _(state: State, modes: int) -> int:
-        return value(state, mode(modes, argnum), state.tape[state.loc + argnum + 1])
+        return value(state, mode(modes, argnum),
+                     state.tape[state.loc + argnum + 1])
 
     return _
 
@@ -82,7 +83,11 @@ def inp(modes):
         tape = state.tape[:]
         inps = state.inputs[:]
         tape[to] = inps.pop()
-        return state._replace(tape=tape, loc=state.loc + 2, inputs=inps,)
+        return state._replace(
+            tape=tape,
+            loc=state.loc + 2,
+            inputs=inps,
+        )
 
     return _
 
@@ -92,7 +97,10 @@ def out(modes):
         x = get_value(0)(state, modes)
         outs = state.outputs[:]
         outs.append(x)
-        return state._replace(loc=state.loc + 2, outputs=outs,)
+        return state._replace(
+            loc=state.loc + 2,
+            outputs=outs,
+        )
 
     return _
 
@@ -107,7 +115,6 @@ def end(modes):
 def jit(modes):
     """Jump-if-True: if the first parameter is non-zero,
     it sets the pointer to the value from the second."""
-
     def _(state):
         cond = get_value(0)(state, modes)
         to = get_value(1)(state, modes)
@@ -124,7 +131,6 @@ def jit(modes):
 def jif(modes):
     """Jump-if-False: if the first parameter is zero,
     it sets the pointer to the value from the second."""
-
     def _(state):
         cond = get_value(0)(state, modes)
         to = get_value(1)(state, modes)
@@ -142,7 +148,6 @@ def less(modes):
     """Less: if the first parameter is less than the 
     second, if yes, stores 1 in the final loc,
     otherwise stores 0."""
-
     def _(state):
         x = get_value(0)(state, modes)
         y = get_value(1)(state, modes)
@@ -158,7 +163,6 @@ def equals(modes):
     """Equals: if the first parameter is equal to the 
     second, it stores 1 in the final loc, otherwise
     stores 0."""
-
     def _(state):
         x = get_value(0)(state, modes)
         y = get_value(1)(state, modes)

@@ -5,9 +5,8 @@ from frozendict import frozendict
 
 data = data19(6)
 
-tests = [
-    (
-        """COM)B
+tests = [(
+    """COM)B
 B)C
 C)D
 D)E
@@ -18,9 +17,8 @@ D)I
 E)J
 J)K
 K)L""",
-        42,
-    )
-]
+    42,
+)]
 
 
 def build_tree(s):
@@ -28,7 +26,8 @@ def build_tree(s):
     for line in s.splitlines():
         left, right = line.split(")")
         tree[left].add(right)
-    return frozendict({node: frozenset(children) for node, children in tree.items()})
+    return frozendict(
+        {node: frozenset(children) for node, children in tree.items()})
 
 
 def roots(tree):
@@ -54,7 +53,8 @@ def product(it):
 
 
 def parents(tree, cand):
-    return frozenset({node for node, children in tree.items() if cand in children})
+    return frozenset(
+        {node for node, children in tree.items() if cand in children})
 
 
 @functools.lru_cache(None)
@@ -71,9 +71,8 @@ def answer1(inp):
     return totalorbits(tree)
 
 
-tests2 = [
-    (
-        """COM)B
+tests2 = [(
+    """COM)B
 B)C
 C)D
 D)E
@@ -86,9 +85,8 @@ J)K
 K)L
 K)YOU
 I)SAN""",
-        4,
-    )
-]
+    4,
+)]
 
 
 def parent(tree, cand):

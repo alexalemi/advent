@@ -11,6 +11,7 @@ def runner(string, *inps):
 
 
 class TestComputer(unittest.TestCase):
+
     def test_day2tests(self):
 
         cases = [
@@ -103,7 +104,8 @@ class TestComputer(unittest.TestCase):
 
     def test_day5_tests(self):
         tests = [
-            (("3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0", "4,3,2,1,0"), 43210),
+            (("3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0", "4,3,2,1,0"),
+             43210),
             (
                 (
                     "3,23,3,24,1002,24,10,24,1002,23,-1,23,101,5,23,23,1,24,23,23,4,23,99,0,0",
@@ -125,12 +127,10 @@ class TestComputer(unittest.TestCase):
     def test_day5_part1(self):
         data = data19(7)
         self.assertEqual(
-            max(
-                [
-                    self._day5_part1((data, ",".join(map(str, x))))
-                    for x in itertools.permutations(range(5))
-                ]
-            ),
+            max([
+                self._day5_part1((data, ",".join(map(str, x))))
+                for x in itertools.permutations(range(5))
+            ]),
             99376,
         )
 
@@ -170,12 +170,10 @@ class TestComputer(unittest.TestCase):
     def test_day5_part2(self):
         data = data19(7)
         self.assertEqual(
-            max(
-                [
-                    self._day5_part2((data, ",".join(map(str, x))))
-                    for x in itertools.permutations([5, 6, 7, 8, 9])
-                ]
-            ),
+            max([
+                self._day5_part2((data, ",".join(map(str, x))))
+                for x in itertools.permutations([5, 6, 7, 8, 9])
+            ]),
             8754464,
         )
 

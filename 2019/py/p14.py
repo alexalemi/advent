@@ -102,9 +102,8 @@ def topo(universe):
         return set(reqs).issubset(set(prev))
 
     while universe:
-        elem = next(
-            key for key, values in universe.items() if seen(values[1].keys(), ordered)
-        )
+        elem = next(key for key, values in universe.items()
+                    if seen(values[1].keys(), ordered))
         universe.pop(elem)
         ordered.append(elem)
     return ordered

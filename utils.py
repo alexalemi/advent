@@ -48,11 +48,16 @@ def get_data(day=None, year=None):
         pass
 
     # See if the requested day is available
-    wanted = datetime.datetime(
-        year=year, month=12, day=day, hour=0, minute=0, second=0, tzinfo=EAST_COAST
-    )
+    wanted = datetime.datetime(year=year,
+                               month=12,
+                               day=day,
+                               hour=0,
+                               minute=0,
+                               second=0,
+                               tzinfo=EAST_COAST)
     if wanted > TODAY:
-        logging.error(f"Requesting a file in the future: {wanted - TODAY} from now!")
+        logging.error(
+            f"Requesting a file in the future: {wanted - TODAY} from now!")
         sys.exit(1)
     elif day > 25:
         logging.error("Day not in Advent!")
@@ -103,9 +108,8 @@ SAL = "851286"
 
 
 def get_leaderboard(force=False):
-    modtime = datetime.datetime.fromtimestamp(LEADERBOARD.stat().st_mtime).astimezone(
-        EAST_COAST
-    )
+    modtime = datetime.datetime.fromtimestamp(
+        LEADERBOARD.stat().st_mtime).astimezone(EAST_COAST)
     if force or TODAY - modtime > datetime.timedelta(seconds=900):
         import urllib.request
         import urllib.error
@@ -161,13 +165,12 @@ def recent_events(data):
                             Event(
                                 name=canonicalize_name(name),
                                 time=datetime.datetime.fromtimestamp(
-                                    float(data["get_star_ts"])
-                                ).astimezone(EAST_COAST),
+                                    float(data["get_star_ts"])).astimezone(
+                                        EAST_COAST),
                                 year=int(year),
                                 day=int(day),
                                 star=int(star),
-                            )
-                        )
+                            ))
     return sorted(events, key=lambda x: x.time, reverse=True)
 
 
@@ -181,11 +184,9 @@ def global_score(events):
     starid = lambda x: (x.year, x.day, x.star)
     N = len({x.name for x in events})
     stargroups = itertools.groupby(sorted(events, key=starid), key=starid)
-    points = (
-        (event.name, N - i)
-        for star, events in stargroups
-        for (i, event) in enumerate(events)
-    )
+    points = ((event.name, N - i)
+              for star, events in stargroups
+              for (i, event) in enumerate(events))
     total_score = defaultdict(int)
     for name, pts in points:
         total_score[name] += pts
