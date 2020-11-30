@@ -3,7 +3,7 @@ import itertools
 from copy import deepcopy
 import functools
 import dataclasses
-from typing import Dict, List, FrozenSet, Sequence
+from typing import Dict, Tuple, FrozenSet, Sequence
 import string
 import heapq
 
@@ -19,7 +19,7 @@ Location = complex
 @functools.total_ordering
 @dataclasses.dataclass(eq=True, frozen=True)
 class World:
-  loc: Location
+  locs: Tuple[Location]
   moves: int
   walls: FrozenSet[Location]
   keys: Dict[Location, chr]
@@ -29,8 +29,8 @@ class World:
     return self.moves < other.moves
 
   def __hash__(self):
-    return hash((self.loc, self.moves, self.walls, tuple(self.keys.items()),
-                 tuple(self.doors.items())))
+    return hash((self.locs, self.walls,
+                 tuple(sorted((n, x) for x, n in self.keys.items()))))
 
 
 tests = [
@@ -76,7 +76,7 @@ def process(inp: str) -> Dict[Location, chr]:
 
 def make(inp: str) -> World:
   board = process(inp)
-  loc = list(board.keys())[list(board.values()).index('@')]
+  locs = tuple(loc for loc, c in board.items() if c == '@')
   moves = 0
   walls = frozenset(loc for loc, c in board.items() if c == '#')
   keys = {
@@ -85,7 +85,7 @@ def make(inp: str) -> World:
   doors = {
       c: let for let, c in board.items() if c in set(string.ascii_uppercase)
   }
-  return World(loc, moves, walls, keys, doors)
+  return World(locs, moves, walls, keys, doors)
 
 
 def render(world: World):
@@ -96,10 +96,17 @@ def render(world: World):
     board[loc] = d
   for loc, k in world.keys.items():
     board[loc] = k
-  board[world.loc] = '@'
+  for loc in world.locs:
+    board[loc] = '@'
   bounds = library.get_bounds(board)
   library.render(bounds, board, default='.')
   print(f"Moves = {world.moves} keys={','.join(world.keys.values())}")
+
+
+def tup_replace(tup, idx, val):
+  lst = list(tup)
+  lst[idx] = val
+  return tuple(lst)
 
 
 def neighbors(world: World) -> Sequence[World]:
@@ -109,10 +116,12 @@ def neighbors(world: World) -> Sequence[World]:
     return not (x in world.walls) and not (x in world.keys) and not (x in set(
         world.doors.values()))
 
-  frontier = [(world.moves, library.wrap(world.loc))]
+  frontier = [
+      (world.moves, i, library.wrap(x)) for i, x in enumerate(world.locs)
+  ]
   seen = set()
   while frontier:
-    d, x = heapq.heappop(frontier)
+    d, i, x = heapq.heappop(frontier)
     x = library.unwrap(x)
     seen.add(x)
     for n in library.neighbors(x):
@@ -121,14 +130,14 @@ def neighbors(world: World) -> Sequence[World]:
         key = world.keys[n]
         yield dataclasses.replace(
             world,
-            loc=n,
+            locs=tup_replace(world.locs, i, n),
             moves=d + 1,
             keys={loc: x for loc, x in world.keys.items() if loc != n},
             doors={
                 d: loc for d, loc in world.doors.items() if d.lower() != key
             })
       elif valid(n) and n not in seen:
-        heapq.heappush(frontier, (d + 1, library.wrap(n)))
+        heapq.heappush(frontier, (d + 1, i, library.wrap(n)))
 
 
 def solve(world: World) -> int:
@@ -138,54 +147,77 @@ def solve(world: World) -> int:
   seen = set()
   while frontier:
     _, _, x = heapq.heappop(frontier)
-    seen.add(x)
-    if len(x.keys) == 0:
-      return x.moves
-    for n in neighbors(x):
-      if n not in seen:
-        heapq.heappush(frontier, (n.moves, -next(counter), n))
+    if hash(x) not in seen:
+      # print(x.moves, ":", x.loc, ":", ','.join(x.keys.values()), "->", hash(x))
+      seen.add(hash(x))
+      if len(x.keys) == 0:
+        return x.moves
+      for n in neighbors(x):
+        if hash(n) not in seen:
+          heapq.heappush(frontier, (n.moves, -next(counter), n))
 
-
-def heuristic(world):
-  """Try to design a greedy heuristic."""
-  if world.keys:
-    return max(library.distance(world.loc, loc) for loc in world.keys)
-    # return max(n.moves for n in neighbors(world)) - world.moves 
-  return 0
 
 def answer1(inp):
   world = make(inp)
-  # return solve(world)
-  path = library.astar(
-      start=world,
-      goal=lambda world: len(world.keys) == 0,
-      cost=lambda w1, w2: w2.moves - w1.moves,
-      neighbors=neighbors,
-      heuristic=heuristic)
-  return path[-1].moves
+  return solve(world)
 
 
-tests2 = []
+tests2 = [
+    ("""#######
+#a.#Cd#
+##@#@##
+#######
+##@#@##
+#cB#Ab#
+#######""", 8),
+    ("""###############
+#d.ABC.#.....a#
+######@#@######
+###############
+######@#@######
+#b.....#.....c#
+###############""", 24),
+    ("""#############
+#DcBa.#.GhKl#
+#.###@#@#I###
+#e#d#####j#k#
+###C#@#@###J#
+#fEbA.#.FgHi#
+#############""", 32),
+    ("""#############
+#g#f.D#..h#l#
+#F###e#E###.#
+#dCba@#@BcIJ#
+#############
+#nK.L@#@G...#
+#M###N#H###.#
+#o#m..#i#jk.#
+#############""", 72),
+]
 
-# def distance(world, loc):
-#   def cost(x, y):
-#     return 1
-#   def neighbors(x):
-#     x = library.unwrap(x)
-#     for n in library.neighbors(x):
-#       if n not in world.walls and n not in set(world.doors.values()):
-#         yield library.wrap(n)
-#   final, came_from, cost_so_far = library.astar(
-#       library.wrap(world.loc),
-#       goal = lambda x: x == library.wrap(loc),
-#       cost = cost,
-#       neighbors = neighbors,
-#       heuristic = lambda x: library.distance(library.unwrap(x), loc))
-#   return cost_so_far[final] if library.unwrap(final) == loc else float('inf')
+
+def replace_center(inp):
+  vals = process(inp)
+  locs = [loc for loc, c in vals.items() if c == '@']
+  assert len(locs) == 1, "Wrong input."
+  loc = locs[0]
+  vals[loc] = '#'
+  vals[loc + 1] = '#'
+  vals[loc - 1] = '#'
+  vals[loc + 1j] = '#'
+  vals[loc - 1j] = '#'
+  vals[loc + 1 + 1j] = '@'
+  vals[loc + 1 - 1j] = '@'
+  vals[loc - 1 + 1j] = '@'
+  vals[loc - 1 - 1j] = '@'
+  bounds = library.get_bounds(vals.keys())
+  return '\n'.join(''.join(vals[x + y * 1j]
+                           for x in range(bounds.xmin, bounds.xmax + 1))
+                   for y in range(bounds.ymin, bounds.ymax + 1))
 
 
 def answer2(inp):
-  return None
+  return answer1(inp)
 
 
 if __name__ == "__main__":
@@ -200,8 +232,8 @@ if __name__ == "__main__":
   for inp, ans in tests2:
     myans = answer2(inp)
     assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
+    print(f"Got {ans}!")
 
-  ans2 = answer2(data)
+  print("Running part2...", flush=True)
+  ans2 = answer2(replace_center(data))
   print("Answer2:", ans2)
-
-  world = make(data)
