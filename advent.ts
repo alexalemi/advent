@@ -1,9 +1,11 @@
 import { sprintf } from "https://deno.land/std@0.79.0/fmt/printf.ts";
 import { format } from "https://deno.land/std@0.79.0/datetime/mod.ts";
+import * as path from "https://deno.land/std@0.79.0/path/mod.ts";
 
-export { getData };
-
-const token = await Deno.readTextFile("token.txt");
+export const ROOT = path.posix.dirname(import.meta.url);
+// const token = await Deno.readTextFile(path.join(ROOT, "token.txt"));
+const tokenPath = path.join(ROOT, "token.txt");
+const token = await Deno.readTextFile(new URL(tokenPath)).catch((err) => { console.error("Error loading " + tokenPath + ":" + err.message); });
 
 function dayfmt(day: number): string {
   return sprintf("%02d", day);
@@ -18,12 +20,12 @@ function download(day: number, year?: number) {
   const url = `https://adventofcode.com/${year}/day/${day}/input`;
   console.log("Fetching " + url);
   const result = fetch(url, { headers: { "Cookie": `session=${token}` } });
-  const path = `${year}/input/${dayfmt(day)}.txt`;
+  const outPath = path.join(ROOT, `${year}/input/${dayfmt(day)}.txt`);
   return result.then((response) => {
     return response.text();
   }).then((body) => {
-    console.log("Writing file to " + path);
-    return Deno.writeTextFile(path, body).then(() => {return body;}).catch(console.error);
+    console.log("Writing file to " + outPath);
+    return Deno.writeTextFile(new URL(outPath), body).then(() => {return body;}).catch(console.error);
   }).catch(console.error);
 }
 
@@ -33,11 +35,11 @@ function download(day: number, year?: number) {
  * @param {number=} year - or current
  * @returns {Promise} Promise of data.
  */
-function getData(day: number, year?: number) {
+export function getData(day: number, year?: number) {
   year = year || currentYear();
-  const path = `${year}/input/${dayfmt(day)}.txt`;
-  console.log("Loading data from " + path);
-  return Deno.readTextFile(path).catch((err) => {
+  const inPath = path.join(ROOT, `${year}/input/${dayfmt(day)}.txt`);
+  console.log("Loading data from " + inPath);
+  return Deno.readTextFile(new URL(inPath)).catch((err) => {
     console.log("Data missing! attempting to download...");
     return download(day, year);
   });
