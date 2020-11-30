@@ -5,6 +5,20 @@ Location = Any
 Score = Any
 Value = Any
 
+def distance(x, y):
+  return abs(x.real - y.real) + abs(x.imag + y.imag)
+
+def neighbors(x):
+  return [x + 1, x - 1, x + 1j, x - 1j]
+
+def wrap(x):
+  return (x.real, x.imag)
+
+def unwrap(x):
+  return complex(*x)
+
+def wrapped_neighbors(x):
+  return [wrap(y) for y in neighbors(unwrap(x))]
 
 class Bounds(NamedTuple):
   xmin: int
@@ -25,12 +39,13 @@ def get_bounds(world: Sequence[Location]):
 def render(
     bounds: Bounds,
     world: Mapping[Location, Value],
-    symbol: Callable[[Value], chr],
+    symbol: Callable[[Value], chr] = lambda x: x,
     make=lambda x, y: x + 1j * y,
+    default = ' '
 ):
   for y in range(bounds.ymin, bounds.ymax + 1):
     for x in range(bounds.xmin, bounds.xmax + 1):
-      print(symbol(world.get(make(x, y))), end="")
+      print(symbol(world.get(make(x, y), default)), end="")
     print()
 
 
@@ -72,4 +87,4 @@ def astar(
         heapq.heappush(frontier, (priority, next))
         came_from[next] = current
 
-  return came_from, cost_so_far
+  return current, came_from, cost_so_far

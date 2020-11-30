@@ -72,7 +72,7 @@ class World:
       else:
         return 1_000_000
 
-    came_from, cost_so_far = library.astar(
+    _, came_from, cost_so_far = library.astar(
         wrap(start),
         lambda x: x == wrap(new),
         cost,
