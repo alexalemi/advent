@@ -1,5 +1,6 @@
-from typing import Dict, List, Any, Callable, Tuple, Mapping, NamedTuple, Sequence
+import itertools
 import heapq
+from typing import Dict, List, Any, Callable, Tuple, Mapping, NamedTuple, Sequence
 
 Location = Any
 Score = Any
@@ -49,14 +50,13 @@ def render(
     print()
 
 
-def reconstruct_path(came_from: Dict[Location, Location], start: Location,
-                     goal: Location) -> List[Location]:
-  current = goal
+def reconstruct_path(came_from: Dict[Location, Location],
+                     end: Location) -> List[Location]:
+  current = end
   path = []
-  while current != start:
+  while current in came_from:
     path.append(current)
     current = came_from[current]
-  path.append(start)
   path.reverse()
   return path
 
@@ -69,22 +69,22 @@ def astar(
     heuristic: Callable[[Location], Score] = lambda x: 0.0,
 ) -> Tuple[Dict[Location, Location], Dict[Location, Score]]:
   frontier = []
-  heapq.heappush(frontier, (0.0, start))
+  counter = itertools.count()
+  heapq.heappush(frontier, (0, -next(counter), start))
   came_from = {}
   cost_so_far = {}
   came_from[start] = None
   cost_so_far[start] = 0
 
   while frontier:
-    _, current = heapq.heappop(frontier)
+    _, _, current = heapq.heappop(frontier)
     if goal(current):
-      break
-    for next in neighbors(current):
-      new_cost = cost_so_far[current] + cost(current, next)
-      if next not in cost_so_far or new_cost < cost_so_far[next]:
-        cost_so_far[next] = new_cost
-        priority = new_cost + heuristic(next)
-        heapq.heappush(frontier, (priority, next))
-        came_from[next] = current
-
-  return current, came_from, cost_so_far
+      return reconstruct_path(came_from, current)
+    for n in neighbors(current):
+      new_cost = cost_so_far[current] + cost(current, n)
+      if n not in cost_so_far or new_cost < cost_so_far[n]:
+        cost_so_far[n] = new_cost
+        priority = new_cost + heuristic(n)
+        heapq.heappush(frontier, (priority, -next(counter), n))
+        came_from[n] = current
+  return None

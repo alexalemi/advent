@@ -72,14 +72,13 @@ class World:
       else:
         return 1_000_000
 
-    _, came_from, cost_so_far = library.astar(
+    path = library.astar(
         wrap(start),
         lambda x: x == wrap(new),
         cost,
         wrapped_neighbors,
         gen_heuristic(wrap(new)),
     )
-    path = library.reconstruct_path(came_from, wrap(start), wrap(new))
     debug(f"shortest from {start} to {new}: {path} with {self.walls}")
     return path
 
