@@ -1,5 +1,4 @@
 import { sprintf } from "https://deno.land/std@0.79.0/fmt/printf.ts";
-import { format } from "https://deno.land/std@0.79.0/datetime/mod.ts";
 import * as path from "https://deno.land/std@0.79.0/path/mod.ts";
 
 export const ROOT = path.posix.dirname(import.meta.url);
