@@ -37,8 +37,8 @@ def answer2():
       "OR T J",
       "NOT C T",
       "OR T J",
-      "AND D J",  # J if (NOT A) OR (NOT B) OR (NOT C)
-      # need either E true, or H T
+      "AND D J",  # J if (NOT A) OR (NOT B) OR (NOT C) AND D
+      # need either E true, or H
       "NOT J T",
       "OR E T",
       "OR H T",
