@@ -118,6 +118,9 @@ def answer2(inp):
 
 
 if __name__ == "__main__":
+  for inp, ans in tests:
+    myans = render(shuffle(inp, 10), 10)
+    assert myans == ans, f"Failed on {inp} == {ans}, got {myans}"
   ans1 = answer1(data)
   print("Answer1:", ans1)
 
