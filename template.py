@@ -1,6 +1,6 @@
-from utils import data19
+from utils import data20
 
-data = data19(4)
+data = data20(1)
 
 tests = []
 

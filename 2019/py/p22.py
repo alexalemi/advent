@@ -1,5 +1,6 @@
 from utils import data19
 from parse import parse
+from tqdm import tqdm
 
 data = data19(22)
 
@@ -62,11 +63,50 @@ def answer1(inp):
   return shuffle(inp, deck).index(2019)
 
 
+def gcd(x, y):
+  while y:
+    x, y = y, x % y
+  return x 
+
+def power(x, y, m): 
+  if (y == 0):
+    return 1
+  p = power(x, y // 2, m) % m 
+  p = (p * p) % m 
+  if y % 2 == 0:
+    return p 
+  else: 
+    return ((x * p) % m) 
+
+def back_ops(tot):
+  def back_new_stack(pk):
+    return tot - pk
+
+  def back_cut(n, pk):
+    return (pk + n) % tot
+
+  def back_deal(n, pk):
+    assert gcd(n, tot) == 1
+    return power(n, tot - 2, tot)
+
+  return back_new_stack, back_cut, back_deal
+
+
 def answer2(inp):
-  deck = list(range(119_315_717_514_047))
-  for _ in range(101_741_582_076_661):
-    deck = shuffle(inp, deck)
-  return deck[2020]
+  tot = 119_315_717_514_047
+  back_new_stack, back_cut, back_deal = back_ops(tot)
+  pk = 2020
+  for _ in tqdm(range(101_741_582_076_661)):
+    for line in reversed(inp.splitlines()):
+      if line.startswith('cut'):
+        n = int(line[4:].strip())
+        pk = back_cut(n, pk)
+      elif line.startswith('deal with increment'):
+        n = int(line[len('deal with increment '):].strip())
+        pk = back_deal(n, pk)
+      elif line.startswith('deal into new stack'):
+        pk = back_new_stack(pk)
+  return pk
 
 
 if __name__ == "__main__":
@@ -78,10 +118,6 @@ if __name__ == "__main__":
   ans1 = answer1(data)
   print("Answer1:", ans1)
 
-  # for inp, ans in tests2:
-  #   myans = answer2(inp)
-  #   assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
-
-  # ans2 = answer2(data)
-  # print("Answer2:", ans2)
+  ans2 = answer2(data)
+  print("Answer2:", ans2)
   deck = shuffle(data, list(range(10_007)))
