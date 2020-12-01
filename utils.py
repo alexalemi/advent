@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 EAST_COAST = pytz.timezone("America/New_York")
 TODAY = datetime.datetime.now().astimezone(EAST_COAST)
-YEARS = [2015, 2016, 2017, 2018, 2019]
+YEARS = [2015, 2016, 2017, 2018, 2019, 2020]
 
 REPLACED_NAMES = {"pleonasticperson": "Colin Clement"}
 IGNORED_NAMES = {"pleonasticperson"}
