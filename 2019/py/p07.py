@@ -2,7 +2,6 @@ from utils import data19
 import io
 import itertools
 import intcode
-import pintcode
 import threading
 import queue
 
