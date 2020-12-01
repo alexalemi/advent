@@ -1,8 +1,9 @@
-from utils import data19
-from parse import parse
+# from utils import data19
 from tqdm import tqdm
 
-data = data19(22)
+# data = data19(22)
+with open('../input/22.txt', 'r') as f:
+  data = f.read()
 
 tests = [
     ("""deal with increment 7
@@ -68,44 +69,68 @@ def gcd(x, y):
     x, y = y, x % y
   return x 
 
-def power(x, y, m): 
-  if (y == 0):
-    return 1
-  p = power(x, y // 2, m) % m 
-  p = (p * p) % m 
-  if y % 2 == 0:
-    return p 
-  else: 
-    return ((x * p) % m) 
+def inverse(a, n):
+  t = 0
+  r = n
+  newt = 1
+  newr = a
+  while newr != 0:
+    quotient = r // newr
+    (t, newt) = (newt, t - quotient * newt)
+    (r, newr) = (newr, r - quotient * newr)
+  if t < 0:
+    t = t + n
+  return t % n
 
 def back_ops(tot):
   def back_new_stack(pk):
-    return tot - pk
+    return tot - pk - 1
 
   def back_cut(n, pk):
     return (pk + n) % tot
 
   def back_deal(n, pk):
     assert gcd(n, tot) == 1
-    return power(n, tot - 2, tot)
+    return (inverse(n, tot) * pk) % tot
 
   return back_new_stack, back_cut, back_deal
 
+def pk_shuffle(tot, inp):
+  back_new_stack, back_cut, back_deal = back_ops(tot)
+  funcs = []
+  for line in reversed(inp.splitlines()):
+    if line.startswith('cut'):
+      n = int(line[4:].strip())
+      funcs.append(lambda pk: back_cut(n, pk))
+    elif line.startswith('deal with increment'):
+      n = int(line[len('deal with increment '):].strip())
+      funcs.append(lambda pk: back_deal(n, pk))
+    elif line.startswith('deal into new stack'):
+      funcs.append(back_new_stack)
+  def f(pk):
+    for f in funcs:
+      pk = f(pk)
+    return pk
+  return f
 
 def answer2(inp):
   tot = 119_315_717_514_047
-  back_new_stack, back_cut, back_deal = back_ops(tot)
   pk = 2020
-  for _ in tqdm(range(101_741_582_076_661)):
-    for line in reversed(inp.splitlines()):
-      if line.startswith('cut'):
-        n = int(line[4:].strip())
-        pk = back_cut(n, pk)
-      elif line.startswith('deal with increment'):
-        n = int(line[len('deal with increment '):].strip())
-        pk = back_deal(n, pk)
-      elif line.startswith('deal into new stack'):
-        pk = back_new_stack(pk)
+
+  shuffles = 101_741_582_076_661
+  shuffle = pk_shuffle(tot, inp)
+  counter = 1
+  pk = shuffle(pk)
+  with tqdm() as pbar:
+    while pk != 2020:
+      prev, pk = pk, shuffle(pk)
+      counter += 1
+      pbar.update(1)
+  print(f"Found recurrance in {counter} steps!")
+  remainder = shuffles % counter
+  pk = 2020
+  for _ in range(remainder):
+    pk = shuffle(pk)
   return pk
 
 
