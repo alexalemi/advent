@@ -17,14 +17,12 @@ function parse(line: string): Password {
 }
 
 function isValid(pass: Password): boolean {
-  const count = R.compose(
-    R.length,
-    R.filter(R.equals(pass.letter)),
-    Array.from,
+  return R.compose(
+    R.both(R.lte(pass.low), R.gte(pass.high)),
+    R.compose(R.length, R.filter(R.equals(pass.letter)), Array.from),
   )(
     pass.password,
   );
-  return (pass.low <= count) && (count <= pass.high);
 }
 
 const pipeline = (testFunc: ((pass: Password) => boolean)) =>
