@@ -1,11 +1,13 @@
 # from utils import data19
 import itertools
+import time
 from copy import deepcopy
 import functools
 import dataclasses
 from typing import Dict, Tuple, FrozenSet, Sequence
 import string
 import heapq
+from functools import lru_cache
 
 import library
 
@@ -17,7 +19,7 @@ Location = complex
 
 
 @functools.total_ordering
-@dataclasses.dataclass(eq=True, frozen=True)
+@dataclasses.dataclass(frozen=True)
 class World:
   locs: Tuple[Location]
   moves: int
@@ -27,6 +29,9 @@ class World:
 
   def __lt__(self, other):
     return self.moves < other.moves
+
+  def __eq__(self, b):
+    return hash(self) == hash(b)
 
   def __hash__(self):
     return hash((self.locs, self.walls,
@@ -109,6 +114,7 @@ def tup_replace(tup, idx, val):
   return tuple(lst)
 
 
+@lru_cache
 def neighbors(world: World) -> Sequence[World]:
   """Do a sort of flood fill to find the available keys."""
 
@@ -226,8 +232,9 @@ if __name__ == "__main__":
     assert myans == ans, f"Failed on {inp} == {ans}, got {myans}"
     print(f"Got {ans}!")
   print("Running part1...", flush=True)
+  start = time.time()
   ans1 = answer1(data)
-  print("Answer1:", ans1)
+  print("Answer1:", ans1, f" in {time.time() - start:0.3g} secs")
 
   for inp, ans in tests2:
     myans = answer2(inp)
@@ -235,5 +242,6 @@ if __name__ == "__main__":
     print(f"Got {ans}!")
 
   print("Running part2...", flush=True)
+  start = time.time()
   ans2 = answer2(replace_center(data))
-  print("Answer2:", ans2)
+  print("Answer2:", ans2, f" in {time.time() - start:0.3g} secs")
