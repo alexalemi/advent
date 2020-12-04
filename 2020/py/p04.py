@@ -2,6 +2,7 @@ import time
 import itertools
 from utils import data20
 import string
+import parser as p
 
 data = data20(4)
 
@@ -49,7 +50,15 @@ def valid(pw):
   return True
 
 
-def valid2(pw, debug=False):
+def answer1(inp):
+  return sum(map(valid, process(inp)))
+
+
+## PART 2
+
+
+def hand_valid2(pw, debug=False):
+  """Original hand designed parser."""
   if debug:
     debug = print
   else:
@@ -107,9 +116,68 @@ def valid2(pw, debug=False):
   return True
 
 
-def answer1(inp):
-  return sum(map(valid, process(inp)))
+def hand_answer2(inp):
+  return sum(map(valid2, process(inp)))
 
+
+## New combinator version.
+
+head = lambda parser: p.map(parser, lambda x: x[0])
+
+year = lambda key: head(
+    p.chain(
+        p.ignore(p.exact(key + ":")),
+        p.map(p.repeat(p.digit, 4), lambda x: int(''.join(x)))))
+
+byr = p.assertion(year('byr'), lambda x: 1920 <= x <= 2002)
+iyr = p.assertion(year('iyr'), lambda x: 2010 <= x <= 2020)
+eyr = p.assertion(year('eyr'), lambda x: 2020 <= x <= 2030)
+
+
+def valid_height(x):
+  num, unit = x
+  if unit == 'cm':
+    return 150 <= num <= 193
+  elif unit == 'in':
+    return 59 <= num <= 76
+  return False
+
+
+hgt = p.assertion(
+    p.chain(
+        p.ignore(p.exact("hgt:")), p.integer,
+        p.alternatives([p.exact("cm"), p.exact("in")])), valid_height)
+
+hcl = head(p.chain(p.ignore(p.exact("hcl:")), p.hex_color))
+
+ecl = head(
+    p.chain(
+        p.ignore(p.exact("ecl:")),
+        p.alternatives([
+            p.exact("amb"),
+            p.exact("blu"),
+            p.exact("brn"),
+            p.exact("gry"),
+            p.exact("grn"),
+            p.exact("hzl"),
+            p.exact("oth")
+        ])))
+
+pid = head(
+    p.chain(p.ignore(p.exact("pid:")), p.map(p.repeat(p.digit, 9), p.join)))
+
+cid = head(
+    p.chain(p.ignore(p.exact("cid:")), p.map(p.plus(p.non_whitespace), p.join)))
+
+record = p.dictionary(
+    byr=p.pad(byr),
+    iyr=p.pad(iyr),
+    eyr=p.pad(eyr),
+    hgt=p.pad(hgt),
+    hcl=p.pad(hcl),
+    ecl=p.pad(ecl),
+    pid=p.pad(pid),
+    cid=p.optional(p.pad(cid)))
 
 tests2 = [("""eyr:1972 cid:100
 hcl:#18171d ecl:amb hgt:170 pid:186cm iyr:2018 byr:1926
@@ -138,8 +206,16 @@ eyr:2022
 iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719""", 4)]
 
 
+def valid2(s):
+  try:
+    p.parse(record, s + " ")
+    return True
+  except ValueError:
+    return False
+
+
 def answer2(inp):
-  return sum(map(valid2, process(inp)))
+  return sum(map(valid2, inp.split("\n\n")))
 
 
 if __name__ == "__main__":
