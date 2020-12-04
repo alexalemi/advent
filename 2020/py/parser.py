@@ -51,6 +51,7 @@ def element(collection: Sequence[Datum], desc: str = None) -> Parser:
 
 
 def alternatives(parsers: Sequence[Parser], desc: str = None) -> Parser:
+  """Takes a sequence of parsers, matches on the first one."""
   desc = desc or f"Failed to match any!"
   parsers = list(parsers)
 
@@ -82,6 +83,7 @@ def repeat(parser: Parser, n: int) -> Parser:
 
 
 def plus(parser: Parser) -> Parser:
+  """Acts like a regex +, matches at least once but repeated."""
 
   def new_parser(s: Tokens) -> Result:
     result, s = parser(s)
@@ -99,6 +101,7 @@ def plus(parser: Parser) -> Parser:
 
 
 def optional(parser: Parser) -> Parser:
+  """Acts like a regex ?, match zero or one times."""
 
   def new_parser(s: Tokens) -> Result:
     a, b = itertools.tee(s)
@@ -121,7 +124,7 @@ def ignore(parser: Parser) -> Parser:
 
 
 def chain(*parsers: Parser, filter=lambda x: not x is None) -> Parser:
-  """Chain many parsers together."""
+  """Chain many parsers together in a sequence."""
 
   def parse(s: Tokens) -> Result:
     data = []
@@ -135,7 +138,7 @@ def chain(*parsers: Parser, filter=lambda x: not x is None) -> Parser:
 
 
 def map(parser: Parser, f: Callable) -> Parser:
-  """Wrap a parser to handle some processing."""
+  """Wrap a parser to handle some processing of the result."""
 
   def new_parser(s: Tokens) -> Result:
     result, rest = parser(s)
@@ -145,7 +148,7 @@ def map(parser: Parser, f: Callable) -> Parser:
 
 
 def dictionary(**parsers: Parser) -> Parser:
-  """Require that we manage to match each of the parsers once in any order."""
+  """Require that we manage to match each of the parsers once in any order return a dictionary of results."""
   desc = f"Failed to match all of {parsers}"
 
   def parser(s: Tokens) -> Result:
@@ -168,6 +171,8 @@ def dictionary(**parsers: Parser) -> Parser:
 
   return parser
 
+
+## Helper utilities
 
 join = lambda x: ''.join(x)
 
@@ -194,9 +199,7 @@ hex_digit = element(string.digits + "abcdef")
 word = map(plus(letter), join)
 integer = map(plus(digit), lambda x: int(''.join(x)))
 hex_color = map(chain(atom("#"), repeat(hex_digit, 6)), lambda x: ''.join(x[1]))
-
 exact = lambda word: map(chain(*[atom(c) for c in word]), join)
-
 pad = lambda parser: map(chain(parser, whitespace), lambda x: x[0])
 
 
