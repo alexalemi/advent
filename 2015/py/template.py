@@ -4,13 +4,17 @@ data = data15(3)
 
 tests = []
 
+
 def answer1(inp):
   return None
 
+
 tests2 = []
+
 
 def answer2(inp):
   return None
+
 
 if __name__ == "__main__":
   for inp, ans in tests:
