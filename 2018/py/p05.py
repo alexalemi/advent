@@ -4,8 +4,6 @@ import string
 with open("../input/05.txt") as f:
   text = f.read().strip()
 
-# text = open('../input/05.txt').read().strip()
-
 
 def match(a, b):
   return abs(ord(a) - ord(b)) == 32

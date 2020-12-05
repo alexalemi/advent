@@ -34,31 +34,32 @@ position=<14,  7> velocity=<-2,  0>
 position=<-3,  6> velocity=< 2, -1>"""
 
 with open('../input/10.txt') as f:
-    data = f.readlines()
+  data = f.readlines()
 
 regex = re.compile(
-        r"position=<\s*(-?\d+),\s*(-?\d+)> velocity=<\s*(-?\d+),\s*(-?\d+)>")
+    r"position=<\s*(-?\d+),\s*(-?\d+)> velocity=<\s*(-?\d+),\s*(-?\d+)>")
 
 
 class Reading(object):
-    def __init__(self, position: Tuple[int, int], velocity: Tuple[int, int]):
-        self.position = position
-        self.velocity = velocity
 
-    @classmethod
-    def from_groups(cls, x, y, vx, vy):
-        return cls(position=(x, y), velocity=(vx, vy))
+  def __init__(self, position: Tuple[int, int], velocity: Tuple[int, int]):
+    self.position = position
+    self.velocity = velocity
 
-    @classmethod
-    def from_line(cls, line):
-        return cls.from_groups(*map(int, regex.match(line).groups()))
+  @classmethod
+  def from_groups(cls, x, y, vx, vy):
+    return cls(position=(x, y), velocity=(vx, vy))
 
-    def step(self):
-        self.position = (self.position[0] + self.velocity[0],
-                         self.position[1] + self.velocity[1])
+  @classmethod
+  def from_line(cls, line):
+    return cls.from_groups(*map(int, regex.match(line).groups()))
 
-    def __repr__(self):
-        return f'<{self.position}, {self.velocity}>'
+  def step(self):
+    self.position = (self.position[0] + self.velocity[0],
+                     self.position[1] + self.velocity[1])
+
+  def __repr__(self):
+    return f'<{self.position}, {self.velocity}>'
 
 
 # all_readings = list(map(Reading.from_line, test1.splitlines()))
@@ -66,35 +67,35 @@ all_readings = list(map(Reading.from_line, data))
 
 counter = 0
 
+
 def step_all(all_readings: List[Reading]):
-    global counter
-    counter = counter + 1
-    for reading in all_readings:
-        reading.step()
+  global counter
+  counter = counter + 1
+  for reading in all_readings:
+    reading.step()
 
 
 def getedges(all_readings: List[Reading]) -> Tuple[int, int, int, int]:
-    right = max([reading.position[0] for reading in all_readings])
-    left = min([reading.position[0] for reading in all_readings])
-    top = min([reading.position[1] for reading in all_readings])
-    bottom = max([reading.position[1] for reading in all_readings])
-    return left, right, top, bottom
+  right = max([reading.position[0] for reading in all_readings])
+  left = min([reading.position[0] for reading in all_readings])
+  top = min([reading.position[1] for reading in all_readings])
+  bottom = max([reading.position[1] for reading in all_readings])
+  return left, right, top, bottom
 
 
 def plot_readings(all_readings: List[Reading]) -> str:
-    occupied = set(reading.position for reading in all_readings)
+  occupied = set(reading.position for reading in all_readings)
 
-    left, right, top, bottom = getedges(all_readings)
-    width = right - left
-    height = bottom - top
+  left, right, top, bottom = getedges(all_readings)
+  width = right - left
+  height = bottom - top
 
-    output = ''
-    for line in range(height + 1):
-        for row in range(width + 1):
-            if (row + left, line + top) in occupied:
-                output += '█'
-            else:
-                output += ' '
-        output += '\n'
-    return output
-
+  output = ''
+  for line in range(height + 1):
+    for row in range(width + 1):
+      if (row + left, line + top) in occupied:
+        output += '█'
+      else:
+        output += ' '
+    output += '\n'
+  return output
