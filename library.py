@@ -1,3 +1,4 @@
+import re
 import itertools
 import heapq
 from typing import Dict, List, Any, Callable, Tuple, Mapping, NamedTuple, Sequence
@@ -5,6 +6,10 @@ from typing import Dict, List, Any, Callable, Tuple, Mapping, NamedTuple, Sequen
 Location = Any
 Score = Any
 Value = Any
+
+
+def ints(s: str) -> List[int]:
+  return list(map(int, re.findall("\d+", s)))
 
 
 def distance(x, y):
