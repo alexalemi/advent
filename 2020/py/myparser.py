@@ -82,7 +82,7 @@ def repeat(parser: Parser, n: int) -> Parser:
   return new_parser
 
 
-def plus(parser: Parser, sep: Parser = None) -> Parser:
+def plus(parser: Parser) -> Parser:
   """Acts like a regex +, matches at least once but repeated."""
 
   def new_parser(s: Tokens) -> Result:
@@ -123,7 +123,7 @@ def ignore(parser: Parser) -> Parser:
   return new_parser
 
 
-def chain(*parsers: Parser, filter=lambda x: not x is None, sep: Parser = None) -> Parser:
+def chain(*parsers: Parser, filter=lambda x: not x is None) -> Parser:
   """Chain many parsers together in a sequence."""
 
   def parse(s: Tokens) -> Result:
@@ -132,8 +132,6 @@ def chain(*parsers: Parser, filter=lambda x: not x is None, sep: Parser = None) 
       datum, s = parser(s)
       if filter(datum):
         data.append(datum)
-      if sep is not None:
-        _, s = sep(s)
     return Result(data, s)
 
   return parse

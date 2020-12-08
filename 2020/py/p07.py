@@ -1,6 +1,7 @@
 import time
 import library
 from utils import data20
+import myparser as p
 
 data = data20(7)
 
@@ -13,6 +14,24 @@ dark olive bags contain 3 faded blue bags, 4 dotted black bags.
 vibrant plum bags contain 5 faded blue bags, 6 dotted black bags.
 faded blue bags contain no other bags.
 dotted black bags contain no other bags.""", 4)]
+
+
+def parse2(txt):
+  bagtype = p.map(p.chain(p.word, p.space, p.word), p.join)
+  holding = p.map(
+      p.chain(
+          p.integer, p.ignore(p.space), bagtype,
+          p.ignore(
+              p.chain(p.space, p.alternatives([p.exact('bags'),
+                                               p.exact('bag')]),
+                      p.optional(p.exact(", "))))), tuple)
+  line = p.chain(
+      bagtype, p.ignore(p.exact(" bags contain ")),
+      p.alternatives(
+          [p.plus(holding),
+           p.map(p.exact('no other bags'), lambda x: '')]),
+      p.ignore(p.atom('.')))
+  return dict(list(map(lambda x: p.parse(line, x)[0], txt.splitlines())))
 
 
 def parse(txt):

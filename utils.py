@@ -210,5 +210,5 @@ if __name__ == "__main__":
   print("\n\nRECENT EVENTS\n===========================")
   for x in events[:15]:
     print(
-        f"{x.name} solved {x.year}-{x.day}-{x.star} {(TODAY-x.time).total_seconds()/(60*60):.2f} hours ago at {x.time}"
+        f"{x.name} solved {x.year}-{x.day:02d}-{x.star} {(TODAY-x.time).total_seconds()/(60*60):.2f} hours ago at {x.time}"
     )

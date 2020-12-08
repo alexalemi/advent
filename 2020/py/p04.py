@@ -2,7 +2,7 @@ import time
 import itertools
 from utils import data20
 import string
-import parser as p
+import myparser as p
 
 data = data20(4)
 
