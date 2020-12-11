@@ -93,7 +93,6 @@ if __name__ == "__main__":
   for inp, ans in tests2:
     myans = answer2(inp)
     assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
-    print("done", flush=True)
 
   start = time.time()
   ans2 = answer2(data)
