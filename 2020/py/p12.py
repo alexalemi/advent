@@ -47,14 +47,10 @@ def move(state, move):
         state, position=intify(state.position - move.amount))
   elif move.kind == 'L':
     return dataclasses.replace(
-        state,
-        direction=intify(state.direction *
-                         cmath.exp(1j * 2 * cmath.pi * move.amount / 360)))
+        state, direction=intify(state.direction * (1j)**(move.amount // 90)))
   elif move.kind == 'R':
     return dataclasses.replace(
-        state,
-        direction=intify(state.direction *
-                         cmath.exp(-1j * 2 * cmath.pi * move.amount / 360)))
+        state, direction=intify(state.direction * (-1j)**(move.amount // 90)))
   elif move.kind == 'F':
     return dataclasses.replace(
         state, position=intify(state.position + move.amount * state.direction))
