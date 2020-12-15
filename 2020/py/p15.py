@@ -18,15 +18,15 @@ def answer1(inp, n=2020, debug=False):
     prev = num
     turn += 1
 
-  with tqdm(total=n - turn) as pbar:
-    while turn <= n:
-      new = (turn - 1) - seen.get(prev, turn - 1)
-      seen[prev] = turn - 1
-      if debug:
-        print(f"{turn}: {new}")
-      pbar.update(1)
-      turn += 1
-      prev = new
+  # with tqdm(total=n - turn) as pbar:
+  while turn <= n:
+    new = (turn - 1) - seen.get(prev, turn - 1)
+    seen[prev] = turn - 1
+    if debug:
+      print(f"{turn}: {new}")
+    # pbar.update(1)
+    turn += 1
+    prev = new
 
   return prev
 
@@ -48,10 +48,10 @@ if __name__ == "__main__":
   end = time.time()
   print("Answer1:", ans1, f" in {end - start:0.3e} secs")
 
-  for inp, ans in tests2:
-    myans = answer2(inp)
-    print(f"{myans} ?= {ans}", flush=True)
-    assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
+  # for inp, ans in tests2:
+  #   myans = answer2(inp)
+  #   print(f"{myans} ?= {ans}", flush=True)
+  #   assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
 
   start = time.time()
   ans2 = answer2(data)
