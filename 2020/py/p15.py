@@ -10,26 +10,23 @@ tests = [("0,3,6", 436), ("1,3,2", 1), ("2,1,3", 10), ("1,2,3", 27),
 
 
 def answer1(inp, n=2020, debug=False):
-  seen = defaultdict(lambda: deque([], 2))
+  seen = {}
   prev = None
   turn = 1
   for i, num in enumerate(list(map(int, inp.split(",")))):
-    seen[num].append(turn)
+    seen[num] = turn
     prev = num
     turn += 1
 
   with tqdm(total=n - turn) as pbar:
     while turn <= n:
-      if len(seen.get(prev, [])) == 1:
-        prev = 0
-        seen[prev].append(turn)
-      else:
-        prev = seen[prev][-1] - seen[prev][-2]
-        seen[prev].append(turn)
+      new = (turn - 1) - seen.get(prev, turn - 1)
+      seen[prev] = turn - 1
       if debug:
-        print(f"{turn}: {prev}")
+        print(f"{turn}: {new}")
       pbar.update(1)
       turn += 1
+      prev = new
 
   return prev
 
