@@ -2,7 +2,7 @@ import time
 from utils import data20
 import itertools
 import functools
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Sequence, Union
 
 data = data20(19)
 
@@ -37,9 +37,19 @@ def compile(inp):
   return rules
 
 
+Rule = Union[int, str, List, Tuple]
+
+
 @functools.singledispatch
-def match(rule, rules, s):
-  print(f"Asked to match {rule} to {s}")
+def match(rule: Rule, rules: Dict[int, Rule], s: Sequence[str]):
+  """Match the rule from the set of rules to the sequence of string s.
+  
+  The type of the rule determines its behavior.  Integers refer to another
+  rule in the rules dictionary.  Strings are exact matches.
+  Tuples are sequential matches and lists are for optional branching.
+
+  The input 's' is itself a generator of possible things to continue to match.
+  """
   yield None
 
 
@@ -53,7 +63,7 @@ def _(rule: str, rules, ses):
 
 @match.register
 def _(rule: tuple, rules, ses):
-  """Must match in order."""
+  """Tuples match sequentially."""
   stream = ses
   for cand in ses:
     stream = [cand]
@@ -64,7 +74,7 @@ def _(rule: tuple, rules, ses):
 
 @match.register
 def _(rule: list, rules, ses):
-  """List of alternatives."""
+  """Lists create alternatives."""
   tees = itertools.tee(ses, len(rule))
   for part, sub in zip(rule, tees):
     yield from match(part, rules, sub)
@@ -76,7 +86,8 @@ def _(rule: int, rules, ses):
   yield from match(rules[rule], rules, ses)
 
 
-def valid(rules, query):
+def valid(rules: Dict[int, Rule], query: str) -> bool:
+  """Determines the rules match a given query."""
   return any(x == '' for x in match(0, rules, [query]))
 
 
