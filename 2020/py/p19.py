@@ -21,6 +21,9 @@ aaaabbb""", 2)]
 
 
 def compile(inp):
+  """Process the input into a dictionary of rules.
+  
+  Lists encode alternatives, tuples are sequences."""
   rules = {}
   for line in inp.splitlines():
     pk, rule = line.split(": ")
