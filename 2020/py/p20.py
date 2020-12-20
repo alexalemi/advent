@@ -188,6 +188,7 @@ NEIGHBOR_EDGE = (2, 3, 0, 1)
 
 
 def assemble_puzzle(inp):
+  """Put together the puzzle."""
   tiles = process(inp)
   seen_edges = defaultdict(set)
   for tileno, tile in tiles.items():
@@ -234,6 +235,7 @@ def assemble_puzzle(inp):
 
 
 def assemble_picture(board):
+  """Given a board dict, assemble the actual picture."""
   minx = min(z[0] for z in board.keys())
   maxx = max(z[0] for z in board.keys())
   miny = min(z[1] for z in board.keys())
@@ -257,6 +259,7 @@ DRAGON_TEMPLATE = np.array(
 
 
 def count_dragons(pic):
+  """Count all of the dragons in the pic."""
   dragon_pks = np.where(DRAGON_TEMPLATE)
   Y, X = pic.shape
   dY, dX = DRAGON_TEMPLATE.shape
