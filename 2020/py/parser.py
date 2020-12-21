@@ -123,7 +123,9 @@ def ignore(parser: Parser) -> Parser:
   return new_parser
 
 
-def chain(*parsers: Parser, filter=lambda x: not x is None, sep: Parser = None) -> Parser:
+def chain(*parsers: Parser,
+          filter=lambda x: not x is None,
+          sep: Parser = None) -> Parser:
   """Chain many parsers together in a sequence."""
 
   def parse(s: Tokens) -> Result:
