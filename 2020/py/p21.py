@@ -20,30 +20,14 @@ def process(inp):
 
 
 def create_associations(info):
-  """Create a mapping from each 'word' to an allergen it could be associated with."""
-  times = Counter(
-      [allergen for (words, allergens) in info for allergen in allergens])
-  # create a dictionary, where for each word, it is a dictionary
-  # of the number of times each allergen appears associated with that
-  # word.
+  """Create a mapping from each allergen to a set of words it could be."""
   associations = {}
   for words, allergens in info:
-    for word in words:
-      for allergen in allergens:
-        word_dict = associations.get(word, {})
-        word_dict[allergen] = word_dict.get(allergen, 0) + 1
-        associations[word] = word_dict
-
-  # if we haven't seen the word occur with the allergen
-  # at least as many times as the allergen appeared, then
-  # this word can't be that allergen.
-  for allergen, seen in times.items():
-    for word, word_dict in associations.items():
-      if word_dict.get(allergen, 0) < seen:
-        if allergen in word_dict:
-          del word_dict[allergen]
-
-  # remove emptys
+    for allergen in allergens:
+      if allergen in associations:
+        associations[allergen] = associations[allergen].intersection(set(words))
+      else:
+        associations[allergen] = set(words)
   associations = {k: v for k, v in associations.items() if v}
   return associations
 
@@ -53,9 +37,7 @@ def answer1(inp):
   word_counter = Counter([word for words, _ in info for word in words])
   associations = create_associations(info)
 
-  safe_words = set(word_counter.keys()) - {
-      words for words, d in associations.items() if len(d) > 0
-  }
+  safe_words = set(word_counter.keys()) - set.union(*associations.values())
   return sum(word_counter[word] for word in safe_words)
 
 
@@ -66,24 +48,21 @@ def answer2(inp):
   info = list(process(inp))
   associations = create_associations(info)
 
-  def prune(associations, allergen):
+  def prune(associations, word):
     """Remove instances of allergen from associations."""
-    new = {
-        k: {vk: vv for vk, vv in v.items() if vk != allergen
-           } for k, v in associations.items()
-    }
+    new = {k: v - set([word]) for k, v in associations.items()}
     new = {k: v for k, v in new.items() if v}
     return new
 
   assignments = {}
   while associations:
-    word, assoc = min(associations.items(), key=lambda x: len(x[1]))
-    assert len(assoc) == 1, "Not unique!"
-    allergen = list(assoc.keys())[0]
-    assignments[word] = allergen
-    associations = prune(associations, allergen)
+    allergen, words = min(associations.items(), key=lambda x: len(x[1]))
+    assert len(words) == 1, "Not unique!"
+    word = list(words)[0]
+    assignments[allergen] = word
+    associations = prune(associations, word)
 
-  return ','.join(x[0] for x in sorted(assignments.items(), key=lambda x: x[1]))
+  return ','.join(x[1] for x in sorted(assignments.items(), key=lambda x: x[0]))
 
 
 if __name__ == "__main__":
