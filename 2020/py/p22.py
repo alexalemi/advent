@@ -28,18 +28,18 @@ def process(inp: str) -> Tuple[List[int], List[int]]:
     deck = []
     for line in player.splitlines()[1:]:
       deck.append(int(line))
-    decks.append(deck[::-1])
+    decks.append(deck)
   return tuple(decks)
 
 
 def play_round(state):
   adeck, bdeck = state
-  a = adeck.pop()
-  b = bdeck.pop()
+  a, *adeck = adeck
+  b, *bdeck = bdeck
   if a > b:
-    adeck[:0] = [b, a]
+    adeck.extend([a, b])
   elif b > a:
-    bdeck[:0] = [a, b]
+    bdeck.extend([b, a])
   else:
     raise ValueError("Don't know how to handle ties.")
   return (adeck, bdeck)
@@ -53,8 +53,10 @@ def finished(state):
 
 
 def score(state):
-  p1_score = sum([x * y for x, y in zip(state[0], itertools.count(1))])
-  p2_score = sum([x * y for x, y in zip(state[1], itertools.count(1))])
+  p1_score = sum(
+      [x * y for x, y in zip(reversed(state[0]), itertools.count(1))])
+  p2_score = sum(
+      [x * y for x, y in zip(reversed(state[1]), itertools.count(1))])
   return (p1_score, p2_score)
 
 
@@ -98,10 +100,10 @@ def finisher():
 
 def play_round2(state):
   adeck, bdeck = state
-  a = adeck.pop()
-  b = bdeck.pop()
+  a, *adeck = adeck
+  b, *bdeck = bdeck
   if a <= len(adeck) and b <= len(bdeck):
-    winner, _ = game2((adeck[-a:], bdeck[-b:]))
+    winner, _ = game2((adeck[:a], bdeck[:b]))
   elif a > b:
     winner = 0
   elif b > a:
@@ -110,9 +112,9 @@ def play_round2(state):
     raise ValueError("Don't know how to handle ties.")
 
   if winner == 0:
-    adeck[:0] = [b, a]
+    adeck.extend([a, b])
   else:
-    bdeck[:0] = [a, b]
+    bdeck.extend([b, a])
   return (adeck, bdeck)
 
 
