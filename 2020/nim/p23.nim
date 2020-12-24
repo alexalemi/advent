@@ -4,15 +4,17 @@ import times
 
 const data = staticRead(currentSourcePath.parentDir() / "../input/23.txt")
 
+type num = uint32
+
 type State = ref object
-  children: seq[int]
-  current: int
+  children: seq[num]
+  current: num
 
-func child(state: State, x: int): int {.inline.} = state.children[x]
+func child(state: State, x: num): num {.inline.} = state.children[x]
 
-func read(state: State, n: int, start: int = -1): seq[int] {.inline.} =
-  var current = (if start == -1: state.current else: start)
-  result = newSeq[int](n)
+func read(state: State, n: int, start: num = 0): seq[num] {.inline.} =
+  var current = (if start == 0: state.current else: start)
+  result = newSeq[num](n)
   for i in 0..<n:
     current = state.child(current)
     result[i] = current
@@ -21,21 +23,21 @@ func read(state: State, n: int, start: int = -1): seq[int] {.inline.} =
 func process(inp: string, n: int = 0): State =
   let deck = inp.strip
   let size = (if n > 0: n else: deck.len)
-  var children = newSeq[int](size+1)
-  var x = 0
-  let first = parseInt($(deck[0]))
+  var children = newSeq[num](size+1)
+  var x = 0.num
+  let first = parseInt($(deck[0])).num
   var prev = first
   for i in 1..<size:
-    x = if (i < deck.len): parseInt($(deck[i])) else: i + 1
+    x = (if (i < deck.len): parseInt($(deck[i])) else: i + 1).num
     (children[prev], prev) = (x, x)
   # set last element
   children[x] = first
   return State(children: children, current: first)
 
-func len(state: State): int {.inline.} = state.children.len - 1
+func len(state: State): Natural {.inline.} = state.children.len - 1
 
-func dec(state: State, x: int): int {.inline.} = (if (x - 1 ==
-    0): state.len else: x - 1)
+func dec(state: State, x: num): num {.inline.} = (if (x - 1 ==
+    0): state.len.num else: x - 1)
 
 
 func move(state: State) {.inline.} =
@@ -68,7 +70,7 @@ func finalize(state: State): string =
 func finalize2(state: State): int =
   let x = state.child(1)
   let y = state.child(x)
-  result = x * y
+  result = x.int * y.int
 
 
 proc answer1(inp: string): string =

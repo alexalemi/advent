@@ -5,19 +5,21 @@ import times
 
 const data = staticRead(currentSourcePath.parentDir() / "../input/15.txt")
 
-func seq(start: seq[int], top: int): int {.inline.} =
-  var num = 0
-  var prev = 0
-  var lastSeen = newSeq[int](top)
+type Num = uint32
+
+func sequence(start: seq[int], top: Num): Num {.inline.} =
+  var num: Num = 0
+  var prev: Num = 0
+  var lastSeen = newSeq[Num](top)
 
   num = 0
   for i, x in start:
     prev = num
-    num = x
+    num = x.Num
     if i > 0:
-      lastSeen[prev] = i
+      lastSeen[prev] = i.Num
 
-  for j in start.len..<top:
+  for j in start.len.Num..<top:
     prev = num
     if lastSeen[num] == 0:
       num = 0
@@ -28,9 +30,9 @@ func seq(start: seq[int], top: int): int {.inline.} =
   return num
 
 
-func answer(inp: string, top: int): int {.inline.} =
+func answer(inp: string, top: Num): Num {.inline.} =
   let start = inp.strip.split(",").map(parseInt)
-  return seq(start, top)
+  return sequence(start, top)
 
 
 when isMainModule:
