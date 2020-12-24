@@ -1,36 +1,60 @@
 import os
 import strUtils
 import seqUtils
+import times
 
 const data = staticRead(currentSourcePath.parentDir() / "../input/15.txt")
 
-proc seq(start: seq[int], top: int): int =
-  var j = 0
-  var num = 0
-  var lastSeen = newSeq[int](top)
-  for i, x in start:
-    j += 1
-    num = x
-    lastSeen[x] = j
-    echo i, ":", num
+func seq(start: seq[uint], top: uint): uint {.inline.} =
+  var num: uint = 0
+  var prev: uint = 0
+  var lastSeen = newSeq[uint](top)
 
-  for j in j..<top:
-    if lastSeen[num] == j-1:
+  num = 0
+  for i, x in start:
+    prev = num
+    num = x
+    if i > 0:
+      lastSeen[prev] = i.uint
+
+  for j in start.len.uint..<top:
+    prev = num
+    if lastSeen[num] == 0:
       num = 0
     else:
       num = j - lastSeen[num]
-    echo j, ":", num
-    lastSeen[num] = j
+    lastSeen[prev] = j
 
   return num
 
 
-proc answer1(inp: string, top: int): int =
-  let start = inp.strip.split(",").map(parseInt)
+func answer(inp: string, top: uint): uint {.inline.} =
+  let start = inp.strip.split(",").map(parseUInt)
   return seq(start, top)
 
 
 when isMainModule:
-  echo answer1("0,3,6", 10) # == 436
+  const n1 = 2020
 
-  # echo "Answer1: ", answer1(data, 2020)
+  assert answer("0,3,6", n1) == 436
+  assert answer("1,3,2", n1) == 1
+  assert answer("2,1,3", n1) == 10
+  assert answer("1,2,3", n1) == 27
+  assert answer("2,3,1", n1) == 78
+  assert answer("3,2,1", n1) == 438
+  assert answer("3,1,2", n1) == 1836
+
+  var time = cpuTime()
+  echo "Answer1: ", answer(data, n1), " in ", cpuTime() - time, " secs"
+
+  const n2 = 30_000_000
+  assert answer("0,3,6", n2) == 175594
+  assert answer("1,3,2", n2) == 2578
+  assert answer("2,1,3", n2) == 3544142
+  assert answer("1,2,3", n2) == 261214
+  assert answer("2,3,1", n2) == 6895259
+  assert answer("3,2,1", n2) == 18
+  assert answer("3,1,2", n2) == 362
+
+  time = cpuTime()
+  echo "Answer2: ", answer(data, n2), " in ", cpuTime() - time, " secs"
