@@ -4,10 +4,10 @@ use std::fs;
 fn max_min(row: String) -> u32 {
     let numbers: Vec<u32> = row
         .split_ascii_whitespace()
-        .map(|x| x.parse::<u32>().expect("failed"))
+        .map(|x| x.parse::<u32>().unwrap())
         .collect();
-    let max = numbers.iter().max().expect("no max!");
-    let min = numbers.iter().min().expect("no min!");
+    let max = numbers.iter().max().unwrap();
+    let min = numbers.iter().min().unwrap();
     max - min
 }
 
@@ -18,7 +18,7 @@ fn answer1(data: &String) -> u32 {
 fn divisors(row: String) -> u32 {
     let numbers: Vec<u32> = row
         .split_ascii_whitespace()
-        .map(|x| x.parse::<u32>().expect("failed"))
+        .map(|x| x.parse::<u32>().unwrap())
         .collect();
     let pair = numbers
         .iter()
@@ -26,8 +26,8 @@ fn divisors(row: String) -> u32 {
         .filter(|x| (x[1] != x[0]) && (x[1] % x[0] == 0 || x[0] % x[1] == 0))
         .next()
         .expect("didn't work");
-    let a = *pair.iter().min().expect("no min");
-    let b = *pair.iter().max().expect("no min");
+    let a = *pair.iter().min().unwrap();
+    let b = *pair.iter().max().unwrap();
     b / a
 }
 
