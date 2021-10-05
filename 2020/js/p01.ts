@@ -1,5 +1,4 @@
-import { getData } from "../../advent.ts";
-// import * as R from "https://x.nest.land/ramda@0.27.0/source/index.js";
+import { getData } from "./deps.ts";
 
 const data = await getData(1, 2020).catch(console.error) || "";
 const nums: number[] = data.split("\n").map(parseFloat);

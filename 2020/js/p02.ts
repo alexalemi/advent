@@ -1,4 +1,4 @@
-import { getData } from "../../advent.ts";
+import { getData } from "./deps.ts";
 import {
   assert,
   assertEquals,
