@@ -52,7 +52,7 @@ func move(state: State) {.inline.} =
       ^1]]) = (state.children[hand[^1]], hand[0], state.children[insertAt])
   state.current = state.children[state.current]
 
-proc `$`(state: State): string =
+func `$`(state: State): string =
   let start = state.current
   var current = start
   result &= $start

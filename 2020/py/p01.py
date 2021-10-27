@@ -10,9 +10,6 @@ def answer1(inp):
       return x * (2020 - x)
 
 
-tests2 = []
-
-
 def answer2(inp):
   nums = set(int(x) for x in inp.splitlines())
   for x in nums:
