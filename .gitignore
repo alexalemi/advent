@@ -6,6 +6,7 @@ __pycache__
 */nim/p??
 */nim/p??.out
 .mypy_cache
+.lein*
 
 *~
 *.swp
