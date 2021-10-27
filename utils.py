@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 EAST_COAST = pytz.timezone("America/New_York")
 TODAY = datetime.datetime.now().astimezone(EAST_COAST)
-YEARS = [2015, 2016, 2017, 2018, 2019, 2020]
+YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021]
 
 REPLACED_NAMES = {"pleonasticperson": "Colin Clement"}
 IGNORED_NAMES = {"pleonasticperson"}
@@ -95,6 +95,7 @@ def get_data(day=None, year=None):
       sys.exit(1)
 
 
+data21 = functools.partial(get_data, year=2021)
 data20 = functools.partial(get_data, year=2020)
 data19 = functools.partial(get_data, year=2019)
 data18 = functools.partial(get_data, year=2018)
@@ -109,7 +110,7 @@ SAL = "851286"
 CHOSEN = SAL
 
 
-def get_leaderboard(num=SAL, force=False):
+def get_leaderboard(num=CHOSEN, force=False):
   modtime = datetime.datetime.fromtimestamp(
       LEADERBOARD.stat().st_mtime).astimezone(EAST_COAST)
   if force or TODAY - modtime > datetime.timedelta(seconds=900):
