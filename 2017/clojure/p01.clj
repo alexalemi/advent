@@ -11,10 +11,7 @@
        (cons (last data))
        (partition 2 1)
        (map 
-         (fn [pair] 
-           (if (= (first pair) (second pair))
-               (Character/digit (first pair) 10)
-               0)))
+         (fn [[a b]] (if (= a b) (Character/digit a 10) 0)))
        (reduce +)))
         
 (def ans1 (part-1 data))
@@ -33,10 +30,7 @@
          (apply interleave)
          (partition 2)
          (map 
-          (fn [pair] 
-            (if (= (first pair) (second pair))
-                (* 2 (Character/digit (first pair) 10))
-                0)))
+          (fn [[a b]] (if (= a b) (* 2 (Character/digit a 10)) 0)))
          (reduce +))))
 
 (def ans2 (part-2 data))
