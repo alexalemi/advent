@@ -3,6 +3,8 @@ bin/
 nimcache/
 __pycache__
 
+2020/hy/advent
+
 */nim/p??
 */nim/p??.out
 .mypy_cache

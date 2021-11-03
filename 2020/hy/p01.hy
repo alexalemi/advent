@@ -8,4 +8,4 @@
   (setv one (next (filter (fn [x] (in (- 2020 x) nums)) nums)))
   (* one (- 2020 one)))
   
-(ans1 data)
+(print "answer1:" (ans1 data))
