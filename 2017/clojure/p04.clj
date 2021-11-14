@@ -17,9 +17,9 @@
 
 (test/deftest test-part-1
   (test/are [x y] (= (valid-passphrase x) y)
-    "aa bb cc dd ee" :true
-    "aa bb cc dd aa" :false
-    "aa bb cc dd aaa" :true))
+    "aa bb cc dd ee" true
+    "aa bb cc dd aa" false
+    "aa bb cc dd aaa" true))
 
 (def ans1 (reduce + (map #(if % 1 0) (map valid-passphrase data))))
 
@@ -31,11 +31,11 @@
 
 (test/deftest test-part-2
   (test/are [x y] (= (valid-passphrase-2 x) y)
-    "abcde fghij" :true
-    "abcde xyz ecdab" :false
-    "a ab abc abd abf abj" :true
-    "iiii oiii ooii oooi oooo" :true
-    "oiii ioii iioi iiio" :false))
+    "abcde fghij" true
+    "abcde xyz ecdab" false
+    "a ab abc abd abf abj" true
+    "iiii oiii ooii oooi oooo" true
+    "oiii ioii iioi iiio" false))
 
 (def ans2 (reduce + (map #(if % 1 0) (map valid-passphrase-2 data))))
 
