@@ -10,6 +10,8 @@ __pycache__
 .mypy_cache
 .lein*
 .nrepl*
+.clj-kondo/
+.lsp/
 
 *~
 *.swp
