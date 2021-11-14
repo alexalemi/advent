@@ -58,17 +58,41 @@
        1024 31)) 
 
 
+(comment "I need to figure out the value of each tile, so I need to store all of the tiles by their location and store their value in there.")
+
+(def neighbor-directions [[:up] [:up :right] [:up :left] [:left] [:down :left] [:down] [:down :right] [:right]])
+
+(defn neighbors
+  "Get all of the neighbors of a tile."
+  [tile]
+  (map #(reduce next-tile tile %) neighbor-directions))
+
+
+(defn neighbor-total
+  "Add up the total of all of the existing tiles."
+  [tile tiles]
+  (reduce + (map #(get tiles % 0) (neighbors tile))))
+
 (defn first-tile-greater
   "Find the first tile with a value greater than that given."
-  [n] n)
+  ([n] (first-tile-greater n {:x 0 :y 0} 1 {{:x 0 :y 0} 1} directions))
+  ([n tile val tiles directions]
+   (if (> val n) val
+       (let [dir (first directions)
+             next (next-tile tile dir)
+             next-val (neighbor-total next tiles)]
+         (recur n next next-val (assoc tiles next next-val) (rest directions))))))
 
 
 (test/deftest test-part-2
   (test/are [x y] (= (first-tile-greater x) y)
        0 1 
-       1 3
+       1 2
        3 4
-       4 5))
+       4 5
+       5 10
+       10 11
+       11 23))
 
 
 (def ans2 (first-tile-greater data))
