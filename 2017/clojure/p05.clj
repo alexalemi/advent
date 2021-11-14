@@ -29,7 +29,7 @@
 
 (defn exit-2
   "Find the exit of a sequence of instructions."
-  ([tape] (exit-2 0 0 tape))
+  ([tape] (exit-2 0 0 (transient tape)))
   ([loc step tape]
    (if (or (< loc 0) (>= loc (count tape))) step
        (let [val (get tape loc)
@@ -37,7 +37,7 @@
          (recur
           (+ loc val)
           (inc step)
-          (assoc tape loc new-val))))))
+          (assoc! tape loc new-val))))))
 
 (test/deftest test-part-2
   (test/is (= (exit-2 [0 3 0 1 -3]) 10))) 
