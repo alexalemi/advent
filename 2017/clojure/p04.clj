@@ -1,6 +1,5 @@
 (ns advent04
   (:require
-   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.string :as string]))
 
@@ -23,7 +22,22 @@
     "aa bb cc dd aaa" :true))
 
 (def ans1 (reduce + (map #(if % 1 0) (map valid-passphrase data))))
-(def ans2 1)
+
+(defn valid-passphrase-2
+  "Doesn't contain anagrams."
+  [phrase]
+  (let [words (string/split (string/trim phrase) #" ")]
+    (= (count (into #{} (map #(into #{} %) words))) (count words))))
+
+(test/deftest test-part-2
+  (test/are [x y] (= (valid-passphrase-2 x) y)
+    "abcde fghij" :true
+    "abcde xyz ecdab" :false
+    "a ab abc abd abf abj" :true
+    "iiii oiii ooii oooi oooo" :true
+    "oiii ioii iioi iiio" :false))
+
+(def ans2 (reduce + (map #(if % 1 0) (map valid-passphrase-2 data))))
 
 (test/run-tests)
 
