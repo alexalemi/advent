@@ -1,6 +1,5 @@
 (ns advent05
   (:require
-   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.string :as string]))
 
@@ -13,36 +12,46 @@
 
 (defn exit
   "Find the exit of a sequence of instructions."
-  ([tape] (exit 0 0 tape))
+  ([tape] (exit 0 0 (transient tape)))
   ([loc step tape]
-   (if (or (< loc 0) (>= loc (count tape))) step
-       (let [val (get tape loc)]
-        (recur
-          (+ loc val)
-          (inc step)
-          (assoc tape loc (inc val)))))))
+   (if-let [val (get tape loc)]
+     (recur (+ loc val) (inc step) (assoc! tape loc (inc val)))
+     step)))
 
 (test/deftest test-part-1
   (test/is (= (exit [0 3 0 1 -3]) 5))) 
 
-(def ans1 (exit data))
+(time (def ans1 (exit data)))
 
 (defn exit-2
   "Find the exit of a sequence of instructions."
   ([tape] (exit-2 0 0 (transient tape)))
   ([loc step tape]
-   (if (or (< loc 0) (>= loc (count tape))) step
-       (let [val (get tape loc)
-             new-val (if (>= val 3) (dec val) (inc val))]
-         (recur
-          (+ loc val)
-          (inc step)
-          (assoc! tape loc new-val))))))
+   (if-let [val (get tape loc)]
+     (let [new-val ^int (if (>= val 3) (dec val) (inc val))]
+       (recur (+ loc val) (inc step) (assoc! tape loc new-val)))
+     step)))
+
+(defn exit-2-array
+  "Find the exit of a sequence of instructions."
+  [tape]
+  (let [size (count tape)]
+    (loop [tape (int-array tape)
+           loc  0
+           step 0]
+      (if (or (< loc 0) (>= loc size)) step
+          (let [val (aget tape loc)
+                new-val (if (>= val 3) (dec val) (inc val))]
+            (aset ^ints tape loc new-val)
+            (recur
+              ^ints tape
+              (+ loc val)
+              (inc step)))))))
 
 (test/deftest test-part-2
-  (test/is (= (exit-2 [0 3 0 1 -3]) 10))) 
+  (test/is (= (exit-2-array [0 3 0 1 -3]) 10))) 
 
-(def ans2 (exit-2 data))
+(time (def ans2 (exit-2-array data)))
 
 (test/run-tests)
 
