@@ -7,8 +7,8 @@
 
 (def data
   (into [] (map edn/read-string
-       (string/split-lines
-        (slurp "../input/05.txt")))))
+            (string/split-lines
+             (slurp "../input/05.txt")))))
 ;; => (2 1 1 0 ...)
 
 (defn exit
@@ -41,8 +41,8 @@
            loc  0
            step 0]
       (if (or (< loc 0) (>= loc size)) step
-          (let [val (aget tape loc)
-                new-val (if (>= val 3) (dec val) (inc val))]
+          (let [val ^int (aget tape loc)
+                new-val ^int (if (>= val 3) (dec val) (inc val))]
             (aset ^ints tape loc new-val)
             (recur
               ^ints tape
