@@ -1,5 +1,6 @@
 (ns advent05
   (:require
+   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.string :as string]))
 
