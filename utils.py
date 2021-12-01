@@ -29,6 +29,14 @@ def pairwise(iterable):
   next(b, None)
   return zip(a, b)
 
+def threewise(iterable):
+  "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+  a, b, c = tee(iterable, 3)
+  next(b, None)
+  next(c, None)
+  next(c, None)
+  return zip(a, b, c)
+
 
 with open(Path(__file__).resolve().parent / "token.txt") as f:
   TOKEN = f.read().strip()
