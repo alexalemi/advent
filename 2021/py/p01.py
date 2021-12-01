@@ -2,8 +2,8 @@ from utils import data21
 from utils import threewise
 import time
 
-# data = open("../input/01.txt").read() # data21(1)
-data = data21(1)
+data = open("../input2/01.txt").read() # data21(1)
+# data = data21(1)
 
 tests = [("""199
     200
