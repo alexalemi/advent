@@ -19,7 +19,7 @@
        (filter #(> (last %) (first %)))
        count))
 
-(def ans1 (part-1 data))
+(time (def ans1 (part-1 data)))
 
 (def test-data (process-string "199
 200
@@ -43,7 +43,7 @@
        (map #(reduce + %))
        part-1))
 
-(def ans2 (part-2 data))
+(time (def ans2 (part-2 data)))
 
 (test/deftest test-part-2
   (test/is (= (part-2 test-data) 5)))
