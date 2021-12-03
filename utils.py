@@ -226,7 +226,7 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description='advent of code utilites.')
   parser.add_argument('--force', dest='force', action='store_true', default=False, help='force a refresh (default: False)')
-  subparsers = parser.add_subparsers()
+  subparsers = parser.add_subparsers(dest='command')
 
   # create the parser for the "fetch" command
   parser_fetch = subparsers.add_parser('fetch', help='Fetches data files.')
@@ -238,7 +238,7 @@ if __name__ == "__main__":
 
   args = parser.parse_args()
 
-  if args.day:
+  if args.command == 'fetch':
       # We are trying to download data.
       get_data(args.day, args.year, args.token, args.suffix)
 
