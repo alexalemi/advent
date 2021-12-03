@@ -115,7 +115,8 @@ LEADERBOARD = Path(__file__).resolve().parent / "leaderboard.txt"
 
 FRIENDS = "173774"
 SAL = "851286"
-CHOSEN = SAL
+CHOSEN = FRIENDS
+BOARDS = [FRIENDS,SAL]
 
 
 def get_leaderboard(num=CHOSEN, force=False):
@@ -206,7 +207,10 @@ def global_score(events):
 if __name__ == "__main__":
   logging.basicConfig(level=logging.INFO)
 
-  data = get_leaderboard()
+  data = []
+  for board in BOARDS:
+      data.extend(get_leaderboard(num=board))
+
   events = recent_events(data)
 
   score = global_score(events)

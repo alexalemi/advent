@@ -4,35 +4,29 @@
    [clojure.string :as string]
    [clojure.test :as test]))
 
-(def data (string/split-lines (slurp "../input/07.txt")))
-
 (defn process-line
   "name (number) -> child, child2"
   [s]
-  (let [[header footer](string/split s #" -> ")
+  (let [[header footer] (string/split s #" -> ")
         [_ name weight] (re-find #"(\w+) \((\d+)\)" header)
         val (edn/read-string weight)
         children (if footer (string/split footer #", ") nil)]
-       {:name name :weight val :children children}))
+    {:name name :weight val :children children}))
 
-(defn make-child-parent
+(defn extend-data
+  "Take the list of maps and make it a dictionary"
   [data]
-  (transduce
-    (comp (map process-line)
-          (filter :children)
-          (mapcat #(for [child (:children %)] [child (:name %)])))
-    conj {} data))
+  (merge-with merge
+              (zipmap (map :name data) data)
+              (into {} (mapcat #(for [child (:children %)] [child {:parent (:name %)}]) (filter :children data)))))
 
-
-(def processed-data (map process-line data))
-(def child-parent (make-child-parent data))
+(def data (extend-data (map process-line (string/split-lines (slurp "../input/07.txt")))))
 
 (defn find-root
-  ([child-parent] (find-root child-parent (first (first child-parent))))
-  ([child-parent child]
-   (if-let [parent (get child-parent child)]
-     (recur child-parent parent)
-     child)))
+  ([data] (find-root data (first (first data))))
+  ([data which]
+   (if-let [parent (:parent (data which))]
+     (recur data parent) which)))
 
 (def test-string "pbga (66)
 xhth (57)
@@ -48,96 +42,76 @@ ugml (68) -> gyxo, ebii, jptl
 gyxo (61)
 cntj (57)")
 
+(def test-data (extend-data (map process-line (string/split-lines test-string))))
 
 (test/deftest test-part-1
-  (test/is (= "tknk"
-              (find-root
-               (make-child-parent
-                (string/split-lines test-string))))))
+  (test/is (= "tknk" (find-root test-data))))
 
-(time (def ans1 (find-root (make-child-parent data))))
-
-(defn make-full-data
-  [data]
-  (merge-with into
-             (into {} (map (fn [x] [(:name x) x]) (map process-line data)))
-             (into {} (map (fn [x] (let [[child parent] x] [child {:parent parent}])) (make-child-parent data)))))
-
-(def full-data (make-full-data data))
-(def full-test-data (make-full-data (string/split-lines test-string)))
-
-(defn get-weight-old
-  ([full-data node] (get-weight full-data #{node} 0))
-  ([full-data queue total]
-   (if (empty? queue) total
-       (let [which (first queue)
-             new-queue (rest queue)
-             node (full-data which)]
-          (recur full-data
-                 (into new-queue (:children node))
-                 (+ total (:weight node)))))))
-
+(time (def ans1 (find-root data)))
+(println)
+(println "Answer1:", ans1)
 
 (defn get-weight
-  [full-data which]
-  (let [node (full-data which)]
+  [data which]
+  (let [node (data which)]
     (if-let [children (:children node)]
-      (+ (:weight node) (reduce + (map #(get-weight full-data %) children)))
+      (+ (:weight node) (reduce + (map #(get-weight data %) children)))
       (:weight node))))
 
-(def memoized-get-weight (memoize get-weight))
+(def mget-weight (memoize get-weight))
 
 (defn add-total-weights
-  [full-data]
-  (merge-with into full-data
-             (into {} (map (fn [which] [which {:total-weight (memoized-get-weight full-data which)}]) (keys full-data)))))
+  [data]
+  (merge-with into data
+              (into {} (map (fn [which] [which {:total-weight (mget-weight data which)}]) (keys data)))))
 
-(def full2-test-data (add-total-weights full-test-data))
-
-(defn find-broken-node
-  [full-data]
-  (first (filter (fn [node] (not= 1 (count (into #{} (map (fn [which] (:total-weight (full-data which))) (:children node)))))) (filter :children (vals full-data)))))
+(def weighted-test-data (add-total-weights test-data))
+(def weighted-data (add-total-weights data))
 
 (defn child-weights
-  [full-data node]
-  (into {} (map (fn [which] [which (:total-weight (full-data which))]) (:children node))))
+  [data node]
+  (map (partial mget-weight data) (:children node)))
 
+(defn child-weight-map
+  [data node]
+  (zipmap (:children node)
+          (child-weights data node)))
+
+(defn only-one?
+  [nums]
+  (= 1 (count (into #{} nums))))
+
+(defn balanced-children?
+  [data node]
+  (only-one? (child-weights data node)))
 
 (defn odd-one-out
-  [data which]
-  (= 1 (count (disj (into #{} (vals (dissoc (child-weights data (data (:parent (data which)))) which))) (:total-weight (data which))))))
+  [m]
+  (some (fn [[k _]] (when (only-one? (vals (dissoc m k))) k)) m))
 
+(defn find-problem-node
+  ([data] (find-problem-node data (data (find-root data))))
+  ([data node]
+   (if (balanced-children? data node)
+     node
+     (recur data (data (odd-one-out (child-weight-map data node)))))))
 
 (defn new-weight
-  [data which]
-  (- (:weight (data which))
-    (- (:total-weight (data which)) (first (disj (into #{} (vals (child-weights data (data (:parent (data which)))))) (:total-weight (data which)))))))
+  [data node]
+  (- (:weight node) (- (:total-weight node) (first (vals (dissoc (child-weight-map  data (data (:parent node))) (:name node)))))))
 
-(defn find-bad-key
+(defn part-2
   [data]
-  (first (filter #(odd-one-out data %) (map :name (filter :children (vals data))))))
-
-
-(defn fixing-weight
-  [data]
-  (new-weight data (find-bad-key data)))
-
+  (new-weight data (find-problem-node data)))
 
 (test/deftest test-part-2
-  (test/is (= 60
-              (fixing-weight (add-total-weights full-test-data)))))
+  (test/is (= 60 (part-2 weighted-test-data))))
 
-
-(- (:weight (foo "apjxafk")) 8)
-
-(time (def ans2 (fixing-weight (add-total-weights full-data))))
-
-(comment TODO "I really need to fix this up, its broken right now!")
+(time (def ans2 (part-2 (add-total-weights data))))
+(println)
+(println "Answer2:", ans2)
 
 (test/run-tests)
 
-(println)
-(println "Answer1:", ans1)
-(println "Answer2:", ans2)
 
 
