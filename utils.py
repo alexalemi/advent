@@ -11,6 +11,7 @@ import pytz
 import sys
 from itertools import tee
 import itertools
+import operator
 from collections import namedtuple, defaultdict
 
 logging.basicConfig(level=logging.INFO)
@@ -29,6 +30,7 @@ def pairwise(iterable):
   next(b, None)
   return zip(a, b)
 
+
 def threewise(iterable):
   "s -> (s0,s1), (s1,s2), (s2, s3), ..."
   a, b, c = tee(iterable, 3)
@@ -36,6 +38,14 @@ def threewise(iterable):
   next(c, None)
   next(c, None)
   return zip(a, b, c)
+
+
+def unique_justseen(iterable, key=None):
+  "List unique elements, preserving order. Remember only the element just seen."
+  # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
+  # unique_justseen('ABBCcAD', str.lower) --> A B C A D
+  return map(next,
+             map(operator.itemgetter(1), itertools.groupby(iterable, key)))
 
 
 with open(Path(__file__).resolve().parent / "token.txt") as f:
@@ -117,10 +127,10 @@ FRIENDS = "173774"
 SAL = "851286"
 DISCORD = "1575826"
 CHOSEN = FRIENDS
-BOARDS = [FRIENDS,SAL,DISCORD]
+BOARDS = [FRIENDS, SAL]
 
 
-def get_leaderboard(num=CHOSEN, force=False):
+def get_leaderboard(nums=BOARDS, force=False):
   modtime = datetime.datetime.fromtimestamp(
       LEADERBOARD.stat().st_mtime).astimezone(EAST_COAST)
   if force or TODAY - modtime > datetime.timedelta(seconds=900):
@@ -128,26 +138,27 @@ def get_leaderboard(num=CHOSEN, force=False):
     import urllib.error
 
     with open(LEADERBOARD, "wb") as f:
-      for year in YEARS:
-        url = f"https://adventofcode.com/{year}/leaderboard/private/view/{num}.json"
-        req = urllib.request.Request(url)
-        req.add_header("Cookie", f"session={TOKEN}")
-        try:
-          logging.info(f"Requesting leaderboard from {url}...")
-          with urllib.request.urlopen(req) as r:
-            f.write(r.read())
-            f.write(b"\n")
-        except urllib.error.HTTPError as e:
-          status_code = e.getcode()
-          if status_code == 400:
-            logging.error("Auth failed!")
-            sys.exit(1)
-          elif status_code == 404:
-            logging.error("Day is not out yet???")
-            sys.exit(1)
-          else:
-            logging.error(f"Request failed with code: {code}??")
-            sys.exit(1)
+      for num in nums:
+        for year in YEARS:
+          url = f"https://adventofcode.com/{year}/leaderboard/private/view/{num}.json"
+          req = urllib.request.Request(url)
+          req.add_header("Cookie", f"session={TOKEN}")
+          try:
+            logging.info(f"Requesting leaderboard from {url}...")
+            with urllib.request.urlopen(req) as r:
+              f.write(r.read())
+              f.write(b"\n")
+          except urllib.error.HTTPError as e:
+            status_code = e.getcode()
+            if status_code == 400:
+              logging.error("Auth failed!")
+              sys.exit(1)
+            elif status_code == 404:
+              logging.error("Day is not out yet???")
+              sys.exit(1)
+            else:
+              logging.error(f"Request failed with code: {code}??")
+              sys.exit(1)
   else:
     logging.info(
         f"Not enough time as elapsed to justify a new call. {(900 - (TODAY - modtime).total_seconds())/60:0.1f} minutes left."
@@ -183,7 +194,8 @@ def recent_events(data):
                     day=int(day),
                     star=int(star),
                 ))
-  return sorted(events, key=lambda x: x.time, reverse=True)
+  return list(
+      unique_justseen(sorted(events, key=lambda x: x.time, reverse=True)))
 
 
 def total_leaderboard(events):
@@ -208,9 +220,7 @@ def global_score(events):
 if __name__ == "__main__":
   logging.basicConfig(level=logging.INFO)
 
-  data = []
-  for board in BOARDS:
-      data.extend(get_leaderboard(num=board))
+  data = get_leaderboard(nums=BOARDS, force=False)
 
   events = recent_events(data)
 
