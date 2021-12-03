@@ -1,6 +1,5 @@
 (ns advent.day03
   (:require
-   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.string :as str]))
 
