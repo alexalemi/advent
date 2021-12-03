@@ -115,8 +115,9 @@ LEADERBOARD = Path(__file__).resolve().parent / "leaderboard.txt"
 
 FRIENDS = "173774"
 SAL = "851286"
+DISCORD = "1575826"
 CHOSEN = FRIENDS
-BOARDS = [FRIENDS,SAL]
+BOARDS = [FRIENDS,SAL,DISCORD]
 
 
 def get_leaderboard(num=CHOSEN, force=False):

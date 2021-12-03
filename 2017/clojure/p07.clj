@@ -98,7 +98,10 @@ cntj (57)")
 
 (defn new-weight
   [data node]
-  (- (:weight node) (- (:total-weight node) (first (vals (dissoc (child-weight-map  data (data (:parent node))) (:name node)))))))
+  (- (:weight node) 
+     (- (:total-weight node) 
+        (first (vals (dissoc (child-weight-map 
+                               data (data (:parent node))) (:name node)))))))
 
 (defn part-2
   [data]
