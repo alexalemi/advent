@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 """Utility functions for Advent of Code."""
 
+import argparse
 import datetime
 import functools
 import logging
@@ -19,6 +20,7 @@ logging.basicConfig(level=logging.INFO)
 EAST_COAST = pytz.timezone("America/New_York")
 TODAY = datetime.datetime.now().astimezone(EAST_COAST)
 YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021]
+DEFAULT_TOKEN = open(Path(__file__).resolve().parent / "token.txt", 'r')
 
 REPLACED_NAMES = {"pleonasticperson": "Colin Clement"}
 IGNORED_NAMES = {"pleonasticperson"}
@@ -48,16 +50,14 @@ def unique_justseen(iterable, key=None):
              map(operator.itemgetter(1), itertools.groupby(iterable, key)))
 
 
-with open(Path(__file__).resolve().parent / "token.txt") as f:
-  TOKEN = f.read().strip()
 
 
-def get_data(day=None, year=None):
+def get_data(day=None, year=None, token=DEFAULT_TOKEN, suffix=''):
   p = Path(__file__).resolve().parent
   year = year or TODAY.year
   if year is not None:
     p = p / f"{year}"
-  p = p / "input" / f"{day:02d}.txt"
+  p = p / "input" / f"{day:02d}{suffix}.txt"
   try:
     logging.info(f"Attempting to load {p}...")
     with open(p) as f:
@@ -89,6 +89,7 @@ def get_data(day=None, year=None):
 
   url = f"https://adventofcode.com/{year}/day/{day}/input"
   req = urllib.request.Request(url)
+  TOKEN = token.read().strip()
   req.add_header("Cookie", f"session={TOKEN}")
   try:
     logging.info(f"Requesting data from {url}...")
@@ -127,15 +128,18 @@ FRIENDS = "173774"
 SAL = "851286"
 DISCORD = "1575826"
 CHOSEN = FRIENDS
+GOOGLE = "275172"
 BOARDS = [FRIENDS, SAL]
 
 
-def get_leaderboard(nums=BOARDS, force=False):
+def get_leaderboard(nums=BOARDS, force=False, token=DEFAULT_TOKEN):
   modtime = datetime.datetime.fromtimestamp(
       LEADERBOARD.stat().st_mtime).astimezone(EAST_COAST)
   if force or TODAY - modtime > datetime.timedelta(seconds=900):
     import urllib.request
     import urllib.error
+
+    TOKEN = token.read().strip()
 
     with open(LEADERBOARD, "wb") as f:
       for num in nums:
@@ -181,7 +185,7 @@ def recent_events(data):
   for yeardata in data:
     year = yeardata["event"]
     for member in yeardata["members"].values():
-      name = member["name"]
+      name = member.get("name") or member['id']
       for day, level in member["completion_day_level"].items():
         for star, data in level.items():
           if name not in IGNORED_NAMES:
@@ -220,19 +224,38 @@ def global_score(events):
 if __name__ == "__main__":
   logging.basicConfig(level=logging.INFO)
 
-  data = get_leaderboard(nums=BOARDS, force=False)
+  parser = argparse.ArgumentParser(description='advent of code utilites.')
+  parser.add_argument('--force', dest='force', action='store_true', default=False, help='force a refresh (default: False)')
+  subparsers = parser.add_subparsers()
 
-  events = recent_events(data)
+  # create the parser for the "fetch" command
+  parser_fetch = subparsers.add_parser('fetch', help='Fetches data files.')
+  parser_fetch.add_argument('day', nargs='?', type=int, default=TODAY.day, help='Day to download')
+  parser_fetch.add_argument('--year', type=int, default=TODAY.year, help='year')
+  parser_fetch.add_argument('--token', type=argparse.FileType('r'), default=open('token.txt','r'))
+  parser_fetch.add_argument('--suffix', type=str, default='', help='input file suffix (default: none)')
 
-  score = global_score(events)
-  leaderboard = total_leaderboard(events)
 
-  print("\nLEADERBOARD\n==============================")
-  for (name, pts) in sorted(score.items(), key=lambda x: x[1], reverse=True):
-    print(f"{pts:4d} pts - {leaderboard[name]:3d} stars - {name}")
+  args = parser.parse_args()
 
-  print("\n\nRECENT EVENTS\n===========================")
-  for x in events[:15]:
-    print(
-        f"{x.name} solved {x.year}-{x.day:02d}-{x.star} {(TODAY-x.time).total_seconds()/(60*60):.2f} hours ago at {x.time}"
-    )
+  if args.day:
+      # We are trying to download data.
+      get_data(args.day, args.year, args.token, args.suffix)
+
+  else:
+      data = get_leaderboard(nums=BOARDS, force=args.force)
+
+      events = recent_events(data)
+
+      score = global_score(events)
+      leaderboard = total_leaderboard(events)
+
+      print("\nLEADERBOARD\n==============================")
+      for (name, pts) in sorted(score.items(), key=lambda x: x[1], reverse=True):
+        print(f"{pts:4d} pts - {leaderboard[name]:3d} stars - {name}")
+
+      print("\n\nRECENT EVENTS\n===========================")
+      for x in events[:15]:
+        print(
+            f"{x.name} solved {x.year}-{x.day:02d}-{x.star} {(TODAY-x.time).total_seconds()/(60*60):.2f} hours ago at {x.time}"
+        )
