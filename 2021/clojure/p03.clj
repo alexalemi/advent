@@ -39,26 +39,21 @@
      (recur (rest s) (+ (* 2 x) (first s))))))
 
 (defn gamma
-  ([data] (gamma data []))
-  ([data final]
-   (if (= (count (first data)) 0) (map to-number final)
+  ([data] (gamma data {\0 0 \1 1} 0))
+  ([data lookup] (gamma data lookup 0))
+  ([data lookup x]
+   (if (= (count (first data)) 0) x
      (recur
        (map rest data)
-       (conj final (most-common-leading data))))))
+       lookup
+       (+ (* 2 x) (lookup (most-common-leading data)))))))
 
-
-(defn opposite
-   [x] (if (= x \0) \1 \0))
-
-(defn opposites
-  [seq]
-  (map #(- 1 %) seq))
-
+(defn epsilon
+  [data] (gamma data {\0 1 \1 0}))
+ 
 
 (defn part-1 [data]
-  (let [g-bin (gamma data)
-        e-bin (opposites g-bin)]
-   (* (seq-to-bin g-bin) (seq-to-bin e-bin))))
+  (* (gamma data) (epsilon data)))
 
 (time (def ans1 (part-1 data)))
 (println)
@@ -66,31 +61,29 @@
 
 
 (test/deftest test-part-1
+  (test/is (= (gamma test-data) 22))
+  (test/is (= (epsilon test-data) 9))
   (test/is (= (part-1 test-data) 198)))
 
-(defn oxygen
-  ([data] (oxygen data []))
-  ([data final]
-   (if (= 1 (count data)) (map to-number (into final (first data)))
-     (let [next (most-common-leading data)]
-       (recur
-         (map rest (filter #(= (first %) next) data))
-         (conj final next))))))
+(defn from-binary [x bits]
+  (if (empty? bits) x
+    (recur (+ (* x 2) (first bits)) (rest bits))))
 
-(defn co2
-  ([data] (co2 data []))
-  ([data final]
-   (if (= 1 (count data)) (map to-number (into final (first data)))
-     (let [next (opposite (most-common-leading data))]
-       (recur
-         (map rest (filter #(= (first %) next) data))
-         (conj final next))))))
+(defn oxygen
+  ([data] (oxygen data most-common-leading 0))
+  ([data selfun x]
+   (if (= 1 (count data)) (from-binary x (map {\0 0 \1 1} (first data)))
+      (let [next (selfun data)]
+          (recur
+            (map rest (filter #(= (first %) next) data))
+            selfun
+            (+ (* 2 x) ({\0 0 \1 1} next)))))))
+
+(defn co2 [data] (oxygen data (comp #(if (= % \0) \1 \0) most-common-leading) 0))
 
 (defn part-2
   [data]
-  (let [o (seq-to-bin (oxygen data))
-        c (seq-to-bin (co2 data))]
-    (* o c)))
+  (* (oxygen data) (co2 data)))
 
 (part-2 test-data)
 

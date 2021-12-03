@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import pytz
 import sys
+import time
 from itertools import tee
 import itertools
 import operator
@@ -21,6 +22,7 @@ EAST_COAST = pytz.timezone("America/New_York")
 TODAY = datetime.datetime.now().astimezone(EAST_COAST)
 YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021]
 DEFAULT_TOKEN = open(Path(__file__).resolve().parent / "token.txt", 'r')
+B_TOKEN = open(Path(__file__).resolve().parent / "tokenb.txt", 'r')
 
 REPLACED_NAMES = {"pleonasticperson": "Colin Clement"}
 IGNORED_NAMES = {"pleonasticperson"}
@@ -124,26 +126,29 @@ data15 = functools.partial(get_data, year=2015)
 
 LEADERBOARD = Path(__file__).resolve().parent / "leaderboard.txt"
 
+# original token
 FRIENDS = "173774"
 SAL = "851286"
-DISCORD = "1575826"
-CHOSEN = FRIENDS
 GOOGLE = "275172"
-BOARDS = [FRIENDS, SAL]
+# B token
+DISCORD = "1575826"
+
+BOARDS = [(FRIENDS, DEFAULT_TOKEN),
+          (SAL, DEFAULT_TOKEN)]
 
 
-def get_leaderboard(nums=BOARDS, force=False, token=DEFAULT_TOKEN):
+def get_leaderboard(boards=BOARDS, force=False):
   modtime = datetime.datetime.fromtimestamp(
       LEADERBOARD.stat().st_mtime).astimezone(EAST_COAST)
   if force or TODAY - modtime > datetime.timedelta(seconds=900):
     import urllib.request
     import urllib.error
 
-    TOKEN = token.read().strip()
-
     with open(LEADERBOARD, "wb") as f:
-      for num in nums:
+      for num, token in boards:
+        TOKEN = token.read().strip()
         for year in YEARS:
+          time.sleep(180.337)
           url = f"https://adventofcode.com/{year}/leaderboard/private/view/{num}.json"
           req = urllib.request.Request(url)
           req.add_header("Cookie", f"session={TOKEN}")
@@ -243,7 +248,7 @@ if __name__ == "__main__":
       get_data(args.day, args.year, args.token, args.suffix)
 
   else:
-      data = get_leaderboard(nums=BOARDS, force=args.force)
+      data = get_leaderboard(boards=BOARDS, force=args.force)
 
       events = recent_events(data)
 
