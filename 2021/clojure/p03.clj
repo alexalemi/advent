@@ -19,7 +19,7 @@
 (defn process [inp]
   (str/split-lines inp))
 
-(def data (process (slurp "../input/03b.txt")))
+(def data (process (slurp "../input/03.txt")))
 (def test-data (process test-string))
 
 (defn most-common-leading
@@ -63,7 +63,8 @@
 (test/deftest test-part-1
   (test/is (= (gamma test-data) 22))
   (test/is (= (epsilon test-data) 9))
-  (test/is (= (part-1 test-data) 198)))
+  (test/is (= (part-1 test-data) 198))
+  (test/is (= (part-1 data) 1131506)))
 
 (defn from-binary [x bits]
   (if (empty? bits) x
@@ -92,6 +93,7 @@
 (println "Part2:" ans2)
 
 (test/deftest test-part-2
-  (test/is (= (part-2 test-data) 230)))
+  (test/is (= (part-2 test-data) 230))
+  (test/is (= (part-2 data) 7863147)))
 
 (test/run-tests)

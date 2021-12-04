@@ -10,7 +10,10 @@
    :amount (edn/read-string (last (str/split line #" ")))})
 
 (defn process [inp]
-  (into [] (map process-line (map str/trim (str/split-lines inp)))))
+  (->> (str/split-lines inp)
+       (map str/trim)
+       (map process-line)
+       (into [])))
 
 (def data (process (slurp "../input/02b.txt")))
 
