@@ -69,13 +69,6 @@
         (every? aseen (map board (for [v (range 5)] [v y]))) (score board aseen draw)))
     nil))
 
-(defn is-any-winner?
-  [data]
-  (let [{:keys [boards, moves, seen]} data
-        draw (first moves)
-        checker (partial is-winner? seen draw)]
-    (some checker boards)))
-
 (defn turn
   [data]
   (let [{:keys [boards, moves, seen]} data
