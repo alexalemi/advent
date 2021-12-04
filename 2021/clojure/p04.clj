@@ -92,21 +92,22 @@
   (test/is (boolean (is-winner? #{22 13 17 11} 0 (first (:boards test-data)))))
   (test/is (boolean (is-winner? #{22 13 11 0} 17 (first (:boards test-data)))))
   (test/is (boolean (is-winner? #{13 2 9 10} 12 (first (:boards test-data)))))
-  (test/is (= (part-1 test-data) 4512)))
+  (test/is (= (part-1 test-data) 4512))
+  (test/is (= (part-1 data) 41503)))
 
 (defn part-2
   [data]
   (:score
-   (first (drop-while
-           (and (complement :score)
-                #(not-empty (:boards %)))
-           (iterate turn data)))))
+   (first (drop-while 
+            (and (complement :score) (comp not-empty :boards)) 
+            (iterate turn data)))))
 
 (time (def ans2 (part-2 data)))
 (println)
 (println "Part2:" ans2)
 
 (test/deftest test-part-2
-  (test/is (= (part-2 test-data) 1924)))
+  (test/is (= (part-2 test-data) 1924))
+  (test/is (= (part-2 data) 3178)))
 
 (test/run-tests)
