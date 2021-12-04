@@ -102,8 +102,6 @@
                 #(not-empty (:boards %)))
            (iterate turn data)))))
 
-(part-2 test-data)
-
 (time (def ans2 (part-2 data)))
 (println)
 (println "Part2:" ans2)
