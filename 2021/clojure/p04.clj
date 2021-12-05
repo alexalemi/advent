@@ -38,47 +38,53 @@
    (empty? line) (conj boards [])
    (conj (pop boards) (into (peek boards) (read-vec line)))))
 
-(defn board-to-map [board]
-  (into {} (map-indexed (fn [i x] [[(quot i 5) (mod i 5)] x]) board)))
-
 (defn process [s]
   (let [lines (str/split-lines s)]
     {:moves (read-vec (first lines))
-     :boards (mapv board-to-map (reduce board-reducer [] (rest lines)))
+     ; :boards (mapv board-to-map (reduce board-reducer [] (rest lines)))
+     :boards (reduce board-reducer [] (rest lines))
      :seen #{}}))
 
 (def data (process data-string))
 (def test-data (process test-string))
 
+(defn index-of [vec v]
+  (some identity (map-indexed (fn [i x] (if (= x v) i nil)) vec)))
+
 (defn find-loc
   "Find the location of a value on the board, if any"
   [board x]
-  (first (first (filter (fn [[_ v]] (= v x)) board))))
+  (if-let [pk (index-of board x)]
+    [(quot pk 5) (mod pk 5)]
+    nil))
+
+(defn tally
+  [board seen draw]
+  (* draw (reduce + (set/difference (set board) seen))))
+
+(defn ravel [x y] (+ y (* 5 x)))
 
 (defn score
-  [board seen draw]
-  (* draw (reduce + (set/difference (set (vals board)) seen))))
-
-(defn is-winner?
   "Check to see if the board is a winner given the current draw."
   [seen draw board]
   (if-let [[x y] (find-loc board draw)]
-    (let [aseen (conj seen draw)]
+    (let [aseen (conj seen draw)
+          get-board (partial get board)]
       (cond
-        (every? aseen (map board (for [v (range 5)] [x v]))) (score board aseen draw)
-        (every? aseen (map board (for [v (range 5)] [v y]))) (score board aseen draw)))
-    false))
+        (every? aseen (map get-board (for [v (range 5)] (ravel x v)))) (tally board aseen draw)
+        (every? aseen (map get-board (for [v (range 5)] (ravel v y)))) (tally board aseen draw)))
+    nil))
 
 (defn turn
   [data]
   (let [{:keys [boards, moves, seen]} data
         draw (first moves)
-        checker (partial is-winner? seen draw)
-        score (some checker boards)]
+        checker (partial score seen draw)
+        points (some checker boards)]
     {:boards (filterv (complement checker) boards)
      :moves (rest moves)
      :seen (conj seen draw)
-     :score score}))
+     :score points}))
 
 (defn part-1 [data]
   (:score (first (drop-while (complement :score) (iterate turn data)))))
@@ -88,19 +94,19 @@
 (println "Part1:" ans1)
 
 (test/deftest test-part-1
-  (test/is (not (is-winner? #{} 7 (first (:boards test-data)))))
-  (test/is (boolean (is-winner? #{22 13 17 11} 0 (first (:boards test-data)))))
-  (test/is (boolean (is-winner? #{22 13 11 0} 17 (first (:boards test-data)))))
-  (test/is (boolean (is-winner? #{13 2 9 10} 12 (first (:boards test-data)))))
+  (test/is (not (score #{} 7 (first (:boards test-data)))))
+  (test/is (boolean (score #{22 13 17 11} 0 (first (:boards test-data)))))
+  (test/is (boolean (score #{22 13 11 0} 17 (first (:boards test-data)))))
+  (test/is (boolean (score #{13 2 9 10} 12 (first (:boards test-data)))))
   (test/is (= (part-1 test-data) 4512))
   (test/is (= (part-1 data) 41503)))
 
 (defn part-2
   [data]
   (:score
-   (first (drop-while 
-            (and (complement :score) (comp not-empty :boards)) 
-            (iterate turn data)))))
+   (first (drop-while
+           (and (complement :score) (comp not-empty :boards))
+           (iterate turn data)))))
 
 (time (def ans2 (part-2 data)))
 (println)
