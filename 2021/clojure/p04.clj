@@ -67,7 +67,7 @@
       (cond
         (every? aseen (map board (for [v (range 5)] [x v]))) (score board aseen draw)
         (every? aseen (map board (for [v (range 5)] [v y]))) (score board aseen draw)))
-    nil))
+    false))
 
 (defn turn
   [data]
