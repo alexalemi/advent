@@ -48,6 +48,12 @@
 (def data (process data-string))
 (def test-data (process test-string))
 
+
+(def N 5)
+(defn ravel [x y] (+ y (* N x)))
+(defn unravel [pk] [(quot pk N) (mod pk N)])
+
+
 (defn index-of [vec v]
   (some identity (map-indexed (fn [i x] (if (= x v) i nil)) vec)))
 
@@ -55,14 +61,13 @@
   "Find the location of a value on the board, if any"
   [board x]
   (if-let [pk (index-of board x)]
-    [(quot pk 5) (mod pk 5)]
-    nil))
+    (unravel pk) nil))
+
 
 (defn tally
   [board seen draw]
   (* draw (reduce + (set/difference (set board) seen))))
 
-(defn ravel [x y] (+ y (* 5 x)))
 
 (defn score
   "Check to see if the board is a winner given the current draw."
