@@ -49,12 +49,18 @@ c inc -20 if c == 10")
 (println)
 (println "Answer1:", ans1)
 
-(defn part-2
+(defn part-2-old
   [data]
   (->> (reductions tick {} data)
        (map vals)
        (map (fnil (partial reduce max) [0]))
        (reduce max)))
+
+(defn part-2
+  [data]
+  (transduce
+   (comp (map vals) (map (fnil (partial reduce max) [0])))
+   max 0 (reductions tick {} data)))
 
 (test/deftest test-part-2
   (test/is (= (part-2 test-data) 10))
