@@ -26,8 +26,7 @@ c inc -20 if c == 10")
 (defn process
   [s]
   (->> (str/split-lines s)
-       (map parse)
-       (into [])))
+       (mapv parse)))
 
 (def data (process data-string))
 (def test-data (process test-string))
