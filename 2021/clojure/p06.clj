@@ -3,7 +3,7 @@
    [clojure.test :as test]
    [clojure.edn :as edn]))
 
-(def data-string (slurp "../input/06b.txt"))
+(def data-string (slurp "../input/06.txt"))
 (def test-string "3,4,3,1,2")
 
 (defn process
