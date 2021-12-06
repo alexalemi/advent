@@ -133,9 +133,11 @@ GOOGLE = "275172"
 # B token
 DISCORD = "1575826"
 
-BOARDS = [(FRIENDS, DEFAULT_TOKEN),
-          (SAL, DEFAULT_TOKEN),
-          (DISCORD, B_TOKEN)]
+# BOARDS = [(FRIENDS, DEFAULT_TOKEN),
+          # (SAL, DEFAULT_TOKEN),
+          # (DISCORD, B_TOKEN)]
+
+BOARDS = [(SAL, DEFAULT_TOKEN)]
 
 
 def get_leaderboard(boards=BOARDS, force=False):
@@ -149,7 +151,7 @@ def get_leaderboard(boards=BOARDS, force=False):
       for num, token in boards:
         TOKEN = token.read().strip()
         for year in YEARS:
-          time.sleep(15.1 * 60)
+          time.sleep(1.337)
           url = f"https://adventofcode.com/{year}/leaderboard/private/view/{num}.json"
           req = urllib.request.Request(url)
           req.add_header("Cookie", f"session={TOKEN}")
