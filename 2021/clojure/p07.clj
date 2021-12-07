@@ -40,18 +40,28 @@
 
 (defn score [data goal]
   (->> data
-        (map (partial - goal))
-        (map abs)
-        (map triangular)
-        (reduce +)))
+       (map (partial - goal))
+       (map abs)
+       (map triangular)
+       (reduce +)))
+
+(defn mean [x]
+  (let [n (count x)
+        total (reduce + x)]
+    (/ total n)))
 
 (defn part-2 [data]
+  (let [x (mean data)
+        left (Math/round (Math/floor x))
+        right (Math/round (Math/ceil x))]
+    (min (score data left) (score data right))))
+
+(defn part-2-brute [data]
   (let [left (reduce min data)
         right (reduce max data)]
     (->> (range left right)
          (map (partial score data))
          (reduce min))))
-
 
 (test/deftest part-2-test
   (test/is (= (part-2 test-data) 168))
