@@ -1,6 +1,6 @@
-ans advent09
+(ns advent09
   (:require
-   [clojure.test :as test])
+   [clojure.test :as test]))
 
 (def data (slurp "../input/09.txt"))
 

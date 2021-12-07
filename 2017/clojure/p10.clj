@@ -42,9 +42,6 @@
 (println)
 (println "Answer1: " ans1)
 
-(defn expand-input [s]
-  (flatten (repeat 64 (concat (map int s) [17 31 73 47 23]))))
-
 (defn expand-input [inp]
   (as-> inp s
     (map int s)
@@ -66,7 +63,7 @@
 
 (knot-hash "1,2,3")
 
-(test/deftest test-part-1
+(test/deftest test-part-2
   (test/are [s h] (= (knot-hash s) h)
     "" "a2582a3a0e66e6e86e3812dcb672a272"
     "AoC 2017" "33efeb34ea91902bb2f59c9920caa6cd"

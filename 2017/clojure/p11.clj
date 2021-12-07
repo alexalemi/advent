@@ -1,12 +1,11 @@
 (ns advent11
   (:require
-   [clojure.edn :as edn]
-   [clojure.test :as test]))
+   [clojure.edn :as edn]))
 
 (def data-string (slurp "../input/11.txt"))
 
 (defn process [s]
-  (map keyword (edn/read-string (str "[" data-string "]"))))
+  (map keyword (edn/read-string (str "[" s "]"))))
 
 (def data (process data-string))
 
