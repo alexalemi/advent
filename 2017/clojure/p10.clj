@@ -45,6 +45,13 @@
 (defn expand-input [s]
   (flatten (repeat 64 (concat (map int s) [17 31 73 47 23]))))
 
+(defn expand-input [inp]
+  (as-> inp s
+    (map int s)
+    (concat s [17 31 73 47 23])
+    (repeat 64 s)
+    (flatten s)))
+
 (defn hexify [vs]
   (apply str (map #(format "%02x" %) vs)))
 
