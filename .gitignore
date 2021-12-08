@@ -2,6 +2,7 @@
 bin/
 nimcache/
 __pycache__
+.cpcache
 
 2020/hy/advent
 
