@@ -1,7 +1,6 @@
 (ns advent15
   (:require
    [clojure.test :as test]
-   [clojure.edn :as edn]
    [clojure.string :as str]))
 
 (def test-string "Generator A starts with 65
@@ -9,7 +8,7 @@ Generator B starts with 8921")
 (def data-string (slurp "../input/15.txt"))
 
 (defn process-line [s]
-  (edn/read-string ((re-matches #"Generator \w starts with (\d+)" s) 1)))
+  (read-string ((re-matches #"Generator \w starts with (\d+)" s) 1)))
 
 (defn process [s]
   (map process-line (str/split-lines s)))

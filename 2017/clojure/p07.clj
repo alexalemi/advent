@@ -1,6 +1,5 @@
 (ns advent07
   (:require
-   [clojure.edn :as edn]
    [clojure.string :as string]
    [clojure.test :as test]))
 
@@ -9,7 +8,7 @@
   [s]
   (let [[header footer] (string/split s #" -> ")
         [_ name weight] (re-find #"(\w+) \((\d+)\)" header)
-        val (edn/read-string weight)
+        val (read-string weight)
         children (if footer (string/split footer #", ") nil)]
     {:name name :weight val :children children}))
 

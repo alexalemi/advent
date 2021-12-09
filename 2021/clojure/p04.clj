@@ -1,7 +1,6 @@
 (ns day04
   (:require
    [clojure.test :as test]
-   [clojure.edn :as edn]
    [clojure.set :as set]
    [clojure.string :as str]))
 
@@ -28,7 +27,7 @@
 
 (defn read-vec
   "Read off a vector of numbers"
-  [line] (edn/read-string (str "[" line "]")))
+  [line] (read-string (str "[" line "]")))
 
 (defn board-reducer
   "Read off a single board."

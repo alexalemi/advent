@@ -1,13 +1,12 @@
 (ns advent.day02
   (:require
-   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.string :as str]))
 
 
 (defn process-line [line]
-  {:direction (keyword (edn/read-string line))
-   :amount (edn/read-string (last (str/split line #" ")))})
+  {:direction (keyword (read-string line))
+   :amount (read-string (last (str/split line #" ")))})
 
 (defn process [inp]
   (->> (str/split-lines inp)

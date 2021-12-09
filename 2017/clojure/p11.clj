@@ -1,11 +1,9 @@
-(ns advent11
-  (:require
-   [clojure.edn :as edn]))
+(ns advent11)
 
 (def data-string (slurp "../input/11.txt"))
 
 (defn process [s]
-  (map keyword (edn/read-string (str "[" s "]"))))
+  (map keyword (read-string (str "[" s "]"))))
 
 (def data (process data-string))
 
@@ -35,6 +33,8 @@
   (distance (reduce step origin data)))
 
 (def ans1 (part-1 data))
+(println)
+(println "Answer 1:" ans1)
 
 (defn part-2 [data]
   (->> (reductions step origin data)
@@ -42,3 +42,5 @@
       (reduce max)))
 
 (def ans2 (part-2 data))
+(println)
+(println "Answer 2:" ans2)

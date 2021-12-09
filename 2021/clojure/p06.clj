@@ -1,14 +1,13 @@
 (ns day06
   (:require
-   [clojure.test :as test]
-   [clojure.edn :as edn]))
+   [clojure.test :as test]))
 
 (def data-string (slurp "../input/06.txt"))
 (def test-string "3,4,3,1,2")
 
 (defn process
   "Read off a vector of numbers"
-  [line] (frequencies (edn/read-string (str "[" line "]"))))
+  [line] (frequencies (read-string (str "[" line "]"))))
 
 (def data (process data-string))
 (def test-data (process test-string))

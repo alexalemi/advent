@@ -1,7 +1,6 @@
 (ns advent13
   (:require
    [clojure.test :as test]
-   [clojure.edn :as edn]
    [clojure.string :as str]))
 
 (def test-string "0: 3
@@ -12,7 +11,7 @@
 
 (defn process-line [line]
   (as-> line x
-    (let [[left right] (map edn/read-string (str/split x #":"))]
+    (let [[left right] (map read-string (str/split x #":"))]
       [left right])))
 
 (defn process [s]

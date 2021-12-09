@@ -1,6 +1,5 @@
 (ns advent12
   (:require
-   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.set :as set]
    [clojure.string :as str]))
@@ -15,12 +14,12 @@
 (def data-string (slurp "../input/12.txt"))
 
 (defn read-set [s]
-  (edn/read-string (str "#{" s "}")))
+  (read-string (str "#{" s "}")))
 (def pattern #"(\d+) <-> ((\d+(, )?)*)")
 
 (defn process-line [s]
   (let [[_ node children & _] (re-matches pattern s)]
-    [(edn/read-string node) (read-set children)]))
+    [(read-string node) (read-set children)]))
 (defn process [s]
   (into {} (map process-line (str/split-lines s))))
 

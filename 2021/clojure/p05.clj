@@ -1,7 +1,6 @@
 (ns day05
   (:require
    [clojure.test :as test]
-   [clojure.edn :as edn]
    [clojure.string :as str]))
 
 (def data-string (slurp "../input/05.txt"))
@@ -18,7 +17,7 @@
 
 (defn read-vec
   "Read off a vector of numbers"
-  [line] (edn/read-string (str "[" line "]")))
+  [line] (read-string (str "[" line "]")))
 
 (defn process-line [line]
   (zipmap [:from :upto]

@@ -1,6 +1,5 @@
 (ns advent10
   (:require
-   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.string :as str]))
 
@@ -8,7 +7,7 @@
 (def data-string (str/trim (slurp "../input/10.txt")))
 
 (defn read-vec [s]
-  (edn/read-string (str "[" s "]")))
+  (read-string (str "[" s "]")))
 
 (def test-data [5 (read-vec test-string)])
 (def data [256 (read-vec data-string)])

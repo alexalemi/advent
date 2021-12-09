@@ -1,6 +1,5 @@
 (ns advent01
   (:require
-   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.string :as string]))
 
@@ -8,7 +7,7 @@
 (defn process-string [inp]
   (->> inp
        string/split-lines
-       (map edn/read-string)
+       (map read-string)
        (into [])))
 
 (def data (process-string (slurp "../input/01.txt")))

@@ -1,13 +1,12 @@
 (ns advent07
   (:require
-   [clojure.test :as test]
-   [clojure.edn :as edn]))
+   [clojure.test :as test]))
 
 (def test-string "16,1,2,0,4,2,7,1,2,14")
 (def data-string (slurp "../input/07.txt"))
 
 (defn read-vec [s]
-  (edn/read-string (str "[" s "]")))
+  (read-string (str "[" s "]")))
 
 (def test-data (read-vec test-string))
 (def data (read-vec data-string))

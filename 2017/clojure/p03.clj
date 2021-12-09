@@ -1,11 +1,10 @@
 (ns advent03
   (:require
-   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.string :as string]))
 
 
-(def data (edn/read-string (string/trim (slurp "../input/03.txt"))))
+(def data (read-string (string/trim (slurp "../input/03.txt"))))
 
 
 ; Part 1

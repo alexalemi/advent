@@ -1,12 +1,11 @@
 (ns advent05
   (:require
-   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.string :as string]))
 
 
 (def data
-  (into [] (map edn/read-string
+  (into [] (map read-string
             (string/split-lines
              (slurp "../input/05.txt")))))
 ;; => (2 1 1 0 ...)

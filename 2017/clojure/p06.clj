@@ -1,10 +1,9 @@
 (ns advent06
   (:require
-   [clojure.edn :as edn]
    [clojure.string :as string]
    [clojure.test :as test]))
 
-(def data (into [] (map edn/read-string (string/split (slurp "../input/06.txt") #"\t"))))
+(def data (into [] (map read-string (string/split (slurp "../input/06.txt") #"\t"))))
 ;; => [5 1 10 0 1 7 13 14 3 12 8 10 7 12 0 6]
 
 (defn maximum

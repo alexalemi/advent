@@ -1,6 +1,5 @@
 (ns advent08
   (:require
-   [clojure.edn :as edn]
    [clojure.string :as str]
    [clojure.test :as test]))
 
@@ -18,10 +17,10 @@ c inc -20 if c == 10")
         (re-matches #"(\w+) (inc|dec) (-?\d+) if (\w+) (>|<|<=|>=|==|!=) (-?\d+)" line)]
     {:reg (keyword reg)
      :inst (inst-lookup inst)
-     :amount (edn/read-string amount)
+     :amount (read-string amount)
      :treg (keyword test)
      :top (op-lookup op)
-     :tval (edn/read-string val)}))
+     :tval (read-string val)}))
 
 (defn process
   [s]

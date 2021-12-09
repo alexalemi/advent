@@ -1,12 +1,11 @@
 (ns advent02
   (:require
-   [clojure.edn :as edn]
    [clojure.test :as test]
    [clojure.string :as string]))
 
 
 (def data
-  (map #(map edn/read-string (string/split % #"\t"))
+  (map #(map read-string (string/split % #"\t"))
        (string/split-lines (slurp "../input/02.txt"))))
 
 (defn checksum
