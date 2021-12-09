@@ -1,6 +1,5 @@
 (ns advent16
   (:require
-   [clojure.test :as test]
    [clojure.string :as str]))
 
 (def test-string "s1,x3/4,pe/b")

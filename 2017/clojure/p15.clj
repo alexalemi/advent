@@ -1,6 +1,5 @@
 (ns advent15
   (:require
-   [clojure.test :as test]
    [clojure.string :as str]))
 
 (def test-string "Generator A starts with 65
