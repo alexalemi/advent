@@ -8,7 +8,7 @@
 
 (defn spin [amount state]
   (let [n (count state)]
-    (into [] (take n (drop (- n amount) (cycle state)))))) 
+    (into [] (take n (drop (- n amount) (cycle state))))))
 
 (defn exchange [locs state]
   (let [[from upto] locs
@@ -37,15 +37,14 @@
       :exchange (partial exchange parts)
       :partner (partial partner parts))))
 
-
 (def init-state [:a :b :c :d :e :f :g :h :i :j :k :l :m :n :o :p])
 
 (def dance
   (->> (str/split data-string #",")
-      (map process-command)
-      (map command-to-fun)
-      reverse
-      (apply comp)))
+       (map process-command)
+       (map command-to-fun)
+       reverse
+       (apply comp)))
 
 (defn do-dance [s state]
   (let [dance (->> (str/split s #",")
@@ -53,13 +52,25 @@
                    (map command-to-fun)
                    reverse
                    (apply comp))]
-    (apply str (map name (dance state))))) 
+    (apply str (map name (dance state)))))
 
 (time (def ans1
-           (apply str (map name (dance init-state))))) 
+        (apply str (map name (dance init-state)))))
 
 (println)
 (println "Answer 1:" ans1)
 
+(defn find-repeat [f init]
+  (let [seq (iterate f init)
+        x0 (first seq)]
+    (reduce (fn [acc val] (if (= val x0) (reduced (inc acc)) (inc acc))) 0 (drop 1 seq))))
+
+(time (def ans2
+        (let [cycle-length (find-repeat dance init-state)
+              remainder (mod 1000000000 cycle-length)]
+          (apply str (map name (nth (iterate dance init-state) remainder))))))
+
+(println)
+(println "Answer 2:" ans2)
 
 
