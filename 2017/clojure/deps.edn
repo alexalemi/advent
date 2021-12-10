@@ -1,0 +1,1 @@
+{:deps {io.github.nextjournal/clerk {:mvn/version "0.2.214"}}}
