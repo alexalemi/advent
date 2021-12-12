@@ -66,7 +66,7 @@ start-RW"])
   "Given a filtering function for the invalid nodes to revisit in your own path,
   construct all paths
 
-  paths-from-filter: current path -> nodes you shouldn't revisit"
+  visited-filter: current path -> nodes you shouldn't revisit"
   [visited-filter]
   (fn [data]
    (loop [partials #{'("start")} paths #{}]
