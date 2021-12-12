@@ -56,21 +56,25 @@ start-RW"])
 (defn lower-case? [s]
   (= s (str/lower-case s)))
 
-(defn paths [data]
-  (loop [partials #{'("start")} paths #{}]
-    (if (empty? partials) paths
-        (let [x (first partials)
-              last (first x)]
-          (if (= "end" last)
-            (recur (rest partials) (conj paths x))
-            (let [visited (set (filter lower-case? x))
-                  next-step (remove visited (get data last #{}))]
-              (if (empty? next-step)
-                (recur (rest partials) paths)
-                (recur
-                 (into (rest partials)
-                       (map (partial conj x) next-step))
-                 paths))))))))
+(def lower-case-filter (fn [x] (set (filter lower-case? x))))
+
+(defn paths-from-filter [visited-filter]
+  (fn [data]
+   (loop [partials #{'("start")} paths #{}]
+     (let [x (first partials)
+           last (first x)
+           visited (visited-filter x)
+           next-step (remove visited (get data last #{}))]
+      (cond
+        (empty? partials) paths
+        (= "end" last) (recur (rest partials) (conj paths x))
+        (empty? next-step) (recur (rest partials) paths)
+        :else (recur
+               (into (rest partials) (map (partial conj x) next-step))
+               paths))))))
+
+(def paths (paths-from-filter lower-case-filter))
+
 
 (test/deftest test-part-1
   (test/are [x y] (= (count (paths x)) y)
@@ -83,29 +87,17 @@ start-RW"])
 (println)
 (println "Answer 1:" ans1)
 
+
 (defn visited-lower-twice? [path]
-  (> (reduce max (map val (frequencies (filter lower-case? path)))) 1))
+  (> (reduce max 0 (map val (frequencies (filter lower-case? path)))) 1))
 
 (defn locs-to-remove [path]
   (if (visited-lower-twice? path)
     (set (filter lower-case? path))
     #{"start"}))
 
-(defn paths-2 [data]
-  (loop [partials #{'("start")} paths #{}]
-    (if (empty? partials) paths
-        (let [x (first partials)
-              last (first x)]
-          (if (= "end" last)
-            (recur (rest partials) (conj paths x))
-            (let [visited (locs-to-remove x)
-                  next-step (remove visited (get data last #{}))]
-              (if (empty? next-step)
-                (recur (rest partials) paths)
-                (recur
-                 (into (rest partials)
-                       (map (partial conj x) next-step))
-                 paths))))))))
+(def paths-2 (paths-from-filter locs-to-remove))
+
 
 (test/deftest test-part-2
   (test/are [x y] (= (count (paths-2 x)) y)
