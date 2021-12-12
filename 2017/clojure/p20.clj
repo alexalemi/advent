@@ -16,10 +16,9 @@
 (def data (process data-string))
 
 (defn step [particle]
-  (let [{:keys [p v a]} particle]
-    (-> particle
-        (assoc :v (mapv + v a))
-        (assoc :p (mapv + p (:v particle))))))
+  (let [{:keys [p v a]} particle
+        particle (assoc particle :v (mapv + v a))]
+     (assoc particle :p (mapv + p (:v particle)))))
 
 (defn abs [x] (max x (- x)))
 
@@ -39,9 +38,9 @@
 (println "Answer 1:" ans1)
 
 (defn step-2 [data]
-  (let [data (mapv step data)
+  (let [data (mapv step data) 
         badposes (into #{} (map key (filter #(> (val %) 1) (frequencies (map :p data)))))]
-     (remove (comp badposes :p) data)))
+    (remove (comp badposes :p) data)))
 
 (count data)
 
@@ -52,8 +51,7 @@ p=<3,0,0>, v=<-1,0,0>, a=<0,0,0>")
 
 (def test-data (process test-string))
 
-
-(time (def ans2 (count (nth (iterate step-2 data) 100000))))
+(time (def ans2 (count (nth (iterate step-2 data) 100))))
 (println)
 (println "Answer 2:" ans2)
 
