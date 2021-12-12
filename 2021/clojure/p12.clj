@@ -4,15 +4,13 @@
    [clojure.string :as str]))
 
 (def data-string (slurp "../input/12.txt"))
-(def test-string "start-A
+(def test-strings ["start-A
 start-b
 A-c
 A-b
 b-d
 A-end
-b-end") ; 10 paths
-
-(def test-string-2 "dc-end
+b-end" "dc-end
 HN-start
 start-kj
 dc-start
@@ -21,9 +19,7 @@ LN-dc
 HN-end
 kj-sa
 kj-HN
-kj-dc") ; 19
-
-(def test-string-3 "fs-end
+kj-dc" "fs-end
 he-DX
 fs-he
 start-DX
@@ -40,27 +36,22 @@ start-pj
 he-WI
 zg-he
 pj-fs
-start-RW") ; 226
+start-RW"]) 
 
 (defn process-line [line]
   (str/split line #"-"))
-
-(defn map-vals [f m]
-  (reduce-kv (fn [m k v] (assoc m k (f v))) {} m))
 
 (defn process [data-string]
   (let [lines (str/split-lines data-string)
         pairs (concat
                (map process-line lines)
+               ; reverse all of the inputs to symmetrize
                (map (comp vec reverse process-line) lines))]
     (reduce (fn [acc [k v]] (update acc k (fnil conj #{}) v))
             {} pairs)))
 
 (def data (process data-string))
-
-(def test-data (process test-string))
-(def test-data-2 (process test-string-2))
-(def test-data-3 (process test-string-3))
+(def test-data (mapv process test-strings))
 
 (defn lower-case? [s]
   (= s (str/lower-case s)))
@@ -83,9 +74,10 @@ start-RW") ; 226
 
 (test/deftest test-part-1
   (test/are [x y] (= (count (paths x)) y)
-    test-data 10
-    test-data-2 19
-    test-data-3 226))
+    (get test-data 0) 10
+    (get test-data 1) 19
+    (get test-data 2) 226
+    data 3495))
 
 (time (def ans1 (count (paths data))))
 (println)
@@ -117,9 +109,10 @@ start-RW") ; 226
 
 (test/deftest test-part-2
   (test/are [x y] (= (count (paths-2 x)) y)
-    test-data 36
-    test-data-2 103
-    test-data-3 3509))
+    (get test-data 0) 36
+    (get test-data 1) 103
+    (get test-data 2) 3509
+    data 94849))
 
 (time (def ans2 (count (paths-2 data))))
 (println)
