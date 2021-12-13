@@ -53,7 +53,7 @@ fold along x=5")
     (println)
     (println (str/join "\n" (for [y (range (inc max-y))]
                               (apply str (for [x (range (inc max-x))]
-                                           (if (marks [x y]) "#" " "))))))))
+                                           (if (marks [x y]) "██" "  "))))))))
 
 (defn fold [fold-data mark]
   (let [{:keys [axis which]} fold-data
