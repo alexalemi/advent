@@ -61,19 +61,18 @@
       (and (= x2 x1) (< y2 y1)) :up)))
 
 (defn plus-move [data]
-  (let [{:keys [board loc direction visited]} data
-        x (get board loc)
+  (let [{:keys [board loc direction]} data
         newloc (first (filter board (disj (neighbors loc) (move loc (opposite-direction direction)))))]
     (assoc (assoc data :loc newloc) :direction (find-direction loc newloc))))
 
 (defn non-plus-move [data]
-  (let [{:keys [board loc direction visited]} data
+  (let [{:keys [board loc direction]} data
         newloc (move loc direction)]
     (if (board loc) (assoc data :loc newloc) (assoc data :finished true))))
 
 (defn step [data]
   (let [data (update data :t inc)
-        {:keys [board loc direction visited]} data
+        {:keys [board loc visited]} data
         x (get board loc)]
     (cond-> data
       ; if we're standing on a letter

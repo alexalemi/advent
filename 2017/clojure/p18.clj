@@ -123,9 +123,9 @@ rcv d")))
 
 (defn send-1? [machines]
   (let [machine (get machines 1)
-        {:keys [loc cmds in]} machine
+        {:keys [loc cmds]} machine
         cmd (get cmds loc)
-        [kind & args] cmd]
+        [kind & _] cmd]
     (= kind :snd)))
 
 (time (def ans2

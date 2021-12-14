@@ -1,10 +1,8 @@
 (ns advent20
   (:require
-   [clojure.test :as test]
    [clojure.string :as str]))
 
 (def data-string (slurp "../input/20.txt"))
-
 
 (defn process-line [line]
   (let [[_ px py pz vx vy vz ax ay az] (re-matches #"p=<(-?\d+),(-?\d+),(-?\d+)>, v=<(-?\d+),(-?\d+),(-?\d+)>, a=<(-?\d+),(-?\d+),(-?\d+)>" line)]
