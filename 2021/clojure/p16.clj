@@ -1,6 +1,5 @@
 (ns advent16
   (:require
-   [clojure.string :as str]
    [clojure.test :as test]))
 
 (def data-string (slurp "../input/16.txt"))
@@ -89,8 +88,8 @@
 (defn read-packet [stream]
   (let [[data stream] (read-meta stream)
         t (:type data)]
-    (condp = t
-      4 (combine data (read-literal stream))
+    (if (= t 4) 
+      (combine data (read-literal stream))
       (combine data (read-operator stream)))))
 
 (defn read-packet-from-string [s]
