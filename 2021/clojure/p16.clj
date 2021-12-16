@@ -115,17 +115,15 @@
 (println)
 (println "answer 1:" ans1)
 
+(defn to-int [x]
+  (if (boolean? x) (binary x) x))
+
+(def operation-lookup {0 + 1 * 2 min 3 max 5 > 6 < 7 =})
+
 (defn evaluate [packet]
   (let [{:keys [type value children]} packet]
-    (cond
-      (= type 4) value
-      (= type 0) (apply + (map evaluate children))
-      (= type 1) (apply * (map evaluate children))
-      (= type 2) (apply min (map evaluate children))
-      (= type 3) (apply max (map evaluate children))
-      (= type 5) (binary (apply > (map evaluate children)))
-      (= type 6) (binary (apply < (map evaluate children)))
-      (= type 7) (binary (apply = (map evaluate children))))))
+    (if (= type 4) value
+      (to-int (apply (operation-lookup type) (map evaluate children))))))
 
 (defn part-2 [s]
   (evaluate (first (read-packet-from-string s))))
