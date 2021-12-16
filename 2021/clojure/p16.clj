@@ -3,43 +3,64 @@
    [clojure.test :as test]))
 
 (def data-string (slurp "../input/16.txt"))
-(def test-string "D2FE28")
 
-(defn byte-to-bits [b]
-  (for [i (range 7 -1 -1)]
-    (bit-test b i)))
+(defn byte-to-bits
+  "Read the bits from a byte."
+  [b] (for [i (range 7 -1 -1)]
+        (bit-test b i)))
 
-(def binary {true 1 false 0})
+(def binary
+ "Convert booleans to integers."
+ {true 1 false 0})
 
-(defn to-byte-array [s]
-  (->> (seq s)
-       (partition 2)
-       (map (fn [[a b]] (str "0x" a b)))
-       (map read-string)
-       (byte-array)))
+(defn to-byte-array
+ "Convert a string to a byte-array." 
+  [s] (->> (seq s)
+           (partition 2)
+           (map (fn [[a b]] (str "0x" a b)))
+           (map read-string)
+           (byte-array)))
 
-(defn bit-stream [s]
-  (flatten (map byte-to-bits (to-byte-array s))))
+(defn bit-stream
+  "Convert a hexadecimal string to a sequence of bits."
+  [s] (flatten (map byte-to-bits (to-byte-array s))))
 
-(defn show-bits [bits]
-  (apply str "2r" (map binary bits)))
+(defn show-bits
+  "Show the bits in a bit stream."
+  [bits] (apply str "2r" (map binary bits)))
 
-(defn read-bits [bits]
-  (if (empty? bits) nil
-      (read-string (apply str "2r" (map binary bits)))))
+(defn to-hex
+  "Convert a number to hexidecimal."
+  [x] (format "%x" x))
 
-(defn to-hex [x]
-  (format "%x" x))
-
-(defn read-meta [stream]
+(defn read-bits
+  "Convert a bit-stream to an integer."
+  [bits] 
+  (loop [bits bits x 0]
+    (let [bit (first bits)]
+      (if (nil? bit) x
+        (recur 
+          (rest bits) 
+          (bit-or (bit-shift-left x 1) (binary bit))))))) 
+      
+(defn read-meta
+  "Read the metadata from a stream.
+  
+  Starts with 3 bits for the version and 3 more bits for the type."
+  [stream]
   (let [[v stream] (split-at 3 stream)
         [t stream] (split-at 3 stream)]
     [{:version (read-bits v)
       :type (read-bits t)} stream]))
 
-(defn read-literal [stream]
-  (loop [stream stream
-         bits []]
+(defn read-literal
+  "Read a literal from the stream.
+  
+  A literal comes in groups of 5 bits, the first bit
+  is 1 if there are additional groups and 0 in the last group.
+  The remaining four bits from each group encode the literal value."
+  [stream]
+  (loop [stream stream bits []]
     (let [[group stream] (split-at 5 stream)
           more (first group)
           bits (concat bits (rest group))]
@@ -49,7 +70,9 @@
 
 (declare read-packet)
 
-(defn read-packets [stream]
+(defn read-packets
+  "Read off a sequence of packets from a stream." 
+  [stream]
   (loop [stream stream
          packets []]
     (if (empty? stream)
@@ -58,22 +81,25 @@
         (recur stream (conj packets packet))))))
 
 (defn read-n-packets
-  ([num stream] (read-n-packets num stream []))
-  ([num stream packets]
-   (loop [num num
-          stream stream
-          packets packets]
-     (if (pos? num)
-       (let [[packet stream] (read-packet stream)]
-         (recur (dec num)
-                stream
-                (conj packets packet)))
-       [{:children packets} stream]))))
+  "Read off exactly n packets from a stream."
+  [num stream]
+  (loop [num num
+         stream stream
+         packets []]
+    (if (pos? num)
+      (let [[packet stream] (read-packet stream)]
+        (recur (dec num)
+               stream
+               (conj packets packet)))
+      [{:children packets} stream])))
 
-(defn combine [data [data2 stream]]
-  [(merge data data2) stream])
+(defn combine
+  "Combines data in a reductive fashion."
+  [data [data2 stream]] [(merge data data2) stream])
 
-(defn read-operator [stream]
+(defn read-operator
+  "Read a BITS operator encoding."
+  [stream]
   (let [length-type-id (first stream)
         stream (rest stream)]
     (if length-type-id
@@ -85,19 +111,22 @@
             [packet-stream stream] (split-at total-length stream)]
         [{:packet-length total-length :children (read-packets packet-stream)} stream]))))
 
-(defn read-packet [stream]
-  (let [[data stream] (read-meta stream)
-        t (:type data)]
-    (if (= t 4) 
+(defn read-packet
+  "Read a single packet from the bit stream."
+  [stream]
+  (let [[data stream] (read-meta stream)]
+    (if (= (:type data) 4) 
       (combine data (read-literal stream))
       (combine data (read-operator stream)))))
 
-(defn read-packet-from-string [s]
-  (read-packet (bit-stream s)))
+(defn read-packet-from-string
+  "Read a packet from a hex string."
+  [s] (read-packet (bit-stream s)))
 
-(defn total-version [packet]
-  (let [version (:version packet)
-        children (:children packet)]
+(defn total-version
+  "Compute the total version number of a nested packet."
+  [packet]
+  (let [version (:version packet) children (:children packet)]
     (apply + version (map total-version children))))
 
 (defn part-1 [s]
@@ -114,12 +143,17 @@
 (println)
 (println "answer 1:" ans1)
 
-(defn to-int [x]
-  (if (boolean? x) (binary x) x))
+(defn to-int
+  "Converts booleans to 0, 1"
+  [x] (if (boolean? x) (binary x) x))
 
-(def operation-lookup {0 + 1 * 2 min 3 max 5 > 6 < 7 =})
+(def operation-lookup
+  "BITS operator types."
+  {0 + 1 * 2 min 3 max 5 > 6 < 7 =})
 
-(defn evaluate [packet]
+(defn evaluate
+  "Eval a packet."
+  [packet]
   (let [{:keys [type value children]} packet]
     (if (= type 4) value
       (to-int (apply (operation-lookup type) (map evaluate children))))))
