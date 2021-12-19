@@ -12,10 +12,12 @@
 (defn read-vector [s]
   (read-string (str "[" s "]")))
 
-(defn process [s]
-  (let [scanners (rest (map str/trim (str/split s #"--- scanner \d+ ---")))]
-    (into [] (for [scanner scanners]
-               (mapv read-vector (str/split-lines scanner))))))
+(defn process
+ "Reads the input into a list of lists of vectors"
+ [s]
+ (let [scanners (rest (map str/trim (str/split s #"--- scanner \d+ ---")))]
+   (into [] (for [scanner scanners]
+              (mapv read-vector (str/split-lines scanner))))))
 
 (def data (process data-string))
 (def test-data (process test-string))
@@ -37,43 +39,52 @@
        (sq (- y1 y2))
        (sq (- z1 z2)))))
 
-(defn transforms [vec]
-  (let [[x y z] vec]
-    [[x     y     z]
-     [x  (- y) (- z)]
-     [(- x)    y  (- z)]
-     [(- x) (- y)    z]
-     [y     z     x]
-     [y  (- z) (- x)]
-     [(- y)    z  (- x)]
-     [(- y) (- z)    x]
-     [z     x     y]
-     [z  (- x) (- y)]
-     [(- z)    x  (- y)]
-     [(- z) (- x)    y]
-     [(- x)    z     y]
-     [x  (- z)    y]
-     [x     z  (- y)]
-     [(- x) (- z) (- y)]
-     [(- z)    y     x]
-     [z  (- y)    x]
-     [z     y  (- x)]
-     [(- z) (- y) (- x)]
-     [(- y)    x     z]
-     [y  (- x)    z]
-     [y     x  (- z)]
-     [(- y) (- x) (- z)]]))
+(defn transforms
+ "All 24 transformations of a vector."
+ [vec]
+ (let [[x y z] vec]
+   [[x     y     z]
+    [x  (- y) (- z)]
+    [(- x)    y  (- z)]
+    [(- x) (- y)    z]
+    [y     z     x]
+    [y  (- z) (- x)]
+    [(- y)    z  (- x)]
+    [(- y) (- z)    x]
+    [z     x     y]
+    [z  (- x) (- y)]
+    [(- z)    x  (- y)]
+    [(- z) (- x)    y]
+    [(- x)    z     y]
+    [x  (- z)    y]
+    [x     z  (- y)]
+    [(- x) (- z) (- y)]
+    [(- z)    y     x]
+    [z  (- y)    x]
+    [z     y  (- x)]
+    [(- z) (- y) (- x)]
+    [(- y)    x     z]
+    [y  (- x)    z]
+    [y     x  (- z)]
+    [(- y) (- x) (- z)]]))
 
-(defn volume-of-tetrahedron [vecs]
-  (matrix/det (matrix/transpose (conj (matrix/transpose (apply vector vecs)) [1 1 1 1]))))
+(comment
+  "For the first part of this puzzle, we are going to look for pairs of sensors
+  that are overlapping. We know that each pair has at least 12 points in common, for those
+  12 points there will be 66 line segments. So, for each sensor we'll make a list of all
+  of the line segments they see (their distances which are rotationally and mirror invariant)
+  and then look for how many of these line segment distances they have in common, if there 
+  are at least 66, we know they are overlapping.")
 
 (defn overlapping-pairs
-  "Measure the overlap of two sorted lists of triplets, [distance p1 p2]"
+  "Measure the overlap of two sorted lists of triplets, [distance p1 p2]
+  Returns both the number of segments they have in common as well
+  as an example pair of segments with the same length."
   [x y]
   (loop [x x
          y y
-         overlaps 0
-         a-pair nil]
+         overlaps 0  ; how many overlaps there are.
+         a-pair nil] ; an example pair they have in common.
     (let [[a x1 y1] (first x)
           [b x2 y2] (first y)]
       (cond
@@ -82,19 +93,9 @@
         (< a b) (recur (rest x) y overlaps a-pair)
         :else   (recur x (rest y) overlaps a-pair)))))
 
-(defn overlap
-  "Measure the overlap of two sorted lists"
-  [x y]
-  (loop [x x y y n 0]
-    (let [a (first x)
-          b (first y)]
-      (cond
-        (or (empty? x) (empty? y)) n
-        (= a b) (recur (rest x) (rest y) (inc n))
-        (< a b) (recur (rest x) y n)
-        :else   (recur x (rest y) n)))))
-
-(defn sensor-distances [beacons]
+(defn sensor-distances
+  "Given a list of beacon locations, return a list
+  of all line segments, [distance pt1 pt2]." [beacons]
   (sort-by first
            (map (fn [[a b]] [(squared-length a b) a b])
                 (combo/combinations beacons 2))))
@@ -108,7 +109,15 @@
 (def OVERLAPS 66) ; 12 choose 2
 
 (defn find-overlaps
-  "look for at least 66 share line segment distances."
+  "Look for at least 66 share line segment distances.
+
+  This will return a map with 
+    [i j] : [n [[a b] [c d]]]
+  type keys.  This indicates that sensor i and j overlap
+  with n segments in common, one such example line segment is
+  a-b and c-d.  
+
+  Since these overlap we now know that either a->c or a->d."
   [data]
   (let [sensors (enumerate data)
         sensor-ds (map-vals sensor-distances sensors)
@@ -117,6 +126,15 @@
                                 :when (< i j)]
                             [[i j] (overlapping-pairs ds1 ds2)]))]
     (filter-vals #(>= (first %) OVERLAPS) overlaps)))
+
+(comment
+  "After we are able to find pairs of sensors that do overlap and an example line segment
+  that has to map from each, we should be able to determine the exact aligning transformation
+  quickly.
+  
+  Given that we know the segment a-b has to match c-d we know that either a->c or a->d.
+  That give us a useful offset vector, for the rotations we'll just sort of try them all 
+  and bail early if there isn't a match.")
 
 (defn rot [i]
   (fn [x] ((transforms x) i)))
@@ -132,26 +150,31 @@
     (comp (add-vec offset) (rot rot-id))))
 
 (def inverse-rot
+  "Create a dictionary of the inverse rotations for each of the rotations."
   (into
    {}
    (for [i (range 24)]
      [i (first (filter #(= [1 2 3] ((rot %) ((rot i) [1 2 3]))) (range 24)))])))
 
-(defn inverse-transform [t]
+(defn inverse-transform
+  "Given a transform, return its inverse."
+  [t]
   (let [{:keys [rot-id offset]} t]
     (comp (rot (inverse-rot rot-id)) (sub-vec offset))))
 
-(let [t {:rot-id 7 :offset [5 11 -10]}]
-  ((inverse-transform t) ((transform t) [1 2 3])))
-
-(defn test-alignment [x y t]
+(defn test-alignment
+  "Test whether the transform t will map the y list of beacons
+  onto the x list of beacons." [x y t]
   (>= (count
        (set/intersection
         (set (sort x))
         (set (sort (map (transform t) y)))))
       12))
 
-(defn find-alignment [data [[x y] overlap]]
+(defn find-alignment
+  "Find the proper aligning transformation between 
+  sensor x and y with their overlap data."
+  [data [[x y] overlap]]
   (let [sensors (enumerate data)
         [_ [[a _] [c d]]] overlap]
     (first (filter (partial test-alignment (sensors x) (sensors y))
@@ -166,9 +189,6 @@
        (assoc m k (find-alignment data [k v])))
      {} overlaps)))
 
-(def test-alignments (find-alignments test-data))
-(def alignments (find-alignments data))
-
 (defn filter-keys [f m]
   (reduce-kv
    (fn [m k v] (if (f k) (assoc m k v) m))
@@ -179,6 +199,15 @@
          (reduce-kv
           (fn [m k v] (assoc m (apply vector (reverse k)) (inverse-transform v)))
           {} alignments)))
+
+(comment "Now that we know the alignments between all of the pieces,
+  something like 
+    {[1 4] {:rot-id 7 :offset [7 5 10]}
+     [2 4] {:rot-id 1 :offset [-12 -23 20]}}
+ 
+ we need to stitch this whole thing together in a single map.
+ 
+ We'll do a sort of depth first flooding of the whole thing.")
 
 (defn stitch [data]
   (let [alignments (find-alignments data)
