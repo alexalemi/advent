@@ -147,4 +147,8 @@
 (println)
 (println "Answer 2:" ans2)
 
+(test/deftest test-answers
+  (test/is (= (part-1 data) 4323))
+  (test/is (= (part-2 data) 4749)))
+
 (test/run-tests)
