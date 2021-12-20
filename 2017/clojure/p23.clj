@@ -25,7 +25,7 @@
     (get (:memory state) loc 0)))
 
 (defn step [registers state]
-  (let [{:keys [loc memory]} state
+  (let [{:keys [loc]} state
         inst (get registers loc)
         [call to val] inst
         val (get-value state val)
@@ -55,7 +55,7 @@
   "For part 2 we need to figure out what would happen if :a is set to 1.
    looking at the program, the difference is at the start.")
 (comment
-  0 set b 99
+ "0 set b 99
   1 set c b
   2 jnz a 2
   3 jnz 1 5
@@ -86,7 +86,7 @@
   28 jnz g 2
   29 jnz 1 3
   30 sub b -17
-  31 jnz 1 -23)
+  31 jnz 1 -23")
 
 (comment
   (let [[registers state] data
