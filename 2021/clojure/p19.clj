@@ -1,7 +1,6 @@
 (ns advent19
   (:require
    [clojure.test :as test]
-   [clojure.core.matrix :as matrix]
    [clojure.set :as set]
    [clojure.string :as str]
    [clojure.math.combinatorics :as combo]))
