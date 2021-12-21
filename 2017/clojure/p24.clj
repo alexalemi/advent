@@ -69,6 +69,17 @@
                    {:end end :path (conj path next)}))
          longest)))))
 
+(defn max-depth [data]
+  (fn inner-max-depth [front]
+    (let [{:keys [end path]} front
+          score-so-far (score path)
+          available (subtract data path)
+          links (filter some? (map (next-link end) available))]
+      (if
+        (empty? links) score-so-far
+        (reduce max (for [[next end] links]
+                         (inner-max-depth {:end end :path (conj path next)})))))))
+
 (defn part-1 [data]
   (reduce max (vals (longest-ends data))))
 
@@ -77,8 +88,8 @@
 (test/deftest test-part-1
   (test/is (= (part-1 test-data) 31)))
 
-(time (def ans1 (part-1 data)))
-(println)
-(println "Answer1:" ans1)
+; (time (def ans1 (part-1 data)))
+; (println)
+; (println "Answer1:" ans1)
 
 (test/run-tests)
