@@ -13,9 +13,7 @@
 (defn process [s]
   (let [[a b] (map process-line (str/split-lines s))]
     {:positions [a b]
-     :turn 0
      :rolls 0
-     :dice 1
      :scores [0 0]}))
 
 (def data (process data-string))
@@ -26,31 +24,30 @@
   (if (= s DIE-SIDES) 1 (inc s)))
 
 (def STATES 10)
-(defn new-pos [loc plus]
-  (inc (mod (+ (dec loc) plus) STATES)))
+(defn project [n] (inc (mod (dec n) STATES)))
 
-(defn step [state]
-  (let [{:keys [positions turn dice scores]} state
-        max-score (apply max scores)
-        die (iterate roll-die dice)
-        [roll, die] (split-at 3 die)
-        face (first die)
-        who (mod turn 2)
-        new-loc (new-pos (positions who) (reduce + roll))]
-    (if (>= max-score 1000)
-      (assoc state :finished true)
-      (-> state
-          (assoc :dice face)
-          (update :turn inc)
-          (update :rolls + 3)
-          (assoc-in [:positions who] new-loc)
-          (update-in [:scores who] + new-loc)))))
+(def MAX-SCORE 1000)
+(defn step [state roll]
+  (let [{:keys [positions scores]} state
+        [a b] positions
+        [sa sb] scores
+        loc (project (+ a roll))
+        score (+ sa loc)
+        new-state (-> state
+                      (update :rolls + 3)
+                      (assoc :positions [b loc])
+                      (assoc :scores [sb score]))]
+    (if (>= score MAX-SCORE)
+      (reduced (assoc new-state :finished true))
+      new-state)))
+
+(def rolls (map #(reduce + %) (partition 3 (iterate roll-die 1))))
 
 (defn part-1 [data]
-  (let [final (last (take-while (complement :finished) (iterate step data)))
+  (let [final (reduce step data rolls)
         {:keys [rolls scores]} final
-        lower-score (apply min scores)]
-    (* lower-score rolls)))
+        lower  (first scores)]
+    (* lower rolls)))
 
 (test/deftest test-part-1
   (test/is (= (part-1 test-data) 739785)))
@@ -59,67 +56,43 @@
 (println)
 (println "Answer 1:" ans1)
 
-(defn refine [data]
-  {:positions (:positions data)
-   :turn 0
-   :scores [0 0]
-   :rolls []})
-
-(def data-2 (refine data))
-(def test-data-2 (refine test-data))
-
 (comment
   "Now I need to figure out the number of universes in which
   each player wins. I'll do this with a recursive memoized
   function of a sort.")
 
-(defn get-winner [scores]
-  (let [[a b] scores]
-    (cond
-      (>= a 21) 0
-      (>= b 21) 1
-      :else nil)))
-
-(defn project [n]
-  (inc (mod (dec n) 10)))
-
+(def MAX-SCORE-2 21)
 (defn step-2 [state roll]
-  (let [{:keys [positions turn scores rolls]} state
-        who (mod turn 2)]
-    (cond
-      (= (count rolls) 2)
-      (let [new-loc (project (apply + (positions who) roll rolls))
-            new-scores (update scores who + new-loc)
-            winner (get-winner new-scores)]
-        (-> state
-            (update :turn inc)
-            (assoc :rolls [])
-            (assoc-in [:positions who] new-loc)
-            (update-in [:scores who] + new-loc)
-            (assoc :winner winner)))
+  (let [{:keys [positions scores]} state
+        [a b] positions
+        [sa sb] scores
+        loc (project (+ a roll))
+        score (+ sa loc)
+        new-state (-> state
+                      (assoc :positions [b loc])
+                      (assoc :scores [sb score]))]
+    (if (>= score MAX-SCORE-2)
+      (assoc new-state :finished true)
+      new-state)))
 
-      :else
-      (-> state
-          (update :rolls conj roll)))))
+(defn vec-* [a v]
+  (mapv * (repeat a) v))
 
 (def universes
   (memoize
    (fn [state]
-     (let [{:keys [winner]} state]
-       (if winner
-         (if (= winner 0) [1 0] [0 1])
-         (mapv +
-               (universes (step-2 state 1))
-               (universes (step-2 state 2))
-               (universes (step-2 state 3))))))))
+     (if (state :finished) [0 1]
+         (apply mapv +
+                (for [[times roll] [[1 3] [3 4] [6 5] [7 6] [6 7] [3 8] [1 9]]]
+                  (vec-* times (reverse (universes (step-2 state roll))))))))))
 
 (defn part-2 [data]
-  (apply max (universes data)))
+  (first (universes (dissoc data :rolls))))
 
 (test/deftest test-part-2
-  (test/is (= (part-2 test-data-2) 444356092776315)))
+  (test/is (= (part-2 test-data) 444356092776315)))
 
-(time (def ans2 (part-2 data-2)))
+(time (def ans2 (part-2 data)))
 (println)
 (println "Answer 2:" ans2)
 
