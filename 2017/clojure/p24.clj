@@ -32,26 +32,22 @@
         (= b end) [x a]
         :else nil))))
 
-(defn max-score [data]
-  (let [f (fn inner-max-score [inner front]
-            (let [inner (fn [a] (inner inner a))
-                  {:keys [end available]} front
-                  links (filter some? (map (next-link end) available))]
-              (if
-               (empty? links) 0
-               (reduce max (for [[next end] links]
-                             (apply + (inner {:end end :available (disj available next)}) next))))))
-        memo-f (memoize f)
-        memo-f (partial memo-f memo-f)]
-    (memo-f {:end 0 :available data})))
+(def max-score 
+  (memoize (fn [data front]
+             (let [{:keys [end available]} front
+                   links (filter some? (map (next-link end) available))]
+               (if
+                (empty? links) 0
+                (reduce max (for [[next end] links]
+                             (apply + (max-score data {:end end :available (disj available next)}) next))))))))
 
 (defn part-1 [data]
-  (max-score data))
+  (max-score data {:end 0 :available data}))
 
 (test/deftest test-part-1
   (test/is (= (part-1 test-data) 31)))
 
-(time (def ans1 (max-score data)))
+(time (def ans1 (part-1 data)))
 (println)
 (println "Answer1:" ans1)
 
@@ -62,23 +58,19 @@
     (= l1 l2)
     (if (> s2 s1) [l1 s2] [l1 s1])))
 
-(defn max-length [data]
-  (let [f (fn inner-max-length [inner front]
-            (let [inner (fn [a] (inner inner a))
-                  {:keys [end available]} front
-                  links (filter some? (map (next-link end) available))]
-              (if
-               (empty? links) [0 0]
-               (reduce path-max (for [[next end] links]
-                                  (mapv +
-                                        (inner {:end end :available (disj available next)})
-                                        [1 (reduce + next)]))))))
-        memo-f (memoize f)
-        memo-f (partial memo-f memo-f)]
-    (memo-f {:end 0 :available data})))
+(def max-length 
+  (memoize (fn [data front]
+             (let [{:keys [end available]} front
+                   links (filter some? (map (next-link end) available))]
+               (if
+                (empty? links) [0 0]
+                (reduce path-max (for [[next end] links]
+                                   (mapv +
+                                         (max-length data {:end end :available (disj available next)})
+                                         [1 (reduce + next)]))))))))
 
 (defn part-2 [data]
-  (second (max-length data)))
+  (second (max-length data {:end 0 :available data})))
 
 (test/deftest test-part-2
   (test/is (= (part-2 test-data) 19)))
