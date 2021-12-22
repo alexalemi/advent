@@ -26,3 +26,5 @@ codes it looks like I'm kind of stuck.
 Mananged to get the self check passed but then I'm running into an invalid
 ascii code somehow.  Must have some kind of subtle bug that isn't being picked
 up by the tests.
+
+I changed the registers to use indicies from 32768 to 32775.

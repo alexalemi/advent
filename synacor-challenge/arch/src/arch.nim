@@ -6,11 +6,11 @@ addHandler(consoleLog)
 
 const HIGH = 32768
 type Word = uint16
-const NUMREGISTERS = 8
+const HIGHREGISTER = 32775
 
 type Machine = object
   memory: array[HIGH, Word]
-  registers: array[HIGH..(HIGH+NUMREGISTERS-1), Word]
+  registers: array[HIGH..HIGHREGISTER, Word]
   stack: seq[Word]
   loc: Word
   clock: uint64
@@ -85,10 +85,10 @@ proc tic(vm: var Machine) =
       dec vm
     of 1: # set 1 a b - set register <a> to the value of <b>
       inc vm
-      let r = vm.raw
+      let a = vm.raw
       inc vm
       let b = vm.readVal
-      vm.write(r, b)
+      vm.write(a, b)
     of 2: # push: 2 a - push <a> onto the stack
       inc vm
       let a = vm.readVal
@@ -134,44 +134,44 @@ proc tic(vm: var Machine) =
         vm.jmp(b)
     of 9: # add: 9 a b c - assign into <a> the sum of <b> and <c> (modulo 32768)
       inc vm
-      let r = vm.raw
-      inc vm
-      let a = vm.readVal
+      let a = vm.raw
       inc vm
       let b = vm.readVal
-      vm.write(r, (a + b) mod HIGH)
+      inc vm
+      let c = vm.readVal
+      vm.write(a, (b + c) mod HIGH)
     of 10: # mult: 10 a b c - store into <a> the product of <b> and <c> (modulo 32768)
       inc vm
-      let r = vm.raw
-      inc vm
-      let a = vm.readVal
+      let a = vm.raw
       inc vm
       let b = vm.readVal
-      vm.write(r, (a * b) mod HIGH)
+      inc vm
+      let c = vm.readVal
+      vm.write(a, (b * c) mod HIGH)
     of 11: # mod: 11 a b c - store into <a> the remainder of <b> divided by <c>
       inc vm
-      let r = vm.raw
-      inc vm
-      let a = vm.readVal
+      let a = vm.raw
       inc vm
       let b = vm.readVal
-      vm.write(r, (a mod b) mod HIGH)
+      inc vm
+      let c = vm.readVal
+      vm.write(a, (b mod c) mod HIGH)
     of 12: # and: 12 a b c - stores into <a> the bitwise and of <b> and <c>
       inc vm
-      let r = vm.raw
-      inc vm
-      let a = vm.readVal
+      let a = vm.raw
       inc vm
       let b = vm.readVal
-      vm.write(r, bitand(a, b) mod HIGH)
+      inc vm
+      let c = vm.readVal
+      vm.write(a, bitand(b, c) mod HIGH)
     of 13: # or: 13 a b c - stores into <a> the bitwise or of <b> and <c>
       inc vm
-      let r = vm.raw
-      inc vm
-      let a = vm.readVal
+      let a = vm.raw
       inc vm
       let b = vm.readVal
-      vm.write(r, bitor(a, b) mod HIGH)
+      inc vm
+      let c = vm.readVal
+      vm.write(a, bitor(b, c) mod HIGH)
     of 14: # not: 14 a b - stores 15-bit bitwise inverse of <b> in <a>
       inc vm
       let a = vm.raw
@@ -207,8 +207,8 @@ proc tic(vm: var Machine) =
         vm.jmp(a)
     of 19: # out a - write the ascii character represented by a to stdout
       inc vm
-      let code = vm.readVal
-      assert(code < 128, "Invalid ascii code <" & $code & "> @" & $vm)
+      var code = vm.readVal
+      assert(code < 128, "Invalid ascii code <" & $code &  ">=" & $vm.read(code) & " @" & $vm)
       # debug("out a=" & $code & " vm=" & $vm)
       stdout.write(char(code))
     of 20: # in: 20 a - read a character from the terminal and write its ascii code to <a>; it can be assumed that once input starts, it will continue until a newline is encountered; this means that you can safely read whole lines from the keyboard and trust that they will be fully read
