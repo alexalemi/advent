@@ -28,3 +28,10 @@ ascii code somehow.  Must have some kind of subtle bug that isn't being picked
 up by the tests.
 
 I changed the registers to use indicies from 32768 to 32775.
+
+Checking against a python implementation, it looks like my version should be working,
+and it does for 299,438 steps, until something seems go wrong.
+
+My register suddenly gets set to zero and I'm not sure why. We're near instruction 1730
+where we are doing a rmem. In the implementation I'm checking against this works
+but in my version this somehow has the memory set to zero at that point.

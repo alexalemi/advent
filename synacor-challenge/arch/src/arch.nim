@@ -1,5 +1,5 @@
 # The synacor virtual machine.
-import os, bitops, streams, std/logging
+import os, streams, std/logging
 
 var consoleLog = newConsoleLogger()
 addHandler(consoleLog)
@@ -41,19 +41,17 @@ func readVal(vm: Machine): Word =
 func raw(vm: Machine, offset = 0'u16): Word =
   vm.memory[vm.loc + offset]
 
-proc read(vm: Machine, loc: Word): Word =
-  var l = loc
-  if l >= HIGH:
-    return vm.memory[vm.registers[l]]
+func read(vm: Machine, loc: Word): Word =
+  if loc >= HIGH:
+    return vm.memory[vm.registers[loc]]
   else:
-    return vm.memory[l]
+    return vm.memory[loc]
 
 proc write(vm: var Machine, loc: Word, val: Word) =
-  var l = loc
-  if l >= HIGH:
-    vm.registers[l] = val
+  if loc >= HIGH:
+    vm.registers[loc] = val
   else:
-    vm.memory[l] = val
+    vm.memory[loc] = val
 
 proc inc(vm: var Machine) =
   inc vm.loc
@@ -63,7 +61,7 @@ proc dec(vm: var Machine) =
 
 proc jmp(vm: var Machine, to: Word) =
   vm.loc = to
-  dec vm
+  dec vm  # to correct for end of loop increment.
 
 proc set(vm: var Machine, register: Word, val: Word) =
   vm.registers[register] = val
@@ -139,7 +137,7 @@ proc tic(vm: var Machine) =
       let b = vm.readVal
       inc vm
       let c = vm.readVal
-      vm.write(a, (b + c) mod HIGH)
+      vm.write(a, Word((int(b) + int(c)) mod HIGH))
     of 10: # mult: 10 a b c - store into <a> the product of <b> and <c> (modulo 32768)
       inc vm
       let a = vm.raw
@@ -147,7 +145,7 @@ proc tic(vm: var Machine) =
       let b = vm.readVal
       inc vm
       let c = vm.readVal
-      vm.write(a, (b * c) mod HIGH)
+      vm.write(a, Word((int(b) * int(c)) mod HIGH))
     of 11: # mod: 11 a b c - store into <a> the remainder of <b> divided by <c>
       inc vm
       let a = vm.raw
@@ -155,7 +153,7 @@ proc tic(vm: var Machine) =
       let b = vm.readVal
       inc vm
       let c = vm.readVal
-      vm.write(a, (b mod c) mod HIGH)
+      vm.write(a, (b mod c))
     of 12: # and: 12 a b c - stores into <a> the bitwise and of <b> and <c>
       inc vm
       let a = vm.raw
@@ -163,7 +161,7 @@ proc tic(vm: var Machine) =
       let b = vm.readVal
       inc vm
       let c = vm.readVal
-      vm.write(a, bitand(b, c) mod HIGH)
+      vm.write(a, (b and c))
     of 13: # or: 13 a b c - stores into <a> the bitwise or of <b> and <c>
       inc vm
       let a = vm.raw
@@ -171,21 +169,21 @@ proc tic(vm: var Machine) =
       let b = vm.readVal
       inc vm
       let c = vm.readVal
-      vm.write(a, bitor(b, c) mod HIGH)
+      vm.write(a, (b or c))
     of 14: # not: 14 a b - stores 15-bit bitwise inverse of <b> in <a>
       inc vm
       let a = vm.raw
       inc vm
       var b = vm.readVal
-      b = bitnot(b)
-      b.clearBits(15)
-      vm.write(a, b)
+      let c = (not b) and (HIGH - 1)
+      vm.write(a, c)
     of 15: # rmem: 15 a b - read memory at address <b> and write it to <a>
       inc vm
       let a = vm.raw
       inc vm
       let b = vm.raw
       let val = vm.read(b)
+      debug("rmem @" & $(vm.loc-2) & " clock=" & $vm.clock & " a=" & $a & " b=" & $b & " val=" & $val)
       vm.write(a, val)
     of 16: # wmem: 16 a b - write the value from <b> into memory at address <a>
       inc vm
@@ -197,6 +195,8 @@ proc tic(vm: var Machine) =
       vm.push((vm.loc + 2) mod HIGH)
       inc vm
       let a = vm.readVal
+      if not (a in @[ 1531'u16, 2125'u16, 1528'u16 ]):
+        debug("Calling " & $a & " from " & $(vm.loc-1))
       vm.jmp(a)
     of 18: # ret: 18 - remove the top element from the stack and jump to it; empty stack = halt
       if vm.stack.len == 0:
@@ -224,7 +224,7 @@ proc tic(vm: var Machine) =
   inc vm.clock
 
 proc run(vm: var Machine) =
-  while not vm.terminated:
+  while (not vm.terminated) and (vm.clock < 299_438):
     vm.tic
 
 
@@ -236,3 +236,4 @@ when isMainModule:
   info("Running...")
   vm.run
   info("Exiting.")
+  info("VM=" & $vm)
