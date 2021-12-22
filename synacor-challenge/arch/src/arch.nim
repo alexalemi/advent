@@ -6,10 +6,11 @@ addHandler(consoleLog)
 
 const HIGH = 32768
 type Word = uint16
+const NUMREGISTERS = 8
 
 type Machine = object
   memory: array[HIGH, Word]
-  registers: array[8, Word]
+  registers: array[HIGH..(HIGH+NUMREGISTERS-1), Word]
   stack: seq[Word]
   loc: Word
   clock: uint64
@@ -29,8 +30,7 @@ proc loadFile(machine: var Machine, flname: string, start = 0'u16): int =
 
 func readValAt(vm: Machine, loc: Word): Word =
   var value = vm.memory[loc]
-  if value.testBit(15):
-    value.clearBits(15)
+  if value >= HIGH:
     vm.registers[value]
   else:
     return value
@@ -43,16 +43,14 @@ func raw(vm: Machine, offset = 0'u16): Word =
 
 proc read(vm: Machine, loc: Word): Word =
   var l = loc
-  if l.testBit(15):
-    l.clearBits(15)
+  if l >= HIGH:
     return vm.memory[vm.registers[l]]
   else:
     return vm.memory[l]
 
 proc write(vm: var Machine, loc: Word, val: Word) =
   var l = loc
-  if l.testBit(15):
-    l.clearBits(15)
+  if l >= HIGH:
     vm.registers[l] = val
   else:
     vm.memory[l] = val
@@ -179,12 +177,8 @@ proc tic(vm: var Machine) =
       let a = vm.raw
       inc vm
       var b = vm.readVal
-      let firstBit = b.testBit(15)
       b = bitnot(b)
-      if firstBit:
-        b.setBits(15)
-      else:
-        b.clearBits(15)
+      b.clearBits(15)
       vm.write(a, b)
     of 15: # rmem: 15 a b - read memory at address <b> and write it to <a>
       inc vm
