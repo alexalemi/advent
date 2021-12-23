@@ -52,21 +52,22 @@
 (defn filter-keys [pred m]
   (reduce-kv (fn [m k v] (if (pred k) (assoc m k v) m)) {} m))
 
-(defn reachable-moves
-  [valid-space loc]
-  (loop [frontier [[loc 0]]
-         seen #{}
-         neighs {}]
-    (let [[node cost] (first frontier)]
-      (if (empty? frontier) (dissoc neighs loc)
-          (recur (into
-                  (rest frontier)
-                  (zipmap
-                   (filter (every-pred (complement seen) valid-space)
-                           (raw-neighbors node))
-                   (repeat (inc cost))))
-                 (conj seen node)
-                 (conj neighs [node cost]))))))
+(def reachable-moves
+  (memoize 
+    (fn [valid-space loc]
+     (loop [frontier [[loc 0]]
+            seen #{}
+            neighs {}]
+       (let [[node cost] (first frontier)]
+         (if (empty? frontier) (dissoc neighs loc)
+             (recur (into
+                     (rest frontier)
+                     (zipmap
+                      (filter (every-pred (complement seen) valid-space)
+                              (raw-neighbors node))
+                      (repeat (inc cost))))
+                    (conj seen node)
+                    (conj neighs [node cost]))))))))
 
 (defn map-vals [f m]
   (reduce-kv (fn [m k v] (assoc m k (f v))) {} m))
@@ -91,7 +92,9 @@
        ;we only need to consider our room, provided no other color is in there.
       (if can-dock (filter-keys my-room reachable) ())
       (if (contains? (state :-unmoved) loc)
-        (filter-keys (every-pred (complement (data :door)) board) reachable)
+        (if (and can-dock (not-empty (set/intersection my-room (set (keys reachable)))))
+          (filter-keys my-room reachable) 
+          (filter-keys (every-pred (complement (data :door)) board) reachable))
         ()))))
 
 (defn neighbors
