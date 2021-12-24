@@ -10,6 +10,14 @@ finish the self-test I got another code: `QieZfTCocnNl`
 It seems that this starts a sort of text-based game.  The first code was quite
 easy, I simply `take tablet; use tablet` to get `eVtjKqYzXtQU`.
 
+Seems like I could either go through the doorway or go south.
+You can immediately pick up the tablet and then head to the doorway and into the cavern,
+once you fall off the bridge if you go east you find an empty lantern.
+
+Then we get lost in some twisty passages.
+
+When the grue spots us, if we run and run again we get eaten. If we hide we get eaten.
+
 ## 2021-12-22
 
 Mananged to get the self check passed but then I'm running into an invalid
