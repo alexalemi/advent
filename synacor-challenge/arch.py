@@ -190,6 +190,12 @@ if __name__ == "__main__":
     vm = VM()
     logging.info("Loading the challenge image...")
     vm.load_file("challenge.bin")
+
+    if len(sys.argv) > 1:
+        value = int(sys.argv[1])
+        logging.info(f"Loading the eighth register with {value}...")
+        vm.registers[HIGH+7] = value
+
     logging.info("Running...")
     vm.run()
     logging.info("Finished.")
