@@ -13,255 +13,297 @@ It is correct if the ALU leaves a 0 in the z register. otherwise invalid.
 
 abcdefghijklmn  is 14 digit number.
 
-inp w     - w = a
-mul x 0   - x = 0
-add x z   - x = z = 0
-mod x 26  - x = 0
-div z 1   - z = 0
-add x 11  - x = 11 
-eql x w   - x = 0 (w has to be less than 11)
-eql x 0   - x = 1
-mul y 0   - y = 0
-add y 25  - y = 25
-mul y x   - y = 25
-add y 1   - y = 26
-mul z y   - z = 0
-mul y 0   - y = 0
-add y w   - y = a
-add y 16  - y = a + 16
-mul y x   - y = a + 16
-add z y   - z = a + 16
-inp w     - w = b
-mul x 0   - x = 0
-add x z   - x = a + 16
-mod x 26  - x = (a + 16) % 26
-div z 1   - z = a + 16
-add x 12  - x = (a + 16) % 26 + 12
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 11
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 1
-add x 13
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 12
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 26
-add x -5
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 12
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 26
-add x -3
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 12
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 1
-add x 14
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 2
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 1
-add x 15
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 11
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 26
-add x -16
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 4
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 1
-add x 14
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 12
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 1
-add x 15
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 9
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 26
-add x -7
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 10
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 26
-add x -11
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 11
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 26
-add x -6
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 6
-mul y x
-add z y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 26
-add x -11
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 15
-mul y x
-add z y
+1  inp w     - w = a
+2  mul x 0   - x = 0
+3  add x z   - x = z = 0
+   mod x 26  - x = 0
+   div z 1   - z = 0
+   add x 11  - x = 11 
+   eql x w   - x = 0 (w has to be less than 11)
+   eql x 0   - x = 1
+   mul y 0   - y = 0
+10 add y 25  - y = 25
+   mul y x   - y = 25
+   add y 1   - y = 26
+   mul z y   - z = 0
+   mul y 0   - y = 0
+15 add y w   - y = a
+16 add y 16  - y = a + 16
+   mul y x   - y = a + 16
+   add z y   - z = a + 16
+
+   inp w     - w = b
+20 mul x 0   - x = 0
+   add x z   - x = a + 16
+   mod x 26  - x = (a + 16) % 26 
+               x = a + 16  ; because a is at most 9
+   div z 1   - z = a + 16
+   add x 12  - x = a + 28
+   eql x w   - x = 0
+   eql x 0   - x = 1
+   mul y 0   - y = 0
+   add y 25  - y = 25
+   mul y x   - y = 25
+   add y 1   - y = 26
+   mul z y   - z = 26 * (a + 16)
+   mul y 0   - y = 0
+   add y w   - y = b
+   add y 11  - y = b + 11
+   mul y x   - y = b + 11
+   add z y   - z = 26 * (a + 16) + (b + 11)
+
+   inp w     - w = c
+   mul x 0   - x = 0
+   add x z   - x = 26 * (a + 16) + (b + 11)
+   mod x 26  - x = (b + 11)
+   div z 1   - z = 26 * (a + 16) + (b + 11)
+   add x 13  - x = (b + 24)
+   eql x w   - x = 0
+   eql x 0   - x = 1
+   mul y 0   - y = 0
+   add y 25  - y = 25
+   mul y x   - y = 25
+   add y 1   - y = 26
+   mul z y   - z = 26 * (26 * (a + 16) + (b + 11))
+   mul y 0   - y = 0
+   add y w   - y = c
+   add y 12  - y = c + 12
+   mul y x   - y = (c + 12)
+   add z y   - z = 26 * (26 * (a + 16) + (b + 11)) + (c + 12)
+
+
+   inp w     - w = d
+   mul x 0   - x = 0
+   add x z   - x = 26 * (26 * (a + 16) + (b + 11)) + (c + 12)
+   mod x 26  - x = (c + 12)
+   div z 26  - z = 26 * (a + 16) + (b + 11)
+   add x -5  - x = (c + 7)
+   eql x w   - x = [c + 7 == d]
+   eql x 0   - x = [c + 7 != d]
+   mul y 0   - y = 0
+   add y 25  - y = 25
+   mul y x   - y = 25 * [c + y != d]
+   add y 1   - y = 25 * [c + y != d] + 1
+   mul z y   - z = (26 * (a + 16) + (b + 11)) * (25 * [c + 7 != d] + 1)
+   mul y 0   - y = 0
+   add y w   - y = d
+   add y 12  - y = d + 12
+   mul y x   - y = (d + 12) * [c + 7 != d]
+   add z y   - z = (26 * (a + 16) + (b + 11)) * (25 * [c + 7 != d] + 1) + (d + 12) * [c + 7 != d]
+               z = (26 * (a + 16) + (b + 11)) * (25 * [c + 7 != d] + 1) + (d + 12) * [c + 7 != d]
+               z = (if (= (+ c 7) d)
+                       (26 * (a + 16) + (b + 11)) 
+                       26 * (26 * (a + 16) + (b + 11)) + (d + 12))
+                       
+
+   inp w    -  w = e
+   mul x 0     x = 0
+   add x z     x = z
+   mod x 26    x = (if (= (+ c 7) d)
+                       (b + 11)
+                       (d + 12))
+   div z 26    z = (if (d == c + 7)
+                       (a + 16)
+                       26 * (a + 16) + (b + 11))
+   add x -3    x = (if (= (+ c 7) d)
+                       (b + 8)
+                       (d + 9))
+   eql x w     x = [d == (c + 7)] * [e == (b + 8)]
+   eql x 0     x = (not [d == (c + 7)] * [e == (b + 8)])
+   mul y 0     y = 0
+   add y 25    y = 25
+   mul y x     y = 25 * x
+   add y 1     y = 25 * x + 1
+   mul z y     z = (25 * x + 1) * z
+   mul y 0     y = 0
+   add y w     y = e
+   add y 12    y = (e + 12)
+   mul y x     y = (e + 12) * x
+   add z y     z = z + y
+
+   inp w
+   mul x 0
+   add x z
+   mod x 26
+   div z 1
+   add x 14
+   eql x w
+   eql x 0
+   mul y 0
+   add y 25
+   mul y x
+   add y 1
+   mul z y
+   mul y 0
+   add y w
+   add y 2
+   mul y x
+   add z y
+
+   inp w
+   mul x 0
+   add x z
+   mod x 26
+   div z 1
+   add x 15
+   eql x w
+   eql x 0
+   mul y 0
+   add y 25
+   mul y x
+   add y 1
+   mul z y
+   mul y 0
+   add y w
+   add y 11
+   mul y x
+   add z y
+
+   inp w
+   mul x 0
+   add x z
+   mod x 26
+   div z 26
+   add x -16
+   eql x w
+   eql x 0
+   mul y 0
+   add y 25
+   mul y x
+   add y 1
+   mul z y
+   mul y 0
+   add y w
+   add y 4
+   mul y x
+   add z y
+
+   inp w
+   mul x 0
+   add x z
+   mod x 26
+   div z 1
+   add x 14
+   eql x w
+   eql x 0
+   mul y 0
+   add y 25
+   mul y x
+   add y 1
+   mul z y
+   mul y 0
+   add y w
+   add y 12
+   mul y x
+   add z y
+
+   inp w
+   mul x 0
+   add x z
+   mod x 26
+   div z 1
+   add x 15
+   eql x w
+   eql x 0
+   mul y 0
+   add y 25
+   mul y x
+   add y 1
+   mul z y
+   mul y 0
+   add y w
+   add y 9
+   mul y x
+   add z y
+
+   inp w
+   mul x 0
+   add x z
+   mod x 26
+   div z 26
+   add x -7
+   eql x w
+   eql x 0
+   mul y 0
+   add y 25
+   mul y x
+   add y 1
+   mul z y
+   mul y 0
+   add y w
+   add y 10
+   mul y x
+   add z y
+
+   inp w
+   mul x 0
+   add x z
+   mod x 26
+   div z 26
+   add x -11
+   eql x w
+   eql x 0
+   mul y 0
+   add y 25
+   mul y x
+   add y 1
+   mul z y
+   mul y 0
+   add y w
+   add y 11
+   mul y x
+   add z y
+   
+   inp w
+   mul x 0
+   add x z
+   mod x 26
+   div z 26
+   add x -6
+   eql x w
+   eql x 0
+   mul y 0
+   add y 25
+   mul y x
+   add y 1
+   mul z y
+   mul y 0
+   add y w
+   add y 6
+   mul y x
+   add z y
+   
+   inp w
+   mul x 0
+   add x z
+   mod x 26
+   div z 26
+   add x -11
+   eql x w
+   eql x 0
+   mul y 0
+   add y 25
+   mul y x
+   add y 1
+   mul z y
+   mul y 0
+   add y w
+   add y 15
+   mul y x
+   add z y
+
+
+16   - P
+11   - K
+12   - L
+12   - L
+12   - L
+2    - B
+11
+4
+12
+9
+10
+11
+6
+15

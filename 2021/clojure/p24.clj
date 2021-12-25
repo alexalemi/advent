@@ -119,7 +119,6 @@ mod w 2"])
   of bindings."
   ([rule expr] (matcher rule expr {}))
   ([rule expr bindings]
-   (println "rule=" rule "expr=" expr "bindings=" bindings)
    (cond
      (nil? bindings) nil  ; short-circuit a failed match
 
@@ -142,10 +141,10 @@ mod w 2"])
      (empty? rule)
      (if (empty? expr) bindings nil)
 
+     (atom? expr) nil
+
      (empty? expr)
      (if (empty? rule) bindings nil)
-
-     (atom? expr) nil
 
      :else
      (matcher (rest rule)
@@ -155,13 +154,103 @@ mod w 2"])
                (first expr)
                bindings)))))
 
+
+(defn placeholder? [x]
+  (and (list? x)
+       (= (first x) '!)))
+
+(defn placeholder-form [x] (second x))
+
+(defn fill-in [dict form]
+  (cond
+    (atom? form) (or (dict form) form)
+    (empty? form) form
+    :else
+    (cons (fill-in dict (first form))
+          (fill-in dict (rest form)))))
+
+
 (defn evaluator
   "Instantiate the skeleton with the binding."
-  [binding skeleton])
+  [binding skeleton]
+  (cond
+    (atom? skeleton) skeleton
+    (empty? skeleton) skeleton
+
+    (placeholder? skeleton)
+    (let [form (placeholder-form skeleton)]
+      (eval (fill-in binding form)))
+
+    :else ; should be a list
+    (cons (evaluator binding (first skeleton))
+          (evaluator binding (rest skeleton)))))
 
 
-(defn simplify [expr]
-  expr)
+(declare simplify-exp)
+
+(defn number-equal [a b]
+  (if (= a b) 1 0))
+
+(def the-rules
+  {'(:* 0 (? x)) 0
+   '(:* (? x) 0) 0
+   '(:* (? x) 1) '(! 'x)
+   '(:* 1 (? x)) '(! 'x)
+   '(:* (?c n) (?c m)) '(! (* n m))
+
+   '(:+ 0 (? x)) '(! 'x)
+   '(:+ (? x) 0) '(! 'x)
+   '(:+ (?c n) (?c m)) '(! (+ n m))
+
+   '(:div 0 (? x)) 0
+   '(:div (? x) 1) '(! 'x)
+   '(:div (?c n) (?c m)) '(! (quot n m))
+
+   '(:mod 0 (? x)) 0
+   '(:mod (?c n) (?c m)) '(! (mod n m))
+   '(:mod (:+ (?v x) 16) 26) '(:+ (! x) 16)
+
+   '(:= (?c n) (?v x)) '(! (if (> n 9) 0 (quote (= n x))))
+   '(:= (?c n) (?c m)) '(! (number-equal n m))
+
+   '(:+ (:+ (?v x) (?c n)) (?c m)) '(:+ (! x) (! (+ n m)))
+   '(:= (:+ (?v x) 28) (?v y)) 0
+   '(:= (:+ (?v x) 24) (?v y)) 0
+   '(:mod (:+ (:* (? x) 26) (? y)) 26) '(! 'y)
+   '(:div (:+ (:* (? x) 26) (? y)) 26) '(! 'x)})
+
+   ; ; '(:* (:+ (?v x) (?c n)) (?c m)) '(:+ (:* (! m) (! x)) (! (* n m)))
+
+   ;general distributive
+   ; '(:* (:+ (? x) (? y)) (? z)) '(:+ (:* (! z) (! x)) (:* (! z) (! y)))})
+
+   ; ; '(:* (:+ (?v x) (?c n)) (?c m)) '(:+ (:* (! 'x) (! m)) (! (* n m)))})
+
+(defn try-rules [exp]
+  (letfn [(scan [rules]
+            (if (empty? rules) exp
+                (let [[rule skeleton] (first rules)
+                      dict (matcher rule exp)]
+                  (if (nil? dict)
+                   (scan (rest rules))
+                   (simplify-exp (evaluator dict skeleton))))))]
+     (scan the-rules)))
+
+(defn simplify-exp [exp]
+  (cond
+    (nil? exp) nil
+    (atom? exp) exp
+    (empty? exp) exp
+
+    :else
+    (try-rules (if (list? exp)
+                 (cons (simplify-exp (first exp))
+                       (simplify-exp (rest exp)))
+                 exp))))
+
+(defn simplify [exp]
+  (simplify-exp exp))
+
 
 (defn simplify-all [state]
   (-> state
@@ -172,7 +261,7 @@ mod w 2"])
 
 (defn step [state inst]
   (let [[op a b] inst]
-    (simplify
+    (simplify-all
      (case op
       :inp (inp state a)
       :mul (mul state a b)
@@ -180,8 +269,6 @@ mod w 2"])
       :mod (-mod state a b)
       :div (div state a b)
       :eql (eql state a b)))))
-
-
 
 (comment
   (defn base-26 [vals]
@@ -204,8 +291,8 @@ mod w 2"])
 
 (let [state state
       prog data
-      n 5 ; 44
+      n 100, ; 44
       prog (take n prog)]
   (println n (last prog))
-  (reduce step state prog))
-;; => (:+ (:* 26 (:+ (:* 26 (:+ (:* 26 (:+ (:* 26 (:+ (:* 26 (:+ (:* 26 (:+ :a 16)) (:+ :b 11))) (:+ :e 12))) (:+ :f 2))) (:+ :h 4))) (:+ :i 12))) (:+ :n 15))
+  (:z (reduce step state prog)))
+;; => (:+ (:* (:div (:+ (:* (:+ (:* (:+ :a 16) 26) (:+ :b 11)) (:+ (:* 25 (:= (:= (:+ :c 7) :d) 0)) 1)) (:* (:+ :d 12) (:= (:= (:+ :c 7) :d) 0))) 26) (:+ (:* 25 (:= (:= (:+ (:mod (:+ (:* (:+ (:* (:+ :a 16) 26) (:+ :b 11)) (:+ (:* 25 (:= (:= (:+ :c 7) :d) 0)) 1)) (:* (:+ :d 12) (:= (:= (:+ :c 7) :d) 0))) 26) -3) :e) 0)) 1)) (:* (:+ :e 12) (:= (:= (:+ (:mod (:+ (:* (:+ (:* (:+ :a 16) 26) (:+ :b 11)) (:+ (:* 25 (:= (:= (:+ :c 7) :d) 0)) 1)) (:* (:+ :d 12) (:= (:= (:+ :c 7) :d) 0))) 26) -3) :e) 0)))
