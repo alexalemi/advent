@@ -12,12 +12,11 @@ type Machine = object
   memory: array[HIGH, Word]
   registers: array[HIGH..HIGHREGISTER, Word]
   stack: seq[Word]
-  loc: Word
   clock: uint64
   terminated: bool
 
 proc `$`(x: Machine): string =
-  "VM(loc=" & $x.loc & ", clock=" & $x.clock & ", terminated=" & $x.terminated & ", registers=" & $x.registers & ", stack=" & $x.stack & ")"
+  "VM(clock=" & $x.clock & ", terminated=" & $x.terminated & ", registers=" & $x.registers & ", stack=" & $x.stack & ")"
 
 proc loadData(machine: var Machine, data: seq[int], start = 0'u16) =
   for i, x in data:
@@ -28,22 +27,16 @@ proc loadFile(machine: var Machine, flname: string, start = 0'u16): int =
   defer: stream.close()
   return stream.readData(machine.memory.addr, HIGH)
 
-func readValAt(vm: Machine, loc: Word): Word =
+func value(vm: Machine, loc: Word): Word =
   var value = vm.memory[loc]
   if value >= HIGH:
     vm.registers[value]
   else:
     return value
 
-func readVal(vm: Machine): Word =
-  vm.readValAt(vm.loc)
-
-func raw(vm: Machine, offset = 0'u16): Word =
-  vm.memory[vm.loc + offset]
-
 func read(vm: Machine, loc: Word): Word =
   if loc >= HIGH:
-    return vm.memory[vm.registers[loc]]
+    return vm.registers[loc]
   else:
     return vm.memory[loc]
 
@@ -53,179 +46,141 @@ proc write(vm: var Machine, loc: Word, val: Word) =
   else:
     vm.memory[loc] = val
 
-proc inc(vm: var Machine) =
-  inc vm.loc
-
-proc dec(vm: var Machine) =
-  dec vm.loc
-
-proc jmp(vm: var Machine, to: Word) =
-  vm.loc = to
-  dec vm  # to correct for end of loop increment.
-
 proc set(vm: var Machine, register: Word, val: Word) =
   vm.registers[register] = val
 
 proc push(vm: var Machine, val: Word) =
-  # debug("push " & $val)
   vm.stack.add val
 
 proc pop(vm: var Machine): Word =
   assert(vm.stack.len > 0, "ERROR! tried to pop from empty stack!")
   result = vm.stack.pop
-  # debug("pop " & $result)
 
-proc tic(vm: var Machine) =
-  let op = vm.readVal
+proc tic(vm: var Machine, address: Word): Word =
+  inc vm.clock
+  let op = vm.read(address)
   case op:
     of 0: # halt
       vm.terminated = true
-      dec vm
+      return address
     of 1: # set 1 a b - set register <a> to the value of <b>
-      inc vm
-      let a = vm.raw
-      inc vm
-      let b = vm.readVal
+      let a = vm.read(address+1)
+      let b = vm.value(address+2)
       vm.write(a, b)
+      return address + 3
     of 2: # push: 2 a - push <a> onto the stack
-      inc vm
-      let a = vm.readVal
+      let a = vm.value(address + 1)
       vm.push(a)
+      return address + 2
     of 3: # pop: 3 a - remove the top element from the stack and write it into <a>; empty stack = error
-      inc vm
-      let a = vm.raw
+      let a = vm.read(address + 1)
       let val = vm.pop
       vm.write(a, val)
+      return address + 2
     of 4: # eq: 4 a b c  - set <a> to 1 if <b> is equal to <c>; set it to 0 otherwise
-      inc vm
-      let a = vm.raw
-      inc vm
-      let b = vm.readVal
-      inc vm
-      let c = vm.readVal
+      let a = vm.read(address + 1)
+      let b = vm.value(address + 2)
+      let c = vm.value(address + 3)
       vm.write(a, if b == c: 1 else: 0)
+      return address + 4
     of 5: # gt: 5 a b c - set <a> to 1 if <b> is greater than <c>; set it to 0 otherwise
-      inc vm
-      let a = vm.raw
-      inc vm
-      let b = vm.readVal
-      inc vm
-      let c = vm.readVal
+      let a = vm.read(address + 1)
+      let b = vm.value(address + 2)
+      let c = vm.value(address + 3)
       vm.write(a, if b > c: 1 else: 0)
+      return address + 4
     of 6: # jmp 6 a - jump to <a>
-      inc vm
-      let a = vm.readVal
-      vm.jmp(a)
+      let a = vm.value(address + 1)
+      return a
     of 7: # jt 7 a b - if a is nonzero jump to b
-      inc vm
-      let a = vm.readVal
-      inc vm
-      let b = vm.readVal
+      let a = vm.value(address + 1)
+      let b = vm.value(address + 2)
       if a != 0:
-        vm.jmp(b)
+        return b
+      return address + 3
     of 8: # jf: 8 a b  - if <a> is zero, jump to <b>
-      inc vm
-      let a = vm.readVal
-      inc vm
-      let b = vm.readVal
+      let a = vm.value(address + 1)
+      let b = vm.value(address + 2)
       if a == 0:
-        vm.jmp(b)
+        return b
+      return address + 3
     of 9: # add: 9 a b c - assign into <a> the sum of <b> and <c> (modulo 32768)
-      inc vm
-      let a = vm.raw
-      inc vm
-      let b = vm.readVal
-      inc vm
-      let c = vm.readVal
+      let a = vm.read(address + 1)
+      let b = vm.value(address + 2)
+      let c = vm.value(address + 3)
       vm.write(a, Word((int(b) + int(c)) mod HIGH))
+      return address + 4
     of 10: # mult: 10 a b c - store into <a> the product of <b> and <c> (modulo 32768)
-      inc vm
-      let a = vm.raw
-      inc vm
-      let b = vm.readVal
-      inc vm
-      let c = vm.readVal
+      let a = vm.read(address + 1)
+      let b = vm.value(address + 2)
+      let c = vm.value(address + 3)
       vm.write(a, Word((int(b) * int(c)) mod HIGH))
+      return address + 4 
     of 11: # mod: 11 a b c - store into <a> the remainder of <b> divided by <c>
-      inc vm
-      let a = vm.raw
-      inc vm
-      let b = vm.readVal
-      inc vm
-      let c = vm.readVal
+      let a = vm.read(address + 1)
+      let b = vm.value(address + 2)
+      let c = vm.value(address + 3)
       vm.write(a, (b mod c))
+      return address + 4
     of 12: # and: 12 a b c - stores into <a> the bitwise and of <b> and <c>
-      inc vm
-      let a = vm.raw
-      inc vm
-      let b = vm.readVal
-      inc vm
-      let c = vm.readVal
+      let a = vm.read(address + 1)
+      let b = vm.value(address + 2)
+      let c = vm.value(address + 3)
       vm.write(a, (b and c))
+      return address + 4
     of 13: # or: 13 a b c - stores into <a> the bitwise or of <b> and <c>
-      inc vm
-      let a = vm.raw
-      inc vm
-      let b = vm.readVal
-      inc vm
-      let c = vm.readVal
+      let a = vm.read(address + 1)
+      let b = vm.value(address + 2)
+      let c = vm.value(address + 3)
       vm.write(a, (b or c))
+      return address + 4
     of 14: # not: 14 a b - stores 15-bit bitwise inverse of <b> in <a>
-      inc vm
-      let a = vm.raw
-      inc vm
-      var b = vm.readVal
+      let a = vm.read(address + 1)
+      var b = vm.value(address + 2)
       let c = (not b) and (HIGH - 1)
       vm.write(a, c)
+      return address + 3
     of 15: # rmem: 15 a b - read memory at address <b> and write it to <a>
-      inc vm
-      let a = vm.raw
-      inc vm
-      let b = vm.raw
+      let a = vm.read(address + 1)
+      let b = vm.value(address + 2)
       let val = vm.read(b)
-      debug("rmem @" & $(vm.loc-2) & " clock=" & $vm.clock & " a=" & $a & " b=" & $b & " val=" & $val)
       vm.write(a, val)
+      return address + 3
     of 16: # wmem: 16 a b - write the value from <b> into memory at address <a>
-      inc vm
-      let a = vm.readVal
-      inc vm
-      let b = vm.readVal
+      let a = vm.value(address + 1)
+      let b = vm.value(address + 2)
       vm.write(a, b)
+      return address + 3
     of 17: # call: 17 a - write the address of the next instruction to the stack and jump to <a>
-      vm.push((vm.loc + 2) mod HIGH)
-      inc vm
-      let a = vm.readVal
-      if not (a in @[ 1531'u16, 2125'u16, 1528'u16 ]):
-        debug("Calling " & $a & " from " & $(vm.loc-1))
-      vm.jmp(a)
+      vm.push((address + 2) mod HIGH)
+      let a = vm.value(address + 1)
+      return a
     of 18: # ret: 18 - remove the top element from the stack and jump to it; empty stack = halt
       if vm.stack.len == 0:
         vm.terminated = true
-        dec vm
+        return address
       else:
         let a = vm.pop
-        vm.jmp(a)
+        return a
     of 19: # out a - write the ascii character represented by a to stdout
-      inc vm
-      var code = vm.readVal
+      var code = vm.value(address + 1)
       assert(code < 128, "Invalid ascii code <" & $code &  ">=" & $vm.read(code) & " @" & $vm)
-      # debug("out a=" & $code & " vm=" & $vm)
       stdout.write(char(code))
+      return address + 2
     of 20: # in: 20 a - read a character from the terminal and write its ascii code to <a>; it can be assumed that once input starts, it will continue until a newline is encountered; this means that you can safely read whole lines from the keyboard and trust that they will be fully read
-      inc vm
-      let a = vm.raw
+      let a = vm.read(address + 1)
       let input = readLine(stdin)
       vm.write(a, Word(ord(input[0])))
+      return address + 2
     of 21: # noop
-      discard  # do nothing
+      return address + 1
     else:
       error("Don't understand code: " & $op & "!")
-  inc vm.loc
-  inc vm.clock
 
 proc run(vm: var Machine) =
-  while (not vm.terminated) and (vm.clock < 299_438):
-    vm.tic
+  var address: Word = 0
+  while (not vm.terminated):
+    address = vm.tic(address)
 
 
 when isMainModule:
