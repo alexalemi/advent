@@ -1,7 +1,37 @@
 import time
 from utils import data18
+from typing import NamedTuple, Tuple, Mapping, Set, Sequence
 
 data = data18(15)
+
+Loc = Tuple[int, int]
+
+AttackPower = 3
+
+class Character(NamedTuple):
+    loc: Loc
+    hp: int = 200
+
+class State(NamedTuple):
+    board: Set[Loc]
+    goblins: Sequence[Character]
+    elves: Sequence[Character]
+
+def process(data):
+    walls = set()
+    goblins = []
+    elves = []
+    for row, line in enumerate(data):
+        for col, c in enumerate(line):
+            if c == '#':
+                walls.add((row, col))
+            elif c == 'G':
+                goblins.append((row, col))
+            elif c == 'E':
+                elves.append((row, col))
+    return walls, goblins, elves
+
+
 
 tests = []
 
