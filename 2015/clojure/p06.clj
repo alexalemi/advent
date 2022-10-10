@@ -1,7 +1,7 @@
 (ns p06
   [:require [clojure.string :as str]])
 
-(def data-string (slurp "../input/06.txt"))
+(defonce data-string (slurp "../input/06.txt"))
 
 (def pattern #"(turn on|turn off|toggle) (\d+),(\d+) through (\d+),(\d+)")
 
@@ -55,7 +55,7 @@
               [((rules kind) (if (contains? state [x y]) :on :off)) [x y]]))))
           
 
-(def ans1 (count (reduce step #{} instructions)))
+(defonce ans1 (count (reduce step #{} instructions)))
 (println "Answer1: " ans1)
 
 (def rules2
@@ -75,5 +75,7 @@
                   y (range y1 (inc y2))] 
               [[x y] ((rules2 kind) (get state [x y] 0))])))) 
 
-(def ans2 (reduce + (vals (reduce step2 {} instructions))))
+(defonce ans2 (reduce + (vals (reduce step2 {} instructions))))
+
+
 (println "Answer2: " ans2)

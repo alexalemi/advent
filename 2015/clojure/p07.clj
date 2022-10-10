@@ -64,6 +64,9 @@ NOT y -> i")
 
 (def program (vec (reverse (map parse-line (str/split-lines data-string)))))
 
+(comment
+  (+ 1 2))
+
 (defn value [state op]
   (let [[op a b] op
         aval (get state a)
@@ -90,6 +93,5 @@ NOT y -> i")
           (vec (cons inst (pop insts))))))))
 
 
-;(step {} program :a)
-(+ 1 2)
+
 
