@@ -1,7 +1,7 @@
 (ns p08
   (:require [clojure.string :as str]))
 
-(defonce data-string (slurp "../input/08.txt"))
+(defonce data-string (str/trim (slurp "../input/08.txt")))
 
 (def test-data
   "\"\"\n\"abc\"\n\"aaa\\\"aaa\"\n\"\\x27\"")
