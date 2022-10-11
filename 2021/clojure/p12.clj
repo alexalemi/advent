@@ -24,7 +24,7 @@ he-DX
 fs-he
 start-DX
 pj-DX
-end-zg
+end-zj
 zg-sl
 zg-pj
 pj-he
