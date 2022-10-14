@@ -37,14 +37,11 @@ rotate column x=1 by 1")
   (into board (for [x (range width) y (range height)] [x y])))
 
 
-(defn in-row [row [x y]] (= y row))
-(defn in-col [col [x y]] (= x col))
+(defn in-row [row [_ y]] (= y row))
+(defn in-col [col [x _]] (= x col))
 
 (defn cycle-row [amount width [x y]] [(mod (+ x amount) width) y])
 (defn cycle-col [amount height [x y]] [x (mod (+ y amount) height)])
-
-(comment
-  (let [board #{[0 0] [1 0] [2 0] [0 1] [1 1] [2 1]} {row :row amount :amount} {:type :rotate-row :row 1 :amount 3} {height :height width :width} {:height 2 :width 7}]))
 
 (defn rotate-row [board {row :row amount :amount} {width :width}]
     (let [row (filter (partial in-row row) board)
@@ -75,5 +72,11 @@ rotate column x=1 by 1")
        :board
        count))
 
-(def ans1 (count (:board (round data))))
+(defonce ans1 (count (:board (round data))))
 (println "Answer1" ans1)
+
+(defn print [data]
+  (let [{width :width height :height board :board} data]
+    (println (str/join "\n" (for [y (range height)] (apply str (for [x (range width)] (if (board [x y]) "#" " "))))))))
+
+(print (round data))

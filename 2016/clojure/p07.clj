@@ -52,7 +52,7 @@ ioxxoj[asdfgh]zxcvbn")
 (defn aba? [[a b c]]
   (and (= a c) (not= a b)))
 
-(defn aba-to-bab [[a b a]]
+(defn aba-to-bab [[_ b a]]
   (list b a b))
 
 (defn all-triplets [x]
