@@ -1,0 +1,37 @@
+//import { getData } from "./deps.ts";
+// const data = await getData(1, 2020).catch(console.error) || "";
+import { file } from "bun";
+
+const data = await file("../input/01.txt").text();
+
+const nums: number[] = data.split("\n").map(parseFloat);
+
+function answer1(nums: number[]): number {
+  for (const x of nums) {
+    for (const y of nums) {
+      if (x + y == 2020) {
+        return x * y;
+      }
+    }
+  }
+  return 0;
+}
+
+const ans1 = answer1(nums);
+console.log("Answer1:", ans1);
+
+function answer2(nums: number[]): number {
+  for (const x of nums) {
+    for (const y of nums) {
+      for (const z of nums) {
+        if (2020 == x + y + z) {
+          return x * y * z;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+const ans2 = answer2(nums);
+console.log("Answer2:", ans2);
