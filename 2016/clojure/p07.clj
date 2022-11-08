@@ -1,11 +1,11 @@
 (ns p07
- (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]))
 
 (def data-string (slurp "../input/07.txt")) 
 (def test-string "abba[mnop]qrst
-abcd[bddb]xyyx
-aaaa[qwer]tyui
-ioxxoj[asdfgh]zxcvbn")
+                 abcd[bddb]xyyx
+                 aaaa[qwer]tyui
+                 ioxxoj[asdfgh]zxcvbn")
 
 
 (defn remove-brackets 
@@ -41,11 +41,31 @@ ioxxoj[asdfgh]zxcvbn")
 
 (defn supports-tls? [s]
   (let [[ip hypernets] (remove-brackets s)]
-   ;(and (contains-abba? ip))
-   (and (some contains-abba? ip)
-        (not-any? contains-abba? hypernets))))
+    ;(and (contains-abba? ip))
+    (and (some contains-abba? ip)
+         (not-any? contains-abba? hypernets))))
 
-(defonce ans1 (count (filter true? (map supports-tls? (str/split-lines data-string)))))
+;(defonce ans1 (count (filter true? (map supports-tls? (str/split-lines data-string)))))
+
+(defn bool-to-int [x]
+  (if x 1 0))
+
+(comment
+  (transduce
+    (comp
+      (map supports-tls?)
+      (filter true?)
+      (map bool-to-int))
+    +
+    (str/split-lines data-string)))
+
+(defonce ans1 (transduce
+                (comp
+                  (map supports-tls?)
+                  (filter true?)
+                  (map bool-to-int))
+                +
+                (str/split-lines data-string)))
 (println "Answer1:" ans1)
 
 
@@ -56,8 +76,8 @@ ioxxoj[asdfgh]zxcvbn")
   (list b a b))
 
 (defn all-triplets [x]
-    (apply concat (map #(partition 3 1 %) x))) 
-  
+  (apply concat (map #(partition 3 1 %) x))) 
+
 
 (defn supports-ssl? [s]
   (let [[ips hypernets] (remove-brackets s)
@@ -65,7 +85,6 @@ ioxxoj[asdfgh]zxcvbn")
         babs (into #{} (filter aba? (all-triplets hypernets)))]
     (some babs (map aba-to-bab abas))))
 
-      
 (comment
   (map (comp some? supports-ssl?) 
        ["aba[bab]xyz"
@@ -73,6 +92,28 @@ ioxxoj[asdfgh]zxcvbn")
         "aaa[kek]eke"
         "zazbz[bzb]cdb"]))
 
-(defonce ans2 (count (filter some? (map supports-ssl? (str/split-lines data-string)))))
+
+
+(comment  
+  (time 
+    (transduce
+      (comp
+        (map supports-ssl?)
+        (filter some?)
+        (map bool-to-int))
+      +
+      (str/split-lines data-string)))
+
+  (time (count (filter some? (map supports-ssl? (str/split-lines data-string))))))
+
+
+;(defonce ans2 (count (filter some? (map supports-ssl? (str/split-lines data-string)))))
+(defonce ans2 (transduce
+                (comp
+                  (map supports-ssl?)
+                  (filter some?)
+                  (map bool-to-int))
+                +
+                (str/split-lines data-string)))
 (println "Answer2:" ans2)
 
