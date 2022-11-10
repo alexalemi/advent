@@ -4,6 +4,14 @@
             [clojure.data.priority-map :refer [priority-map]]
             [clojure.test :as t]))
 
+(import 'java.security.MessageDigest
+        'java.math.BigInteger)
+
+(defn md5 [^String s]
+  (let [algorithm (MessageDigest/getInstance "MD5")
+        raw (.digest algorithm (.getBytes s))]
+    (format "%032x" (BigInteger. 1 raw))))
+
 (def QUEUE clojure.lang.PersistentQueue/EMPTY)
 
 (deftype Bag [^clojure.lang.IPersistentMap m
