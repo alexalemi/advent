@@ -84,7 +84,7 @@
 (defn solution [state]
     (util/a-star
      state ;; start
-     (make-goal state) ;; goal
+     #(= % (make-goal state)) ;; goal
      (constantly (constantly 1)) ;; cost
      neighbors ;; neighbors
      (constantly 0))) ;; heuristic

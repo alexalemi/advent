@@ -76,7 +76,7 @@
 
 (defn a-star
   "General A-star algorithm."
-  [start goal cost neighbors heuristic]
+  [start goal? cost neighbors heuristic]
   (loop [frontier (priority-map start (heuristic start))
          current :start
          came-from (transient {})
@@ -86,7 +86,7 @@
       ;; (println "current=" current " frontier=" frontier " neighs=" neighs " neigh=" neigh " best-score=" best-score " came-from=" came-from)
       (cond
         (and (empty? frontier) (empty? neighs)) :failure
-        (= current goal) (reconstruct-path (persistent! came-from) current)
+        (goal? current) (reconstruct-path (persistent! came-from) current)
         (empty? neighs)
         (let [[next _] (peek frontier)]
           (recur
@@ -120,7 +120,7 @@
 (comment
   (a-star
    :a
-   :d
+   #(= % :d)
    {:a {:b 1 :f 10}
     :b {:a 1 :c 1 :e 10}
     :c {:b 1 :d 1}

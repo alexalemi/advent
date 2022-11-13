@@ -60,7 +60,7 @@
   (count
    (util/a-star
     [1 1] ;; start
-    goal ;; goal
+    #(= % goal) ;; goal
     (constantly (constantly 1)) ;; cost
     (partial neighbors (partial open? favorite)) ;; neighbors
     (partial manhatten goal)))))
