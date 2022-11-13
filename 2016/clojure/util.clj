@@ -12,7 +12,14 @@
         raw (.digest algorithm (.getBytes s))]
     (format "%032x" (BigInteger. 1 raw))))
 
+(defn fixed-point [seq]
+  (reduce #(if (= %1 %2) (reduced %1) %2) seq))
+
 (def QUEUE clojure.lang.PersistentQueue/EMPTY)
+
+(defn queue
+ ([] (QUEUE))
+ ([coll] (reduce conj QUEUE coll)))
 
 (deftype Bag [^clojure.lang.IPersistentMap m
               ^long n]

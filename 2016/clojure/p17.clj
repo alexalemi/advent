@@ -1,6 +1,5 @@
 (ns p17
-  (:require [util]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [util :as util]))
 
 (def data-string (str/trim (slurp "../input/17.txt")))
