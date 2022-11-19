@@ -8,6 +8,9 @@ O => HH
 
 HOH")
 
+(def UPPER (set "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+(def LOWER (set "abcdefghijklmnopqrstuvwxyz"))
+
 (defn split-chems
   "Split a long string into a vector of chemical symbols"
   [s]
@@ -32,8 +35,6 @@ HOH")
               (map process-line)
               (into []))})
 
-(def UPPER (set "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-(def LOWER (set "abcdefghijklmnopqrstuvwxyz"))
 
 
 
@@ -77,6 +78,9 @@ e")
 
 (def test-data-2 (process test-string-2))
 
+(comment
+  test-data-2)
+
 (defn increment-time [data]
   (update data :time (fnil inc 0)))
 
@@ -112,3 +116,61 @@ e")
 (comment
   (defonce ans2 (hunt (ready data) (:seed data)))
   (println "Answer2:" ans2))
+
+
+; # Part 2 part deux
+; Let's start this over, this time let's just do a greedy string subsitution thing.
+
+(defn process-line-simple [line]
+    (let [[frm to] (str/split line #" => ")]
+      [to frm]))
+
+(defn process-simple [s]
+  {:seed (last (str/split-lines s))
+   :rules (->> (str/split-lines s)
+              (drop-last 2)
+              (map process-line-simple)
+              (into [])
+              (sort-by (comp count split-chems first) >))})
+
+
+
+(def state
+  (-> (process-simple data-string)
+      (assoc :alive true)
+      (assoc :step 0)))
+
+
+(defn round [state]
+  (let [{:keys [rules seed]} state]
+   (if-let [new (first (drop-while #(= seed %) (map #(str/replace-first seed (re-pattern (first %)) (second %)) rules)))]
+     (-> state
+         (assoc :seed new)
+         (update :step inc))
+     (assoc state :alive false))))
+
+(defn greedy-round [state]
+  (let [{:keys [rules seed]} state
+        cands (filter #(and % (not= seed %)) (map #(str/replace-first seed (re-pattern (first %)) (second %)) rules))]
+    (if (seq cands)
+      (-> state
+          (assoc :seed (apply min-key count cands))
+          (update :step inc))
+      (assoc state :alive false))))
+
+
+(def ans2 (:step (first (drop-while :alive (iterate greedy-round state)))))
+(println "Answer2:" ans2)
+
+(comment
+  state
+
+  (let [state (assoc state :alive true)]
+    (first (drop-while :alive (iterate greedy-round state))))
+
+  (let [state {:rules (sort-by (comp count first) > [["HH" "O"] ["OH" "H"] ["HO" "H"] ["H" "e"] ["O" "e"]])
+               :seed "HOHOHO"
+               :alive true
+               :step 0}]
+    (first (drop-while :alive (iterate greedy-round state)))))
+    ; (greedy-round state)))
