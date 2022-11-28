@@ -21,8 +21,8 @@ logging.basicConfig(level=logging.INFO)
 EAST_COAST = pytz.timezone("America/New_York")
 TODAY = datetime.datetime.now().astimezone(EAST_COAST)
 YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021]
-DEFAULT_TOKEN = open(Path(__file__).resolve().parent / "token.txt", 'r')
-B_TOKEN = open(Path(__file__).resolve().parent / "tokenb.txt", 'r')
+DEFAULT_TOKEN = open(Path(__file__).resolve().parent / ".token", 'r')
+B_TOKEN = open(Path(__file__).resolve().parent / ".tokenb", 'r')
 
 REPLACED_NAMES = {"pleonasticperson": "Colin Clement"}
 IGNORED_NAMES = {"pleonasticperson"}

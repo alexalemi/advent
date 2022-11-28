@@ -3,6 +3,8 @@ bin/
 nimcache/
 __pycache__
 .cpcache
+.token
+.tokenb
 
 2020/hy/advent
 
