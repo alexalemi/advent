@@ -1,0 +1,3 @@
+I need to fix old calls to `a-star` to make goal a function.
+
+Use `a-star` to complete current day.
