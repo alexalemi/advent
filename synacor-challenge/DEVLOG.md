@@ -1,5 +1,35 @@
 # DEVLOG
 
+## 2022-11-03
+
+I decided I might just as well run all of the different values that we could
+place in the 8th register, so I created a little bash script that does that and
+executed it with:
+
+		bash runner.sh | tqdm --total 32765
+		
+So that I have a progress bar.  The script is running the virtual machine with
+each of the possible values less than 32765 in the 8th register and piping the
+output to `/tmp/synacor/$i.txt` so that I could parse those files after the
+fact and find the good one.
+
+The progress bar says it should take half an hour.
+
+I could use something like this:
+
+		md5sum * | datamash -W -s -g 1 count 2 -f
+		
+or:
+
+		md5sum * | cut -f1 -d" " | sort | uniq
+		
+to see all of the unique hashes of the output, so far, about half way through,
+they are all the same.
+
+So, I ran through all of the samples and never got anywhere, they all return
+the same thing which is that they get shutdown when they reach the self-check.
+I'm probably gonna have to overwrite the selfcheck.
+
 ## 2021-12-23
 
 Decided to start over and try to implement the VM in python this time.
