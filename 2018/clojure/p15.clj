@@ -1,21 +1,33 @@
 (ns p15
   (:require [clojure.string :as str]
-            [nextjournal.clerk :as clerk]
-            [criterium.core :as crit]))
+            [nextjournal.clerk :as clerk]))
 
-;; # Day 15
+;; # Advent of Code 2018 - Day 15
+;; [puzzle](https://adventofcode.com/2018/day/15)
 ;; For this day we essentially have to implement a game.
+;; You can see the original page for all of the details, but the
+;; short version is that there a board with goblins and elves on it,
+;; and each turn, one a time the units move towards one another and then
+;; start attacking.  The last species standing wins.
 
 
 ;; ## Data processing
+;; The first thing we'll do is load in the raw input file.
 (def data-string (slurp "../input/15.txt"))
 
-(defn third [x] (nth x 3))
-
+;; We'll save some constants from the problem description for our
+;; default attack strength and hp.
 (def ATTACK 3)
 (def HP 200)
 
-(defn process [s]
+;; We'll represent the state of the game with a large map, with a `walls` key
+;; set to a set of locations that have walls, and then a `goblins` and `elves` map
+;; mapping locations to the health of the creature at that location.
+;; Finally we'll store the `round` that we are on, as well as the `goblin` and `elf` attack power (for use later.)
+
+(defn process
+  "Convert a string into a board representation."
+  [s]
   (let [pixels (into {} (for [[y line] (map-indexed vector (str/split-lines s))
                               [x c] (map-indexed vector line)]
                            [[x y] c]))]
@@ -25,32 +37,43 @@
        (update-keys {\# :walls \G :goblins \E :elves})
        (update :goblins #(into {} (for [loc %] [loc HP])))
        (update :elves #(into {} (for [loc %] [loc HP])))
-       (assoc :round 0))))
+       (assoc :round 0)
+       (assoc :goblin-attack ATTACK)
+       (assoc :elf-attack ATTACK))))
 
 (def data (process data-string))
-
 
 ;; Now we've managed to turn the ascii input into a map of sets of the locations
 ;; that are populated.
 
 ;; ## Visualization
-;; Let's see if we can build a nice vizualization thing.
+;; Let's see if we can build a nice vizualization thing in clerk for these board states.
 
 (defn maximum [vals] (reduce max vals))
 
-(defn max-size [data]
-    (->> (:walls data)
-        ((juxt #(maximum (map first %))
-            #(maximum (map second %))))))
+(defn max-size
+  "Get the maximum dimensions of a game board."
+  [data]
+  (->> (:walls data)
+      ((juxt #(maximum (map first %))
+          #(maximum (map second %))))))
 
-(defn life [x]
+(defn life
+  "Used to set the opacity of a cell."
+  [x]
   (cond
     (= x 200) 1.0
     (= x 0) 0.0
     :else
     (+ 0.3 (* 0.3 (/ x 200)))))
 
-(defn render-spot [data [x y]]
+;; We'll try to represent each board location as a little square,
+;; colored according to whether its filled or empty, with a little
+;; indication of the health (both in terms of its opacity as well as written).
+
+(defn render-spot
+  "Render a single square."
+  [data [x y]]
   (let [{:keys [walls goblins elves]} data]
     [:div.inline-block
      {:style {:width 16 :height 16
@@ -81,6 +104,8 @@
               (for [y (range (inc Y))]
                (render-spot data [x y])))))
        [:div "rounds: " (:round data) (when (:finished data) (str " score:" (score data)))]]))))
+
+;; Our final rendering of our puzzle input...
 
 (render data)
 
@@ -131,9 +156,55 @@
         (recur prev)
         x))))
 
-(comment
-  (let [data data]
-    ((juxt (comp keys :goblins) (comp keys :elves)) data)))
+(defn where-to
+  "Determine which square we should move to."
+  [loc goal? valid?]
+  (loop [frontier (conj QUEUE loc)
+         seen (transient #{loc})
+         came-from (transient {})
+         buffer nil]
+    (if-let [x (peek frontier)]
+      (if
+        ;; If we reached a goal, quit out
+        (goal? x) x
+        ;; Otherwise, we need to append to the frontier.
+        (let [neighs (filter (every-pred valid? (complement seen)) (neighbors x))]
+          (recur
+            (pop frontier)
+            (reduce conj! seen neighs)
+            (reduce (fn [m k] (if (m k) m (assoc! m k x)))
+                    came-from neighs)
+            (into buffer neighs))))
+      ;; Our frontier is empty, check the buffer
+      (if (empty? buffer)
+        ;; If we can't find a path, don't move
+        loc
+        ;; refill the buffer, in reading-order
+        (recur
+         (into frontier (sort reading-order buffer))
+         seen came-from nil)))))
+
+
+(defn shortest-path
+  "Determine the best, first-move"
+  [loc target valid?]
+  (if (= loc target) loc
+   (loop [frontier (conj QUEUE loc)
+          seen (transient #{loc})
+          came-from (transient {})]
+     (if-let [x (peek frontier)]
+       (if
+         ;; If we reached a goal, quit out
+         (= target x) (first-move (persistent! came-from) x loc)
+         ;; Otherwise, we need to append to the frontier.
+         (let [neighs (filter (every-pred valid? (complement seen)) (neighbors x))]
+           (recur
+             (into (pop frontier) neighs)
+             (reduce conj! seen neighs)
+             (reduce (fn [m k] (if (m k) m (assoc! m k x)))
+                     came-from neighs))))
+       ;; If we can't reach the spot
+       loc))))
 
 (defn best-move
   "Determine the best first move."
@@ -142,37 +213,19 @@
         valid? (complement invalid?)
         goal? (into #{} (comp (mapcat (comp neighbors first)) (filter valid?)) targets)]
     (if (empty? goal?) loc ;; short-circuit if there are no places to go.
-     (loop [frontier (conj QUEUE loc)
-            seen (transient #{loc})
-            came-from (transient {})
-            buffer nil]
-       (if-let [x (peek frontier)]
-         (if
-           ;; If we reached a goal, quit out
-           (goal? x) (first-move (persistent! came-from) x loc)
-           ;; Otherwise, we need to append to the frontier.
-           (let [neighs (filter (every-pred valid? (complement seen)) (neighbors x))]
-             (recur
-               (pop frontier)
-               (reduce conj! seen neighs)
-               (reduce (fn [m k] (if (m k) m (assoc! m k x)))
-                       came-from neighs)
-               (into buffer neighs))))
-         ;; Our frontier is empty, check the buffer
-         (if (empty? buffer)
-           ;; If we can't find a path, don't move
-           loc
-           (recur
-            (into frontier (sort reading-order buffer))
-            seen came-from nil)))))))
+      (let [target (where-to loc goal? valid?)]
+        (shortest-path loc target valid?)))))
 
 
-(defn manhattan [[^int x1 ^int y1] [^int x2 ^int y2]]
+(defn manhattan
+  "The taxi-cab metric."
+  [[^int x1 ^int y1] [^int x2 ^int y2]]
   (+ (abs (- x2 x1))
      (abs (- y2 y1))))
 
-(defn adjacent? [a b]
-  (= (manhattan a b) 1))
+(defn adjacent?
+  "Are two squares touching?"
+  [a b] (= (manhattan a b) 1))
 
 (defn move
   "Enact a move for the specified unit."
@@ -194,7 +247,9 @@
                 [newloc which targets]]))))
 
 
-(defn filter-keys [pred map]
+(defn filter-keys
+  "Utility function to filter a map's keys by a predicate."
+  [pred map]
   (reduce-kv (fn [m k v] (if (pred k) (assoc m k v) m)) nil map))
 
 (defn weakest-reading-order
@@ -212,7 +267,8 @@
      (if-let [in-range (filter-keys neighs targets)]
         (let [[target health] (first (sort weakest-reading-order in-range))
               kind (if (= which :goblins) :elves :goblins)
-              newhealth (- health ATTACK)]
+              attack (if (= which :goblins) (:goblin-attack data) (:elf-attack data))
+              newhealth (- health attack)]
           (if (pos? newhealth)
             (assoc-in data [kind target] newhealth)
             (update data kind dissoc target)))
@@ -229,7 +285,7 @@
       data))
 
 (defn round
-  "Run a single round."
+  "Run a single round. This is the main entry point for the game logic."
   ([data] (round data (assemble-turns data)))
   ([data turns]
    (loop [data data turns turns]
@@ -241,10 +297,14 @@
           (update data :round inc))))))
 
 
-(defn complete [data]
+(defn complete
+  "Run a board until completion."
+  [data]
   (first (drop-while (complement :finished) (iterate round data))))
 
-(defn score [data]
+(defn score
+  "Compute the score of a finalized board."
+  [data]
   (* (:round data)
      (reduce + (concat
                 (vals (:elves data))
@@ -353,71 +413,35 @@
  (assert (= (score result) 18740))
  (render result))
 
-(comment
-  (crit/quick-bench
-    (score (complete (process "#########
-#G......#
-#.E.#...#
-#..##..G#
-#...##..#
-#...#...#
-#.G...G.#
-#.....G.#
-#########")))))
-
 ;; ## Part 1
 
 (def final-state (time (complete data)))
 (render final-state)
 (def ans1 (score final-state))
-(println "Answer1:" ans1)
-; 194028 and 192410 are wrong, too high.
-; 190604 is too low
+#_(println "Answer1:" ans1)
 
+#_(def movie (take-while (complement :finished) (iterate round data)))
+#_(map render movie)
 
-(def movie (take-while (complement :finished) (iterate round data)))
-(map render movie)
-
-;; Right now I have an issue, If there are multiple adjacent target squares
-;; that are the same distance apart, I take the first step which is in reading order
-;; to get there. But I need to instead take the first step towards
-;; the one that comes first in reading order.
+;; ## Part 2
 ;;
-;; I think I fixed that problem, now I have the problem that if there
-;; are multiple shortest paths to get to a desired square, I need
-;; to take the one that is best in terms of reading-order.
+;; Now we are supposed to increase the elven attack strength until they
+;; have a decisive victory, that is they win without suffering any losses.
 
-#_(let [data (nth movie 8)
-        turns (assemble-turns data)
-        [loc which] (first turns)
-        targets (identify-targets data which)
-        invalid? (into (:walls data) (concat (keys (:goblins data)) (keys (:elves data))))
-        valid? (complement invalid?)
-        goal? (into #{} (comp (mapcat (comp neighbors first)) (filter valid?)) targets)]
-    [(if (empty? goal?) loc ;; short-circuit if there are no places to go.
-      (loop [frontier (conj QUEUE loc)
-             seen (transient #{loc})
-             came-from (transient {})
-             buffer nil]
-        (if-let [x (peek frontier)]
-          (if
-            ;; If we reached a goal, quit out
-            (goal? x) (first-move (persistent! came-from) x loc)
-            ;; Otherwise, we need to append to the frontier.
-            (let [neighs (filter (every-pred valid? (complement seen)) (neighbors x))]
-              (recur
-                (pop frontier)
-                (reduce conj! seen neighs)
-                (reduce (fn [m k] (if (m k) m (assoc! m k x)))
-                        came-from neighs)
-                (into buffer neighs))))
-          ;; Our frontier is empty, check the buffer
-          (if (empty? buffer)
-            ;; If we can't find a path, don't move
-            loc
-            (recur
-             (into frontier (sort reading-order buffer))
-             seen came-from nil)))))
-     (best-move data loc targets)
-     (render data)
-     (render (round data))])
+(defn decisive-elf-win?
+  "Determine if an attack strength leads to a decisive elven victory,
+  and if so, what score is achieved."
+  [attack]
+  (let [num-elfs (count (:elves data))
+        result (first
+                (sequence
+                 (comp
+                  (drop-while (complement :finished))
+                  (take-while #(= num-elfs (count (:elves %)))))
+                 (iterate round (assoc data :elf-attack attack))))]
+    (if result (score result) nil)))
+
+
+;; Find the lowest attack strength that has a decisive victory...
+(def ans2 (time (some decisive-elf-win? (drop 4 (range)))))
+#_(println "Answer2:" ans2)

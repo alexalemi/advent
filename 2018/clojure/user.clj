@@ -11,3 +11,11 @@
 
 ;; start with watcher and show filter function to enable notebook pinning
 ; (clerk/serve! {:watch-paths ["."]})
+
+
+(comment
+  (clerk/build-static-app! {:paths ["p15.clj"]})
+
+  (clerk/build! {:paths ["p15.clj"]})
+
+  (+ 1 2))
