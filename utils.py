@@ -22,7 +22,7 @@ EAST_COAST = pytz.timezone("America/New_York")
 TODAY = datetime.datetime.now().astimezone(EAST_COAST)
 YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021]
 DEFAULT_TOKEN = open(Path(__file__).resolve().parent / ".token", 'r')
-B_TOKEN = open(Path(__file__).resolve().parent / ".tokenb", 'r')
+# B_TOKEN = open(Path(__file__).resolve().parent / ".tokenb", 'r')
 
 REPLACED_NAMES = {"pleonasticperson": "Colin Clement"}
 IGNORED_NAMES = {"pleonasticperson"}
@@ -240,7 +240,7 @@ if __name__ == "__main__":
   parser_fetch = subparsers.add_parser('fetch', help='Fetches data files.')
   parser_fetch.add_argument('day', nargs='?', type=int, default=TODAY.day, help='Day to download')
   parser_fetch.add_argument('--year', type=int, default=TODAY.year, help='year')
-  parser_fetch.add_argument('--token', type=argparse.FileType('r'), default=open('token.txt','r'))
+  parser_fetch.add_argument('--token', type=argparse.FileType('r'), default=open('.token','r'))
   parser_fetch.add_argument('--suffix', type=str, default='', help='input file suffix (default: none)')
 
 
