@@ -18,7 +18,6 @@
 ;; For part 2 we need the top 3.
 (def ans2
   (->> data
-      (sort)
-      (reverse)
+      (sort >)
       (take 3)
       (reduce +)))

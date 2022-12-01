@@ -14,8 +14,4 @@
 
 
 (comment
-  (clerk/build-static-app! {:paths ["p15.clj"]})
-
-  (clerk/build! {:paths ["p15.clj"]})
-
-  (+ 1 2))
+  (clerk/build! {:paths ["p*.clj"]}))
