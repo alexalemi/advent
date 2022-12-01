@@ -10,6 +10,7 @@
 (def ROOT "https://adventofcode.com/")
 (def TOKEN (str/trim (slurp ".token")))
 (def DZ (java.time.ZoneId/of "America/New_York"))
+(def USER-AGENT "https://github.com/alexalemi/advent/blob/main/utils.clj by alexalemi@gmail.com")
 
 (defn now [] (java.time.ZonedDateTime/now DZ))
 
@@ -36,7 +37,7 @@
         (io/copy
          (:body (curl/get (str ROOT (format "%d/day/%d/input" year day))
                      {:headers {"Cookie" (str "session=" TOKEN)
-                                "User-Agent" "https://git.alexalemi.com/alemi/advent/src/master/utils.clj by alexalemi@gmail.com"} :as :bytes}))
+                                "User-Agent" USER-AGENT} :as :bytes}))
          (io/file (str flname)))
         (let [size (.length (io/file (str flname)))]
           (log/info (format "Got %s with %d bytes" flname size))))))))
