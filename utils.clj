@@ -57,3 +57,33 @@
           (get-input year day)
           (log/error (format "You requested a %d/%d, a day in the future!" year day)))
         (log/error "You must call with a --day [-d] argument.")))))
+
+
+(defn solution-map [m]
+ (letfn [(parse [p] 
+           (let [[year dir flname] (str/split (str p) #"/")
+                 year (parse-long year)
+                 day (parse-long (subs flname 1 3))
+                 ext (subs flname 4)]
+              {:year year :day day :ext ext :path (str p)}))]
+     (let [solutions (map parse (fs/glob "." "*/*/p??.*"))]
+       (println (str "{"
+                     (str/join "  \n&nbsp;" 
+                        (for [year (sort (into #{} (map :year solutions)))]
+                          (str (format "[%s](%s)" year year) " "
+                               (let [solutions (filter #(= (:year %) year) solutions)]     
+                                 (str "{" 
+                                      (str/join "  \n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+                                        (for [day (sort (into #{} (map :day solutions)))]
+                                          (str day " " (let [solutions (filter #(= (:day %) day) solutions)]
+                                                         (str "[" 
+                                                              (str/join " " (for [ext (sort (into #{} (map :ext solutions)))]
+                                                                                (let [solution (first (filter #(= (:ext %) ext) solutions))]
+                                                                                    (format "[%s](%s)" ext (:path solution)))))
+                                                              "]")))))
+                                      "}")))))
+                     "}")))))
+         
+             
+
+
