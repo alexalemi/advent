@@ -84,9 +84,9 @@
                                   (goblins [x y]) (str "rgba(255, 0, 0," (life (goblins [x y])) ")"))
               :border "solid 1px black"}}
      (cond
-        (elves [x y]) (elves [x y])
-        (goblins [x y]) (goblins [x y])
-        :else nil)]))
+       (elves [x y]) (elves [x y]) #_(/ (- 200 (elves [x y])) 3)
+       (goblins [x y]) (goblins [x y]) #_(/ (- 200 (goblins [x y])) 3)
+       :else nil)]))
 
 (declare score)
 
@@ -161,7 +161,6 @@
   [loc goal? valid?]
   (loop [frontier (conj QUEUE loc)
          seen (transient #{loc})
-         came-from (transient {})
          buffer nil]
     (if-let [x (peek frontier)]
       (if
@@ -172,17 +171,13 @@
           (recur
             (pop frontier)
             (reduce conj! seen neighs)
-            (reduce (fn [m k] (if (m k) m (assoc! m k x)))
-                    came-from neighs)
             (into buffer neighs))))
       ;; Our frontier is empty, check the buffer
       (if (empty? buffer)
         ;; If we can't find a path, don't move
         loc
         ;; refill the buffer, in reading-order
-        (recur
-         (into frontier (sort reading-order buffer))
-         seen came-from nil)))))
+        (recur (into frontier (sort reading-order buffer)) seen nil)))))
 
 
 (defn shortest-path

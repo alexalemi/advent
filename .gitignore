@@ -5,11 +5,14 @@ __pycache__
 .cpcache
 .token
 .tokenb
+.vscode
+.leaderboard.txt
 
 2020/hy/advent
 
 */nim/p??
 */nim/p??.out
+*/clojure/.clerk/
 .mypy_cache
 .lein*
 .nrepl*
