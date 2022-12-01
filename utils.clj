@@ -35,7 +35,8 @@
         (log/info (format "Fetching %s..." flname))
         (io/copy
          (:body (curl/get (str ROOT (format "%d/day/%d/input" year day))
-                     {:headers {"Cookie" (str "session=" TOKEN)} :as :bytes}))
+                     {:headers {"Cookie" (str "session=" TOKEN)
+                                "User-Agent" "https://git.alexalemi.com/alemi/advent/src/master/utils.clj by alexalemi@gmail.com"} :as :bytes}))
          (io/file (str flname)))
         (let [size (.length (io/file (str flname)))]
           (log/info (format "Got %s with %d bytes" flname size))))))))
