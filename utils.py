@@ -124,7 +124,7 @@ data17 = functools.partial(get_data, year=2017)
 data16 = functools.partial(get_data, year=2016)
 data15 = functools.partial(get_data, year=2015)
 
-LEADERBOARD = Path(__file__).resolve().parent / "leaderboard.txt"
+LEADERBOARD = Path(__file__).resolve().parent / ".leaderboard.txt"
 
 # original token
 FRIENDS = "173774"
