@@ -54,6 +54,7 @@ y=13, x=498..504"))
     (horizontal-line [(first x) y] [(second x) y])
     (vertical-line [x (first y)] [x (second y)])))
 
+(def QUEUE clojure.lang.PersistentQueue/EMPTY)
 (defn data->state [data]
   (let [clay (reduce into #{} (map line data))]
     {:clay clay
@@ -150,14 +151,15 @@ y=13, x=498..504"))
        (if-let [spawn (:spawn Ω)]
          (let [Ω (-> Ω
                      (dissoc :spawn)
-                     (update :flowing conj spawn))]
+                     (update :flowing conj spawn))
+               newspawn (which spawn)]
           (if
             ;; If there is something solid beneath us
             ((solid? Ω) (below spawn))
             ;; If there is nothing in our way,
-            (if ((not-solid? Ω) (which spawn))
+            (if ((not-solid? Ω) newspawn)
               ;; Then continue in that direction
-              (recur (mark-spawn Ω (which spawn) spawn))
+              (recur (mark-spawn Ω newspawn spawn))
               ;; Otherwise mark as blocked
               (assoc Ω :blocked spawn))
             ;; If there isn't anything below us mark as source
@@ -172,6 +174,12 @@ y=13, x=498..504"))
    (fn [a b] (if (or (map? a) (set? a)) (into a b) b))
    m1 m2))
 
+(defn mark-still [Ω loc]
+  (-> Ω
+      (update :still conj loc)
+      (update :flowing disj loc)
+      (update :came-from dissoc loc)))
+
 (defn combine
   "We just spread both to the left and right, handle it."
   [lefty righty]
@@ -182,7 +190,7 @@ y=13, x=498..504"))
      ;; If both directions got blocked, then make those values still.
      (and l r)
      (reduce
-      (fn [m x] (update m :still conj x))
+      (fn [m x] (mark-still m x))
       combined
       (horizontal-line (:blocked lefty) (:blocked righty)))
      ;; Otherwise, just return the combined thing.
@@ -194,28 +202,22 @@ y=13, x=498..504"))
 (defn fall
   "Pop a source and let it fall."
   [Ω]
-  (let [loc (first (:sources Ω))]
-   (loop [Ω Ω loc loc]
-     (if loc
-       (let [Ω (-> Ω
-                  (update :sources disj loc)
-                  (update :flowing conj loc))
-             newloc (below loc)]
-        (cond
-            ;; If there is something solid below us, create a spawn.
-            ((solid? Ω) newloc)
-            (if ((:spawned Ω) loc)
-               Ω
-               (mark-spawn Ω loc ((:came-from Ω) loc)))
+  (loop [Ω Ω loc (first (:sources Ω))]
+    (let [Ω (-> Ω
+               (update :sources disj loc)
+               (update :flowing conj loc))
+          newloc (below loc)]
+      (cond
+          ;; If there is something solid below us, create a spawn.
+          ((solid? Ω) newloc)
+          (mark-spawn Ω loc ((:came-from Ω) loc))
 
-            ;; If we are within the bounds of the image, continue falling.
-            (above-bottom? (second (:bounds Ω)) newloc)
-            (recur (update Ω :came-from assoc newloc loc) newloc)
+          ;; If we are within the bounds of the image, continue falling.
+          (above-bottom? (second (:bounds Ω)) newloc)
+          (recur (update Ω :came-from assoc newloc loc) newloc)
 
-            ;; Otherwise just pop the source (we must have hit bottom)
-            :else Ω))
-       ;; If there are no sources left, we're done
-       (assoc Ω :finished true)))))
+          ;; Otherwise just pop the source (we must have hit bottom)
+          :else Ω))))
 
 
 (defn fill
@@ -225,7 +227,13 @@ y=13, x=498..504"))
   ;; left and right from every :split, then
   ;; combine the result, finally we'll initiate a new
   ;; :fall
-  (fall (combine (spread left Ω) (spread right Ω))))
+  (if-let [source (first (:sources Ω))]
+    (let [x (fall Ω)
+          spawn (:spawn x)]
+      (if ((:spawned Ω) spawn)
+        (update Ω :sources disj source)
+        (combine (spread left x) (spread right x))))
+    (assoc Ω :finished true)))
 
 
 (defn fill-completely
@@ -236,9 +244,9 @@ y=13, x=498..504"))
 
 ;; We can test all of the game logic on the test input.
 
-(let [Ω (fill-completely test-Ω)]
-  (assert (= 57 (total-wet Ω)))
-  (render Ω))
+#_(let [Ω (fill-completely test-Ω)]
+    (assert (= 57 (total-wet Ω)))
+    (render Ω))
 
 ;; That looks good, so we compute the actual answer.
 
@@ -251,32 +259,33 @@ y=13, x=498..504"))
 
 
 ;; Try to render an image
-(defn render-image [Ω]
- (let [{:keys [clay still flowing sources spawn blocked bounds]} Ω
-       [[xlo xhi] [ylo yhi]] bounds
-       width (- (inc xhi) (dec xlo))
-       height (- (inc yhi) (dec ylo))
-       img (BufferedImage. width height BufferedImage/TYPE_3BYTE_BGR)]
-   (doseq [x (range xlo xhi)
-           y (range ylo yhi)]
-     (let [xp (- x (dec xlo)) yp (- y (dec ylo))
-           loc [x y]]
-       (.setRGB img xp yp
-                (cond
-                 (= spawn loc) (.getRGB (java.awt.Color. 255 0 0))
-                 (= blocked loc) (.getRGB java.awt.Color/GREEN)
-                 (sources loc) (.getRGB java.awt.Color/BLUE)
-                 (clay loc) (.getRGB (java.awt.Color. 165 42 42))
-                 (still loc) (.getRGB (java.awt.Color. 0 0 139))
-                 (flowing loc) (.getRGB (java.awt.Color. 70 130 180))
-                 :else (.getRGB java.awt.Color/WHITE)))))
-   img))
+(defn render-image
+  ([Ω] (render-image Ω (:bounds Ω) 1))
+  ([Ω zoom] (render-image Ω (:bounds Ω) zoom))
+  ([Ω bounds zoom]
+   (let [{:keys [clay still flowing sources spawn blocked]} Ω
+         [[xlo xhi] [ylo yhi]] bounds
+         width (* zoom (- (inc xhi) (dec xlo)))
+         height (* zoom (- (inc yhi) (dec ylo)))
+         img (BufferedImage. width height BufferedImage/TYPE_3BYTE_BGR)]
+     (doseq [xp (range width)
+             yp (range height)]
+       (let [x (+ (quot xp zoom) (dec xlo))
+             y (+ (quot yp zoom) (dec ylo))
+             loc [x y]]
+         (.setRGB img xp yp
+                  (cond
+                   (= spawn loc) (.getRGB (java.awt.Color. 255 0 0))
+                   (= blocked loc) (.getRGB java.awt.Color/GREEN)
+                   (sources loc) (.getRGB java.awt.Color/BLUE)
+                   (clay loc) (.getRGB (java.awt.Color. 165 42 42))
+                   (still loc) (.getRGB (java.awt.Color. 0 0 139))
+                   (flowing loc) (.getRGB (java.awt.Color. 70 130 180))
+                   :else (.getRGB java.awt.Color/WHITE)))))
+     img)))
 
 
-#_(render-image finished-Ω)
+(let [Ω (nth (iterate fill Ω) 39)]
+  [Ω
+   (render-image Ω [[433 550] [0 70]] 8)])
 
-(render-image test-Ω)
-
-
-(let [Ω (nth (iterate fill Ω) 42)]
-  [Ω (render-image Ω)])

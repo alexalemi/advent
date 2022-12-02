@@ -10,7 +10,7 @@
 (def ROOT "https://adventofcode.com/")
 (def TOKEN (str/trim (slurp ".token")))
 (def DZ (java.time.ZoneId/of "America/New_York"))
-(def USER-AGENT "https://github.com/alexalemi/advent/blob/main/utils.clj by alexalemi@gmail.com")
+(def USER-AGENT "github.com/alexalemi/advent by alexalemi@gmail.com")
 
 (defn now [] (java.time.ZonedDateTime/now DZ))
 
