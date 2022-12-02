@@ -2,6 +2,14 @@
 
 This repository contains my solutions in several languages to [Advent Of Code](https://adventofcode.com).
 
+![2015](./badges/img/2015.svg)
+![2016](./badges/img/2016.svg)
+![2017](./badges/img/2017.svg)
+![2018](./badges/img/2018.svg)
+![2019](./badges/img/2019.svg)
+![2020](./badges/img/2020.svg)
+![2021](./badges/img/2021.svg)
+![2022](./badges/img/2022.svg)
 
 ## Getting an access token
 
