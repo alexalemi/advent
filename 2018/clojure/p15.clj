@@ -1,6 +1,7 @@
 (ns p15
   (:require [clojure.string :as str]
-            [nextjournal.clerk :as clerk]))
+            [nextjournal.clerk :as clerk]
+            [clojure.java.io :as io]))
 
 ;; # Advent of Code 2018 - Day 15
 ;; [puzzle](https://adventofcode.com/2018/day/15)
@@ -13,7 +14,7 @@
 
 ;; ## Data processing
 ;; The first thing we'll do is load in the raw input file.
-(def data-string (slurp "../input/15.txt"))
+(def data-string (slurp (io/resource "../input/15.txt")))
 
 ;; We'll save some constants from the problem description for our
 ;; default attack strength and hp.
