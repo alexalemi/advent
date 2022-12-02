@@ -1,7 +1,6 @@
 ;; # Day 2
 (ns p02
-  (:require [clojure.string :as str]
-            [clojure.set :as set]))
+  (:require [clojure.string :as str]))
 
 (defn parse [s]
   (map keyword (str/split s #" ")))
@@ -65,6 +64,6 @@
    data))
 
 
-(defn -main [& args]
+(defn -main [& _]
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))

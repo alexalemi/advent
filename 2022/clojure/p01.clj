@@ -23,7 +23,7 @@
       (reduce +)))
 
 ;; You can run from main with `bb -m p01`.
-(defn -main [& args]
+(defn -main [& _]
  (println "Answer1:" ans1)
  (println "Answer2:" ans2))
 
