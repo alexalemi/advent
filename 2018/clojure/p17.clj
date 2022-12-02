@@ -60,6 +60,7 @@ y=13, x=498..504"))
      :still #{}
      :flowing #{}
      :spawned #{}
+     :came-from {}
      :sources #{[500 0]}
      :bounds [[(dec (reduce min (map first clay)))
                (inc (reduce max (map first clay)))]
@@ -132,17 +133,19 @@ y=13, x=498..504"))
 (defn below [loc] (update loc 1 inc))
 (defn above [loc] (update loc 1 dec))
 
-;; TODO for some reason this adding of the thing to sources doesn't seem to be sticking.
+
+(defn mark-spawn [Ω spawn from]
+  (-> Ω
+      (assoc :spawn spawn)
+      (update :came-from assoc spawn from)))
 
 (defn spread
   "Take the spawn and move whichways until we hit clay or there is nothing below us."
   [which Ω]
   ;; If there isn't a spawn, do nothing
   (if-let [spawn (:spawn Ω)]
-    (let [Ω (update Ω :spawned conj (above spawn))
-          Ω (update Ω :sources conj spawn)] #_(if ((:flowing Ω) (above spawn)
-                                                              (update Ω :sources conj (above spawn))
-                                                              Ω))
+    (let [Ω (update Ω :sources conj ((:came-from Ω) spawn))
+          Ω (update Ω :spawned conj spawn)]
      (loop [Ω Ω]
        (if-let [spawn (:spawn Ω)]
          (let [Ω (-> Ω
@@ -154,7 +157,7 @@ y=13, x=498..504"))
             ;; If there is nothing in our way,
             (if ((not-solid? Ω) (which spawn))
               ;; Then continue in that direction
-              (recur (assoc Ω :spawn (which spawn)))
+              (recur (mark-spawn Ω (which spawn) spawn))
               ;; Otherwise mark as blocked
               (assoc Ω :blocked spawn))
             ;; If there isn't anything below us mark as source
@@ -164,9 +167,9 @@ y=13, x=498..504"))
    Ω))
 
 
-(defn merge-sets [m1 m2]
+(defn merge-sets-and-maps [m1 m2]
   (merge-with
-   (fn [a b] (if (set? a) (into a b) b))
+   (fn [a b] (if (or (map? a) (set? a)) (into a b) b))
    m1 m2))
 
 (defn combine
@@ -174,7 +177,7 @@ y=13, x=498..504"))
   [lefty righty]
   (let [l (:blocked lefty)
         r (:blocked righty)
-        combined (merge-sets (dissoc lefty :blocked) (dissoc righty :blocked))]
+        combined (merge-sets-and-maps (dissoc lefty :blocked) (dissoc righty :blocked))]
    (if
      ;; If both directions got blocked, then make those values still.
      (and l r)
@@ -192,8 +195,7 @@ y=13, x=498..504"))
   "Pop a source and let it fall."
   [Ω]
   (let [loc (first (:sources Ω))]
-   (loop [Ω Ω
-          loc loc]
+   (loop [Ω Ω loc loc]
      (if loc
        (let [Ω (-> Ω
                   (update :sources disj loc)
@@ -201,13 +203,14 @@ y=13, x=498..504"))
              newloc (below loc)]
         (cond
             ;; If there is something solid below us, create a spawn.
-            (and ((solid? Ω) newloc)
-                 ((complement (:spawned Ω)) newloc))
-            (assoc Ω :spawn loc)
+            ((solid? Ω) newloc)
+            (if ((:spawned Ω) loc)
+               Ω
+               (mark-spawn Ω loc ((:came-from Ω) loc)))
 
             ;; If we are within the bounds of the image, continue falling.
             (above-bottom? (second (:bounds Ω)) newloc)
-            (recur Ω newloc)
+            (recur (update Ω :came-from assoc newloc loc) newloc)
 
             ;; Otherwise just pop the source (we must have hit bottom)
             :else Ω))
@@ -232,20 +235,19 @@ y=13, x=498..504"))
 
 
 ;; We can test all of the game logic on the test input.
-(let [Ω (nth (iterate fill test-Ω) 2)]
-  [Ω (render Ω)])
 
-#_(let [Ω (fill-completely test-Ω)]
-    (assert (= 57 (total-wet Ω)))
-    (render Ω))
+(let [Ω (fill-completely test-Ω)]
+  (assert (= 57 (total-wet Ω)))
+  (render Ω))
 
 ;; That looks good, so we compute the actual answer.
 
-;(def finished-Ω (time (fill-completely Ω)))
+#_(def finished-Ω (time (fill-completely Ω)))
 
-;(def ans1 (total-wet finished-Ω))
+#_(def ans1 (total-wet finished-Ω))
 
 ;; 273 is too low!
+;; 39210 is too high!
 
 
 ;; Try to render an image
@@ -271,5 +273,10 @@ y=13, x=498..504"))
    img))
 
 
-#_(let [Ω (nth (iterate fill Ω) 300)]
-    [Ω (render-image Ω)])
+#_(render-image finished-Ω)
+
+(render-image test-Ω)
+
+
+(let [Ω (nth (iterate fill Ω) 42)]
+  [Ω (render-image Ω)])
