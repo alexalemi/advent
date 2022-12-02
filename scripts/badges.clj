@@ -15,6 +15,7 @@
 
 (def yrs ["2022" "2021" "2020" "2019" "2018" "2017" "2016" "2015"])
 
+(def USER-AGENT "https://github.com/alexalemi/advent/blob/main/scripts/badges.clj by alexalemi@gmail.com")
 (def cookie (str/trim (slurp ".token")))
 
 (def badge-style
@@ -27,7 +28,8 @@
   "Return a string representing number of stars earned for a given `year`"
   [year]
   (let [parsed (-> (str "https://adventofcode.com/" year)
-                   (curl/get {:headers {"Cookie" (str "session=" cookie)}})
+                   (curl/get {:headers {"Cookie" (str "session=" cookie)
+                                        "User-Agent" USER-AGENT}})
                    :body
                    (convert-to :hickory))]
     (-> (s/select (s/class "star-count") parsed)
@@ -41,7 +43,7 @@
     (:body (curl/get "http://img.shields.io/static/v1" {:query-params params}))))
 
 (defn save-badge! [year]
-  (let [path  (str "img/" year ".svg")
+  (let [path  (str "scripts/img/" year ".svg")
         stars (get-stars year)
         badge (make-badge year stars)]
     (spit path badge)))

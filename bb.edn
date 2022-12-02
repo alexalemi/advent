@@ -1,3 +1,5 @@
-{:paths ["."]
+{:paths ["scripts/"]
  :tasks {fetch {:doc "Fetch an input file"
-                :task (exec 'utils/fetch)}}}
+                :task (exec 'utils/fetch)}
+         badges {:doc "Regenerate badges."
+                 :task (load-file "scripts/badges.clj")}}}
