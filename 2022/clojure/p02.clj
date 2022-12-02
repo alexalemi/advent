@@ -23,9 +23,6 @@
    :scissors :paper
    :paper :rock})
 
-(def lose
-  (set/map-invert beat))
-
 ;; Each choice has a shape-score.
 (def scores
   {:rock 1
@@ -57,7 +54,7 @@
    (case b
      :X [a (beat a)]
      :Y [a a]
-     :Z [a (lose a)])))
+     :Z [a (beat (beat a))])))
 
 (def ans2
   (transduce
