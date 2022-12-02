@@ -54,19 +54,23 @@ y=13, x=498..504"))
     (horizontal-line [(first x) y] [(second x) y])
     (vertical-line [x (first y)] [x (second y)])))
 
-(def QUEUE clojure.lang.PersistentQueue/EMPTY)
+;; Let's think a bit about how we should best represent our world. We clearly
+;; need some way to specify all of the clay locations, so we'll store a set in
+;; `:clays` with those coordinates.  We also need access to the bounds,
+;; which could be a function as its drived by
+
+(defn bounds [{clay :clay}]
+  [[(dec (reduce min (map first clay)))
+    (inc (reduce max (map first clay)))]
+   [(reduce min (map second clay))
+    (reduce max (map second clay))]])
+
 (defn data->state [data]
   (let [clay (reduce into #{} (map line data))]
     {:clay clay
      :still #{}
-     :flowing #{}
-     :spawned #{}
-     :came-from {}
-     :sources #{[500 0]}
-     :bounds [[(dec (reduce min (map first clay)))
-               (inc (reduce max (map first clay)))]
-              [(reduce min (map second clay))
-               (reduce max (map second clay))]]}))
+     :flowing {}
+     :sources #{[500 0]}}))
 
 (def test-Ω (data->state test-data))
 (def Ω (data->state data))
@@ -74,10 +78,13 @@ y=13, x=498..504"))
 ;; ## Visualization
 ;; Build a nice visualizer though its probably too expensive to do the full problem input.
 
-(defn in-bounds? [[ylo yhi] [x y]] (<= ylo y yhi))
+(defn in-bounds? [Ω [_ y]]
+  (let [[_  [ylo yhi]] (bounds Ω)]
+    (<= ylo y yhi)))
 
 (defn total-wet [Ω]
-  (count (filter (partial in-bounds? (second (:bounds Ω))) (set/union (:flowing Ω) (:still Ω)))))
+  (count (filter (partial in-bounds? Ω)
+                 (set/union (into (:still Ω) (keys (:flowing Ω)))))))
 
 (defn render-cell
   "Render a single square."
@@ -100,7 +107,7 @@ y=13, x=498..504"))
   "Custom clerk rendering function for a board."
   [Ω]
   (letfn [(box [val] [:div.flex.flex-col [:div {:style {:width 16 :height 16 :font-size "0.5em"}} val]])]
-   (let [[[xlo xhi] [ylo yhi]] (:bounds Ω)]
+   (let [[[xlo xhi] [ylo yhi]] (bounds Ω)]
      (clerk/html
       [:div
        (into [:div.flex.inline-flex
@@ -112,6 +119,33 @@ y=13, x=498..504"))
        [:div "wet: " (total-wet Ω)]]))))
 
 (render test-Ω)
+
+
+;; Try to render an image
+(defn render-image
+  ([Ω] (render-image Ω (bounds Ω) 1))
+  ([Ω zoom] (render-image Ω (bounds Ω) zoom))
+  ([Ω bounds zoom]
+   (let [{:keys [clay still flowing sources spawn blocked]} Ω
+         [[xlo xhi] [ylo yhi]] bounds
+         width (* zoom (- (inc xhi) (dec xlo)))
+         height (* zoom (- (inc yhi) (dec ylo)))
+         img (BufferedImage. width height BufferedImage/TYPE_3BYTE_BGR)]
+     (doseq [xp (range width)
+             yp (range height)]
+       (let [x (+ (quot xp zoom) (dec xlo))
+             y (+ (quot yp zoom) (dec ylo))
+             loc [x y]]
+         (.setRGB img xp yp
+                  (cond
+                   (= spawn loc) (.getRGB (java.awt.Color. 255 0 0))
+                   (= blocked loc) (.getRGB java.awt.Color/GREEN)
+                   (sources loc) (.getRGB java.awt.Color/BLUE)
+                   (clay loc) (.getRGB (java.awt.Color. 165 42 42))
+                   (still loc) (.getRGB (java.awt.Color. 0 0 139))
+                   (flowing loc) (.getRGB (java.awt.Color. 70 130 180))
+                   :else (.getRGB java.awt.Color/WHITE)))))
+     img)))
 
 ;; ## Core Logic
 ;; Let's start to plan out how we'll actually solve the problem now that we've done
@@ -138,20 +172,17 @@ y=13, x=498..504"))
 (defn mark-spawn [Ω spawn from]
   (-> Ω
       (assoc :spawn spawn)
-      (update :came-from assoc spawn from)))
+      (update :flowing assoc spawn from)))
 
 (defn spread
   "Take the spawn and move whichways until we hit clay or there is nothing below us."
   [which Ω]
   ;; If there isn't a spawn, do nothing
   (if-let [spawn (:spawn Ω)]
-    (let [Ω (update Ω :sources conj ((:came-from Ω) spawn))
-          Ω (update Ω :spawned conj spawn)]
+    (let [Ω (update Ω :sources conj ((:flowing Ω) spawn))] ;; Add the parent as another source
      (loop [Ω Ω]
        (if-let [spawn (:spawn Ω)]
-         (let [Ω (-> Ω
-                     (dissoc :spawn)
-                     (update :flowing conj spawn))
+         (let [Ω (dissoc Ω :spawn)
                newspawn (which spawn)]
           (if
             ;; If there is something solid beneath us
@@ -177,8 +208,7 @@ y=13, x=498..504"))
 (defn mark-still [Ω loc]
   (-> Ω
       (update :still conj loc)
-      (update :flowing disj loc)
-      (update :came-from dissoc loc)))
+      (update :flowing dissoc loc)))
 
 (defn combine
   "We just spread both to the left and right, handle it."
@@ -197,28 +227,30 @@ y=13, x=498..504"))
      combined)))
 
 
-(defn above-bottom? [[_ yhi] [_ y]] (<= 0 y yhi))
+(defn above-bottom? [Ω [_ y]]
+  (let [[_ [_ yhi]] (bounds Ω)]
+    (<= 0 y yhi)))
 
 (defn fall
   "Pop a source and let it fall."
   [Ω]
-  (loop [Ω Ω loc (first (:sources Ω))]
-    (let [Ω (-> Ω
-               (update :sources disj loc)
-               (update :flowing conj loc))
-          newloc (below loc)]
-      (cond
-          ;; If there is something solid below us, create a spawn.
-          ((solid? Ω) newloc)
-          (mark-spawn Ω loc ((:came-from Ω) loc))
+  (if-let [loc (first (:sources Ω))]
+   (loop [Ω Ω
+          loc loc]
+      (let [Ω (update Ω :sources disj loc)
+            newloc (below loc)]
+        (cond
+            ;; If there is something solid below us, create a spawn.
+            ((solid? Ω) newloc)
+            (mark-spawn Ω loc ((:flowing Ω) loc))
 
-          ;; If we are within the bounds of the image, continue falling.
-          (above-bottom? (second (:bounds Ω)) newloc)
-          (recur (update Ω :came-from assoc newloc loc) newloc)
+            ;; If we are within the bounds of the image, continue falling.
+            (above-bottom? Ω newloc)
+            (recur (update Ω :flowing assoc newloc loc) newloc)
 
-          ;; Otherwise just pop the source (we must have hit bottom)
-          :else Ω))))
-
+            ;; Otherwise just pop the source (we must have hit bottom)
+            :else Ω)))
+   Ω))
 
 (defn fill
   "The main filling logic."
@@ -227,12 +259,9 @@ y=13, x=498..504"))
   ;; left and right from every :split, then
   ;; combine the result, finally we'll initiate a new
   ;; :fall
-  (if-let [source (first (:sources Ω))]
-    (let [x (fall Ω)
-          spawn (:spawn x)]
-      (if ((:spawned Ω) spawn)
-        (update Ω :sources disj source)
-        (combine (spread left x) (spread right x))))
+  (if-let [_ (first (:sources Ω))]
+    (let [x (fall Ω)]
+        (combine (spread left x) (spread right x)))
     (assoc Ω :finished true)))
 
 
@@ -243,6 +272,29 @@ y=13, x=498..504"))
 
 
 ;; We can test all of the game logic on the test input.
+
+(let [Ω test-Ω
+      Ω (fill Ω)]
+      ;Ω (fall Ω)]
+      ;Ω (nth (iterate fill Ω) 3)]
+  [Ω (render Ω)]
+  #_(if-let [loc (first (:sources Ω))]
+      (loop [Ω Ω
+             loc loc]
+         (let [Ω (update Ω :sources disj loc)
+               newloc (below loc)]
+           (cond
+               ;; If there is something solid below us, create a spawn.
+               ((solid? Ω) newloc)
+               (mark-spawn Ω loc ((:flowing Ω) loc))
+
+               ;; If we are within the bounds of the image, continue falling.
+               (above-bottom? Ω newloc)
+               (recur (update Ω :flowing assoc newloc loc) newloc)
+
+               ;; Otherwise just pop the source (we must have hit bottom)
+               :else Ω)))
+     Ω))
 
 #_(let [Ω (fill-completely test-Ω)]
     (assert (= 57 (total-wet Ω)))
@@ -258,34 +310,9 @@ y=13, x=498..504"))
 ;; 39210 is too high!
 
 
-;; Try to render an image
-(defn render-image
-  ([Ω] (render-image Ω (:bounds Ω) 1))
-  ([Ω zoom] (render-image Ω (:bounds Ω) zoom))
-  ([Ω bounds zoom]
-   (let [{:keys [clay still flowing sources spawn blocked]} Ω
-         [[xlo xhi] [ylo yhi]] bounds
-         width (* zoom (- (inc xhi) (dec xlo)))
-         height (* zoom (- (inc yhi) (dec ylo)))
-         img (BufferedImage. width height BufferedImage/TYPE_3BYTE_BGR)]
-     (doseq [xp (range width)
-             yp (range height)]
-       (let [x (+ (quot xp zoom) (dec xlo))
-             y (+ (quot yp zoom) (dec ylo))
-             loc [x y]]
-         (.setRGB img xp yp
-                  (cond
-                   (= spawn loc) (.getRGB (java.awt.Color. 255 0 0))
-                   (= blocked loc) (.getRGB java.awt.Color/GREEN)
-                   (sources loc) (.getRGB java.awt.Color/BLUE)
-                   (clay loc) (.getRGB (java.awt.Color. 165 42 42))
-                   (still loc) (.getRGB (java.awt.Color. 0 0 139))
-                   (flowing loc) (.getRGB (java.awt.Color. 70 130 180))
-                   :else (.getRGB java.awt.Color/WHITE)))))
-     img)))
 
 
-(let [Ω (nth (iterate fill Ω) 39)]
-  [Ω
-   (render-image Ω [[433 550] [0 70]] 8)])
+#_(let [Ω (nth (iterate fill Ω) 39)]
+    [Ω
+     (render-image Ω [[433 550] [0 70]] 8)])
 
