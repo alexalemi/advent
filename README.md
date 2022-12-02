@@ -21,8 +21,7 @@ This should be put into a local file `.token`.
 
 ## Utilities
 
-There is `./utils.py` which will try to automatically fetch the current input, as
-well as `utils.blj` which you can invoke as a babashka task:
+There is [`scripts/utils.py`](scripts/utils.clj) which will try to automatically fetch the current input, as which you can invoke as a babashka task:
 
 	bb fetch
 	
@@ -31,3 +30,11 @@ Since it won't ask for the input either too early or if it has already been grab
 	watch bb fetch
 	
 To automatically grab the input while you're reading the problem.
+
+There is also a task to update the badges [`scripts/badges.clj`](scripts/badges.clj) for the readme with:
+
+  bb badges
+	
+which was forked from [genmeblog](https://github.com/genmeblog/advent-of-code/blob/master/badges/badges.bb).
+	
+
