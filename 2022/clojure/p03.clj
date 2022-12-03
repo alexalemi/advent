@@ -15,14 +15,8 @@
       (- (int x) 96)
       (- (int x) 64 -26)))
 
-
 (defn split-at-half [s]
-  (let [size (count s)
-        half (quot size 2)]
-     [(into #{} (take half s))
-      (into #{} (drop half s))]))
-
-(defn setify [s] (into #{} s))
+  (map set (split-at (quot (count s) 2) s)))
 
 (defn intersect [x]
   (apply set/intersection x))
@@ -38,7 +32,7 @@
 
 (def ans2
   (->> (str/split-lines data-string)
-       (map (comp setify seq))
+       (map (comp set seq))
        (partition 3)
        (map (comp score first intersect))
        (reduce +)))
