@@ -1,8 +1,5 @@
 (ns util
-  (:require ;[clojure.string :as str]
-            ;[clojure.math.combinatorics :as combo]
-            [clojure.data.priority-map :refer [priority-map]]
-            [clojure.test :as t]))
+  (:require [clojure.data.priority-map :refer [priority-map]]))
 
 (import 'java.security.MessageDigest
         'java.math.BigInteger)
