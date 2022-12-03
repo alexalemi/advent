@@ -12,8 +12,8 @@
 
 (defn score [x]
   (if (lower-case? x)
-      (- (int x) 96)
-      (- (int x) 64 -26)))
+      (inc (- (int x) (int \a)))
+      (+ 26 (inc (- (int x) (int \A))))))
 
 (defn split-at-half [s]
   (map set (split-at (quot (count s) 2) s)))
