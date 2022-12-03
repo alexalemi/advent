@@ -1,20 +1,21 @@
-(ns p15
-  (:require [clojure.string :as str]
-            [nextjournal.clerk :as clerk]
-            [clojure.java.io :as io]))
-
-;; # Advent of Code 2018 - Day 15
-;; [puzzle](https://adventofcode.com/2018/day/15)
+;; # 🎄 Advent of Code 2018 - Day 15
+;;
 ;; For this day we essentially have to implement a game.
 ;; You can see the original page for all of the details, but the
 ;; short version is that there a board with goblins and elves on it,
 ;; and each turn, one a time the units move towards one another and then
 ;; start attacking.  The last species standing wins.
+;;
+;; [[link to puzzle]](https://adventofcode.com/2018/day/15)
+
+(ns p15
+  (:require [clojure.string :as str]
+            [nextjournal.clerk :as clerk]))
 
 
 ;; ## Data processing
 ;; The first thing we'll do is load in the raw input file.
-(def data-string (slurp (io/resource "../input/15.txt")))
+(def data-string (slurp "../input/15.txt"))
 
 ;; We'll save some constants from the problem description for our
 ;; default attack strength and hp.
@@ -414,7 +415,6 @@
 (def final-state (time (complete data)))
 (render final-state)
 (def ans1 (score final-state))
-#_(println "Answer1:" ans1)
 
 #_(def movie (take-while (complement :finished) (iterate round data)))
 #_(map render movie)
@@ -440,4 +440,7 @@
 
 ;; Find the lowest attack strength that has a decisive victory...
 (def ans2 (time (some decisive-elf-win? (drop 4 (range)))))
-#_(println "Answer2:" ans2)
+
+(defn -main [& _]
+  (println "Answer1:" ans1)
+  (println "Answer2:" ans2))
