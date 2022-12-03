@@ -7,8 +7,7 @@
 (def data-string (slurp "../input/03.txt"))
 
 (defn lower-case? [s]
-  (let [c (str s)]
-   (= c (str/lower-case c))))
+  (<= (int \a) (int s) (int \z)))
 
 (defn score [x]
   (if (lower-case? x)
