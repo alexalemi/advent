@@ -11,16 +11,16 @@
 
 ;; ## Part 1
 
-(defn fully-contains? [[[a b] [c d]]]
-  (or (<= a c d b) (<= c a b d)))
+(defn fully-contains? [[[a b] [x y]]]
+  (or (<= a x y b) (<= x a b y)))
 
 (def ans1 (count (filter fully-contains? data)))
 
 
 ;; ## Part 2
 
-(defn any-overlap? [[[a b] [c d]]]
-  (or (<= a c b) (<= c a d)))
+(defn any-overlap? [[[a b] [x y]]]
+  (or (<= a x b) (<= x a y)))
 
 (def ans2 (count (filter any-overlap? data)))
 
