@@ -20,8 +20,7 @@
 ;; ## Part 2
 
 (defn any-overlap? [[[a b] [c d]]]
-  (or (<= a c b) (<= a d b)
-      (<= c a d) (<= c b d)))
+  (or (<= a c b) (<= c a d)))
 
 (def ans2 (count (filter any-overlap? data)))
 
