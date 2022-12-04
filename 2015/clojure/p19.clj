@@ -84,18 +84,11 @@ e")
 (defn increment-time [data]
   (update data :time (fnil inc 0)))
 
-(defn step [data]
-  (-> data
-      increment-time))
-
 
 (defn ready [data]
   (-> data
       (assoc :seeds #{[:e]})
       (dissoc :seed)))
-
-(comment
-  (let [data (ready test-data-2)]))
 
 (defn step [data]
    (let [{rules :rules seeds :seeds} data]
@@ -114,8 +107,8 @@ e")
   (hunt (ready test-data-2) [:H :O :H :O :H :O]))
 
 (comment
-  (defonce ans2 (hunt (ready data) (:seed data)))
-  (println "Answer2:" ans2))
+  (defonce ans2-original (hunt (ready data) (:seed data)))
+  (println "Answer2:" ans2-original))
 
 
 ; # Part 2 part deux

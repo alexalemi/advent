@@ -11,6 +11,8 @@ This repository contains my solutions in several languages to [Advent Of Code](h
 ![2021](./scripts/img/2021.svg)
 ![2022](./scripts/img/2022.svg)
 
+![Total](./scripts/img/Total.svg)
+
 ## Getting an access token
 
 https://github.com/wimglenn/advent-of-code-wim/issues/1
@@ -21,7 +23,7 @@ This should be put into a local file `.token`.
 
 ## Utilities
 
-There is [`scripts/utils.py`](scripts/utils.clj) which will try to automatically fetch the current input, as which you can invoke as a babashka task:
+There is [`scripts/fetch.clj`](scripts/fetch.clj) which will try to automatically fetch the current input, as which you can invoke as a babashka task:
 
 	bb fetch
 	

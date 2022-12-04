@@ -30,7 +30,7 @@
 ;; And you can buy 0 to 2 rings.  There is only one of each
 ;; item.
 
-(def test
+(def test-case
   [{:hp 8 :damage 5 :armor 5}
    {:hp 12 :damage 7 :armor 2}])
 
@@ -89,7 +89,7 @@
   ([x] x)
   ([x y] (max x y)))
 
-(def ans1
+(def ans2
   (transduce
    (comp
     (map combine-basket)

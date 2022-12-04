@@ -7,8 +7,6 @@
 Dancer can fly 16 km/s for 11 seconds, but then must rest for 162 seconds.")
 
 
-(comment
-  (let [line (first (str/split-lines test-string))]))
 
 (defn process-line [line]
     (let [[_ name speed active sleep] (re-matches #"(\w+) can fly (\d+) km/s for (\d+) seconds, but then must rest for (\d+) seconds." line)]

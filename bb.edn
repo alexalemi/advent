@@ -1,5 +1,7 @@
 {:paths ["scripts/"]
  :tasks {fetch {:doc "Fetch an input file"
-                :task (exec 'utils/fetch)}
+                :task (exec 'fetch/fetch)}
          badges {:doc "Regenerate badges."
-                 :task (load-file "scripts/badges.clj")}}}
+                 :task (exec 'badges/update-badges)}
+         lint {:doc "Run clj-kondo over all clojure code."
+               :task (shell "clj-kondo --parallel --lint .")}}}

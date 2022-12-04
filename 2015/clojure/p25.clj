@@ -12,12 +12,12 @@
 
 (def pk (apply index data))
 
-(defn update [x]
+(defn step [x]
   (rem (* 252533 x) 33554393))
 
 
-(nth (iterate update 20151125) (dec (index 4 2)))
+(nth (iterate step 20151125) (dec (index 4 2)))
 
 
-(defonce ans1 (nth (iterate update 20151125) (dec (apply index data))))
+(defonce ans1 (nth (iterate step 20151125) (dec (apply index data))))
 (println "Answer1: " ans1)

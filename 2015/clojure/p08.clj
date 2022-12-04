@@ -68,7 +68,7 @@
   (map process (str/split-lines test-data))
   (apply str [\a \b])
   (let [x "\"\""
-        y (escape x)]
+        _y (escape x)]
     [(process x)])
   (escape "\"abc\"")
   (escape "\"abc\"")

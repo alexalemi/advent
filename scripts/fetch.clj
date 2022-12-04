@@ -1,10 +1,9 @@
-(ns utils
+(ns fetch
   (:require [babashka.curl :as curl]
             [clojure.string :as str]
             [babashka.fs :as fs]
             [clojure.tools.logging :as log]
-            [clojure.java.io :as io]
-            [babashka.cli :as cli]))
+            [clojure.java.io :as io]))
 
 
 (def ROOT "https://adventofcode.com/")

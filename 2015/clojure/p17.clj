@@ -25,9 +25,9 @@
 (println "Answer1:" ans1)
 
 (defn num-min-combos [target set]
-   (let [good-sets (filter (fn [[t c]] (= t target)) (map (juxt total count) (power set)))
+   (let [good-sets (filter (fn [[t _]] (= t target)) (map (juxt total count) (power set)))
          min-count (reduce min (map second good-sets))]
-     (count (filter (fn [[t c]] (= c min-count)) good-sets))))
+     (count (filter (fn [[_ c]] (= c min-count)) good-sets))))
 
 (comment
   (num-min-combos 25 test-data))

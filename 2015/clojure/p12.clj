@@ -7,13 +7,12 @@
 (defonce data (json/read-str data-string))
 
 (comment
-  (json/read-str "[1,{\"c\":\"red\",\"b\":2},3]")
+  (json/read-str "[1,{\"c\":\"red\",\"b\":2},3]"))
 
-  (red? {"a" "red"}))
 
 (defn total [s]
   (let [counter (atom 0)]
-    (w/postwalk (fn [x] (do (if (number? x) (swap! counter + x)) x)) s)
+    (w/postwalk (fn [x] (if (number? x) (swap! counter + x) x)) s)
     @counter))
 
 (defonce ans1 (total data))
@@ -39,5 +38,5 @@
   (w/postwalk-demo {:a [-1 1]})
 
   (let [counter (atom 0)]
-    (w/postwalk (fn [x] (do (if (number? x) (swap! counter + x)) x)) {:a [-1 10]})
+    (w/postwalk (fn [x] (if (number? x) (swap! counter + x) x)) {:a [-1 10]})
     @counter))

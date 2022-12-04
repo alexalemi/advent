@@ -30,4 +30,4 @@
   (map (fn [c] (to-char (count c)) (to-char (first c))) (partition-by identity data-string))
   (flatten (map (fn [c] (list (to-char (count c)) (to-char (first c)))) (partition-by identity "1122")))
 
-  (nth (iterate speak-and-say data-string 5)))
+  (nth (iterate speak-and-say data-string) 5))

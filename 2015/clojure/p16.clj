@@ -30,7 +30,7 @@
 (defn right-sue? [sue]
   (= sue (filter-keys sue template)))
 
-(defonce ans1 (ffirst (filter (fn [[k v]] (right-sue? v)) data)))
+(defonce ans1 (ffirst (filter (fn [[_ v]] (right-sue? v)) data)))
 (println "Answer1:" ans1)
 
 (defn right-sue?-2 [sue]
@@ -52,7 +52,7 @@
        true)
      (= eq-sue eq-template))))
 
-(defonce ans2 (ffirst (filter (fn [[k v]] (right-sue?-2 v)) data)))
+(defonce ans2 (ffirst (filter (fn [[_ v]] (right-sue?-2 v)) data)))
 (println "Answer2:" ans2)
 
 (comment
@@ -61,5 +61,5 @@
 
   (right-sue? (val (first data)))
 
-  (first (filter (fn [[k v]] (right-sue? v)) data))
-  (first (filter (fn [[k v]] (right-sue? v)) data)))
+  (first (filter (fn [[_ v]] (right-sue? v)) data))
+  (first (filter (fn [[_ v]] (right-sue? v)) data)))

@@ -17,7 +17,7 @@
    :size (count (str/split-lines board))
    :board (into #{} (remove nil? (for [[r line] (enumerate (str/split-lines board))
                                        [c chr] (enumerate line)]
-                                   (if (= chr \#) [c r]))))})
+                                   (when (= chr \#) [c r]))))})
 
 (def board-data (process-board data-string))
 (def test-board-data (process-board test-string))

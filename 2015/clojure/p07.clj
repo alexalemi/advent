@@ -62,7 +62,6 @@ NOT y -> i")
 
 (comment
   (every? digits "1231")
-  (parse-line "x AND y -> d")
   (parse-left "x AND y")
   (parse-left "123")
   (parse-left "a")
