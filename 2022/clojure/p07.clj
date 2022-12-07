@@ -47,23 +47,26 @@ $ ls
       (loop [sizes sizes pwd pwd]
         (if (seq pwd)
           (recur
-            (update sizes pwd + (parse-long size))
-            (rest pwd))
+           (update sizes pwd + (parse-long size))
+           (pop pwd))
           sizes)))))
 
 (defn process-size
   "Update our sizes with a single command."
   [state command]
-  (cond
-    (str/starts-with? command "cd /") (assoc state :pwd (list "/"))
-    (str/starts-with? command "cd ..") (update state :pwd rest)
-    (str/starts-with? command "cd") (update state :pwd conj (subs command 3))
-    :else (assoc state :sizes (reduce (partial accumulate-one (:pwd state)) (:sizes state) (rest (str/split-lines command))))))
+  (condp (fn [t s] (str/starts-with? s t)) command
+    "cd /" (assoc state :pwd ["/"])
+    "cd .." (update state :pwd pop)
+    "cd" (update state :pwd conj (subs command 3))
+    ;; ls
+    (assoc state :sizes (reduce (partial accumulate-one (:pwd state)) (:sizes state) (rest (str/split-lines command))))))
 
 (defn directory-sizes
   "Compute all of the directory sizes."
   [commands]
-  (:sizes (reduce process-size {:sizes {'("/") 0} :pwd '("/")} commands)))
+  (:sizes (reduce process-size
+                  {:sizes {["/"] 0} :pwd ["/"]}
+                  commands)))
 
 (defn sum-small-directories
   "Find the sum of all of the small directories."
@@ -99,7 +102,7 @@ $ ls
 ;;
 
 (defn -test [_]
-  (test/run-all-tests))
+  (test/run-tests))
 
 (defn -main [_]
   (println "Answer1:" ans1)
