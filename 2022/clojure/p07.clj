@@ -1,7 +1,8 @@
 ;; # 🎄 Advent of Code 2022 - Day 7
 (ns p07
   (:require [clojure.string :as str]
-            [clojure.test :as test]))
+            [clojure.test :as test]
+            [clojure.walk :as walk]))
 
 (def data-string (slurp "../input/07.txt"))
 
@@ -109,3 +110,42 @@ $ ls
 (defn -main [_]
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))
+
+
+
+;; Building Directory Tree
+;;
+;; ## Building the directory tree
+;; Some function to build up the directory tree, which I don't actually need in the end.
+(defn consume-one [fs listing]
+  (if (str/starts-with? listing "dir")
+    (assoc fs (subs listing 4) {})
+    (let [[size name] (str/split listing #" ")]
+      (assoc fs name (parse-long size)))))
+
+(defn consume [fs listings]
+  (reduce consume-one fs listings))
+
+(defn process [state command]
+  (cond
+    (str/starts-with? command "cd /") (assoc state :pwd nil)
+    (str/starts-with? command "cd ..") (update state :pwd pop)
+    (str/starts-with? command "cd") (update state :pwd conj (subs command 3))
+    :else (update-in state
+               (into [:fs] (:pwd state))
+               consume
+               (rest (str/split-lines command)))))
+
+(def test-fs (reduce process {:fs {} :pwd []} test-data))
+
+(def data-fs (reduce process {:fs {} :pwd []} data))
+
+;; This will annotate each directory with its own size.
+(def data-fs
+  (walk/postwalk (fn [x] (if (map? x)
+                         (assoc x :size
+                              (reduce-kv
+                                (fn [tot k v] (+ tot (if (map? v) (:size v) v)))
+                                0 x))
+                         x))
+                 (:fs test-fs))
