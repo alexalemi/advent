@@ -88,11 +88,13 @@ $ ls
         total-size (sizes '("/"))
         free-space (- 70000000 total-size)
         needed-space (- 30000000 free-space)]
-    (->> sizes
-         (map second)
-         (filter (fn [size] (>= size needed-space)))
-         (sort)
-         first)))
+    (transduce
+      (comp
+        (map second)
+        (filter (fn [size] (>= size needed-space))))
+      min
+      ##Inf
+      sizes)))
 
 (test/deftest test-part-2
   (test/is 24933642 (directory-to-delete test-data)))
