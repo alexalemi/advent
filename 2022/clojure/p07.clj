@@ -1,9 +1,7 @@
 ;; # 🎄 Advent of Code 2022 - Day 7
 (ns p07
-  (:require [clojure.edn :as edn]
-            [clojure.string :as str]
-            [util :as util]
-            [clojure.walk :as walk]))
+  (:require [clojure.string :as str]
+            [clojure.test :as test]))
 
 (def data-string (slurp "../input/07.txt"))
 
@@ -38,66 +36,50 @@ $ ls
 
 (def test-data (process-data test-string))
 
-;; ## Building the directory tree
-;; Some function to build up the directory tree, which I don't actually need in the end.
-(defn consume-one [fs listing]
+(defn accumulate-one
+  "Accumulate the sizes for a single listing."
+  [pwd sizes listing]
   (if (str/starts-with? listing "dir")
-    (assoc fs (subs listing 4) {})
-    (let [[size name] (str/split listing #" ")]
-      (assoc fs name (parse-long size)))))
-
-(defn consume [fs listings]
-  (reduce consume-one fs listings))
-
-(defn process [state command]
-  (cond
-    (str/starts-with? command "cd /") (assoc state :pwd nil)
-    (str/starts-with? command "cd ..") (update state :pwd butlast)
-    (str/starts-with? command "cd") (update state :pwd conj (subs command 3))
-    :else (update-in state
-               (into [:fs] (:pwd state))
-               consume
-               (rest (str/split-lines command)))))
-
-
-(def EMPTY {:fs {} :pwd []})
-
-(def test-fs (reduce process EMPTY test-data))
-
-(defn accumulate-one [pwd sizes listing]
-  (if (str/starts-with? listing "dir")
+    ;; A new directory, initialize to 0
     (assoc sizes (conj pwd (subs listing 4)) 0)
     (let [[size _] (str/split listing #" ")]
-      (loop [sizes sizes
-             pwd pwd]
+      ;; For all of the parents, update the size
+      (loop [sizes sizes pwd pwd]
         (if (seq pwd)
           (recur
             (update sizes pwd + (parse-long size))
             (rest pwd))
           sizes)))))
 
-(defn process-size [state command]
+(defn process-size
+  "Update our sizes with a single command."
+  [state command]
   (cond
     (str/starts-with? command "cd /") (assoc state :pwd (list "/"))
     (str/starts-with? command "cd ..") (update state :pwd rest)
     (str/starts-with? command "cd") (update state :pwd conj (subs command 3))
     :else (assoc state :sizes (reduce (partial accumulate-one (:pwd state)) (:sizes state) (rest (str/split-lines command))))))
 
-(defn directory-sizes [commands]
-  (let [result (reduce process-size {:sizes {'("/") 0} :pwd '("/")} commands)]
-     (:sizes result)))
+(defn directory-sizes
+  "Compute all of the directory sizes."
+  [commands]
+  (:sizes (reduce process-size {:sizes {'("/") 0} :pwd '("/")} commands)))
 
-(defn sum-large-directories [commands]
+(defn sum-small-directories
+  "Find the sum of all of the small directories."
+  [commands]
   (let [sizes (directory-sizes commands)]
     (transduce
      (filter (fn [x] (<= x 100000)))
      +
      (vals sizes))))
 
-(sum-large-directories test-data)
+(test/deftest test-part-1
+  (test/is 95437 (sum-small-directories test-data)))
 
-(def ans1 (sum-large-directories data))
+(def ans1 (sum-small-directories data))
 
+;; ## Part 2
 (defn directory-to-delete [commands]
   (let [sizes (directory-sizes commands)
         total-size (sizes '("/"))
@@ -109,9 +91,15 @@ $ ls
          (sort)
          first)))
 
-(directory-to-delete test-data)
+(test/deftest test-part-2
+  (test/is 24933642 (directory-to-delete test-data)))
 
 (def ans2 (directory-to-delete data))
+
+;;
+
+(defn -test [_]
+  (test/run-all-tests))
 
 (defn -main [_]
   (println "Answer1:" ans1)
