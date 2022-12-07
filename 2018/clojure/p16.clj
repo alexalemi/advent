@@ -47,14 +47,6 @@
 ;; Now let's implement the virtual machine itself, the state of the machine is given by
 ;; four registers, which I'll just store in a vector.
 
-(def OPS #{:addr :addi
-           :mulr :muli
-           :banr :bani
-           :borr :bori
-           :setr :seti
-           :gtir :gtri :gtrr
-           :eqir :eqri :eqrr})
-
 (defn step [r [op a b c]]
   (case op
     :addr (assoc r c (+ (r a) (r b)))

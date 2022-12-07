@@ -116,6 +116,7 @@ def get_data(day=None, year=None, token=DEFAULT_TOKEN, suffix=''):
       sys.exit(1)
 
 
+data21 = functools.partial(get_data, year=2022)
 data21 = functools.partial(get_data, year=2021)
 data20 = functools.partial(get_data, year=2020)
 data19 = functools.partial(get_data, year=2019)
