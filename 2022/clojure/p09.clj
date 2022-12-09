@@ -101,7 +101,9 @@ R 2")
         (let [new-knot (if (> (inf-norm prev knot) 1)
                          (where-to knot prev)
                          knot)]
-          (recur new-knot (rest tail) (conj new new-knot)))
+          (if (= new-knot knot)
+            (into new tail)
+            (recur new-knot (rest tail) (conj new new-knot))))
         new))))
 
 (def long-rope (into [] (repeat 10 [0 0])))
