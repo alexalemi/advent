@@ -90,12 +90,12 @@ $ ls
         free-space (- 70000000 total-size)
         needed-space (- 30000000 free-space)]
     (transduce
-      (comp
-        (map second)
-        (filter (fn [size] (>= size needed-space))))
-      min
-      ##Inf
-      sizes)))
+     (comp
+      (map second)
+      (filter (fn [size] (>= size needed-space))))
+     min
+     ##Inf
+     sizes)))
 
 (test/deftest test-part-2
   (test/is 24933642 (directory-to-delete test-data)))
@@ -105,13 +105,11 @@ $ ls
 ;;
 
 (defn -test [_]
-  (test/run-tests))
+  (test/run-tests 'p07))
 
 (defn -main [_]
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))
-
-
 
 ;; Building Directory Tree
 ;;
@@ -132,20 +130,20 @@ $ ls
     (str/starts-with? command "cd ..") (update state :pwd pop)
     (str/starts-with? command "cd") (update state :pwd conj (subs command 3))
     :else (update-in state
-               (into [:fs] (:pwd state))
-               consume
-               (rest (str/split-lines command)))))
+                     (into [:fs] (:pwd state))
+                     consume
+                     (rest (str/split-lines command)))))
 
 (def test-fs (reduce process {:fs {} :pwd []} test-data))
 
 (def data-fs (reduce process {:fs {} :pwd []} data))
 
 ;; This will annotate each directory with its own size.
-(def data-fs
+(def data-fs-with-sizes
   (walk/postwalk (fn [x] (if (map? x)
-                         (assoc x :size
-                              (reduce-kv
-                                (fn [tot k v] (+ tot (if (map? v) (:size v) v)))
-                                0 x))
-                         x))
-                 (:fs test-fs))
+                           (assoc x :size
+                                  (reduce-kv
+                                   (fn [tot k v] (+ tot (if (map? v) (:size v) v)))
+                                   0 x))
+                           x))
+                 (:fs test-fs)))

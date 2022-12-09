@@ -144,7 +144,7 @@
 ;; ## main
 
 (defn -test [_]
-  (test/run-tests))
+  (test/run-tests 'p08))
 
 (defn -main [_]
   (println "Answer1:" ans1)

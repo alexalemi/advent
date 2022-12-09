@@ -57,7 +57,7 @@ R 2")
 (defn total-visited [instructions initial]
   (->> (expand instructions)
        (reductions move initial)
-       (map last)
+       (map peek)
        (into #{})
        count))
 
@@ -126,7 +126,7 @@ U 20"))
 ;; ## main
 
 (defn -test [_]
-  (test/run-tests))
+  (test/run-tests 'p09))
 
 (defn -main [_]
   (println "Answer1:" ans1)
