@@ -18,10 +18,12 @@ from collections import namedtuple, defaultdict
 
 logging.basicConfig(level=logging.INFO)
 
+
+USER_AGENT = "github.com/alexalemi/advent by alexalemi@gmail.com"
 EAST_COAST = pytz.timezone("America/New_York")
 TODAY = datetime.datetime.now().astimezone(EAST_COAST)
 YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
-DEFAULT_TOKEN = open(Path(__file__).resolve().parent / ".token", 'r')
+DEFAULT_TOKEN = open(Path(__file__).resolve().parent / "../.token", 'r')
 # B_TOKEN = open(Path(__file__).resolve().parent / ".tokenb", 'r')
 
 REPLACED_NAMES = {"pleonasticperson": "Colin Clement"}
@@ -156,6 +158,7 @@ def get_leaderboard(boards=BOARDS, force=False):
           url = f"https://adventofcode.com/{year}/leaderboard/private/view/{num}.json"
           req = urllib.request.Request(url)
           req.add_header("Cookie", f"session={TOKEN}")
+          req.add_header("User-Agent", USER_AGENT)
           try:
             logging.info(f"Requesting leaderboard from {url}...")
             with urllib.request.urlopen(req) as r:

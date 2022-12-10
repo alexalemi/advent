@@ -6,7 +6,7 @@ __pycache__
 .token
 .tokenb
 .vscode
-.leaderboard.txt
+scripts/.leaderboard.txt
 .solution-map
 
 2020/hy/advent
