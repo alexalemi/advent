@@ -62,14 +62,22 @@
   (assert (str/ends-with? regex "$"))
   (loop [connections (transient #{})
          frontier (transient [[[0 0] (butlast (rest regex))]])]
-    ; (println "Total connections = " (count connections) " frontier size=" (count frontier) " strlength = " (count (second (peek frontier))))
+    (println "Total connections = " (count connections) " frontier size=" (count frontier) " strlength = " (count (second (peek frontier))))
     (if-let [[loc [next & remaining]] (peek! frontier)]
       (case next
-        \( (recur connections (reduce conj! (pop! frontier) (map vector (repeat loc) (forks remaining))))
-        nil (recur connections (pop! frontier))
+        \( (let [new (set (map vector (repeat loc) (forks remaining)))]
+             (recur connections
+                    (reduce conj! (pop! frontier) new)))
+        nil (recur connections
+                   ;seen
+                   (pop! frontier))
         (\N \S \E \W) (let [nextloc (neighbor loc next)]
-                        (recur (conj! connections #{loc nextloc}) (conj! (pop! frontier) [nextloc remaining])))
-        (recur connections (conj! (pop! frontier) [loc remaining])))
+                        (recur (conj! connections #{loc nextloc})
+                               ;seen
+                               (conj! (pop! frontier) [nextloc remaining])))
+        (recur connections
+               ;seen
+               (conj! (pop! frontier) [loc remaining])))
       (persistent! connections))))
 
 (defn raw-neighbors [[x y]]
@@ -103,7 +111,10 @@
     23 "^ESSWWN(E|NNENN(EESS(WNSE|)SSS|WWWSSSSE(SW|NNNE)))$"
     31 "^WSSEESWWWNW(S|NENNEEEENN(ESSSSW(NWSW|SSEN)|WSWWN(E|WWS(E|SS))))$"))
 
-(def ans1 (time (furthest-distance (assemble-connections data-string))))
+;(def ans1 (time (furthest-distance (assemble-connections data-string))))
+(def ans1 :undefined)
+
+(def connections (time (assemble-connections data-string)))
 
 ;; ## Part 2
 
