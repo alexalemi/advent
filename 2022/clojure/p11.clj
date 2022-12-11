@@ -93,16 +93,19 @@ Monkey 3:
 
 ;; ## Part 1
 
+(defn solver [data rounds]
+  (->> (iterate (partial round (:monkey-specs data)) [(:items data) (into [] (repeat (count (:items data)) 0))])
+       (drop 1)
+       (take rounds)
+       (last)
+       (second)
+       (sort >)
+       (take 2)
+       (apply *')))
+
 (defn part-1 [data]
   (binding [*manage-worry* (fn [x] (quot x 3))]
-    (->> (iterate (partial round (:monkey-specs data)) [(:items data) (into [] (repeat (count (:items data)) 0))])
-         (drop 1)
-         (take 20)
-         (last)
-         (second)
-         (sort >)
-         (take 2)
-         (apply *'))))
+    (solver data 20)))
 
 (test/deftest test-part-1
   (test/is (= (part-1 test-data) 10605)))
@@ -116,14 +119,7 @@ Monkey 3:
 
 (defn part-2 [data]
   (binding [*manage-worry* (fn [x] (mod x (* 2 3 5 7 11 13 17 19 23)))]
-    (->> (iterate (partial round (:monkey-specs data)) [(:items data) (into [] (repeat (count (:items data)) 0))])
-         (drop 1)
-         (take 10000)
-         (last)
-         (second)
-         (sort >)
-         (take 2)
-         (apply *'))))
+    (solver data 10000)))
 
 (test/deftest test-part-2
   (test/is (= 2713310158 (part-2 test-data))))
