@@ -1,7 +1,8 @@
 ;; # 🎄 Advent of Code 2022 - Day 11 - Monkey in the Middle
 (ns p11
   (:require [clojure.string :as str]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [clojure.test :as test]))
 
 (def data-string (str/split (slurp "../input/11.txt") #"\n\n"))
 
@@ -33,8 +34,16 @@ Monkey 3:
     If true: throw to monkey 0
     If false: throw to monkey 1" #"\n\n"))
 
-(defn divisible? [x n]
-  (= 0 (mod x n)))
+(defn divisible? [n]
+  (fn [x] (= 0 (mod x n))))
+
+(defn add [n]
+  (fn [x] (+' x n)))
+
+(defn mul [n]
+  (fn [x] (*' x n)))
+
+(defn square [x] (*' x x))
 
 (def test-data
   {:items [[79 98]
@@ -43,32 +52,34 @@ Monkey 3:
            [74]]
    :monkey-specs
    [{:id 0
-     :operation (fn [x] (*' x 19))
-     :test (fn [x] (divisible? x 23))
+     :operation (mul 19)
+     :test (divisible? 23)
      :true-monkey 2
      :false-monkey 3}
     {:id 1
-     :operation (fn [x] (+' x 6))
-     :test (fn [x] (divisible? x 19))
+     :operation (add 6)
+     :test (divisible? 19)
      :true-monkey 2
      :false-monkey 0}
     {:id 2
-     :operation (fn [x] (*' x x))
-     :test (fn [x] (divisible? x 13))
+     :operation square
+     :test (divisible? 13)
      :true-monkey 1
      :false-monkey 3}
     {:id 3
-     :operation (fn [x] (+' x 3))
-     :test (fn [x] (divisible? x 17))
+     :operation (add 3)
+     :test (divisible? 17)
      :true-monkey 0
      :false-monkey 1}]})
+
+(def ^:dynamic *manage-worry* (fn [x] (quot x 3)))
 
 (defn handle-item
   "Build out a handler from a monkey-spec"
   [{:keys [operation test true-monkey false-monkey]}]
   (fn [items item]
     (let [item (operation item)
-          item (quot item 3)] ;gets bored])
+          item (*manage-worry* item)]
       (if (test item)
         (update items true-monkey conj item)
         (update items false-monkey conj item)))))
@@ -84,44 +95,51 @@ Monkey 3:
   [monkey-specs [items counts]]
   (reduce activate-monkey [items counts] monkey-specs))
 
+;; ## Part 1
+
 (defn part-1 [data]
-  (->> (iterate (partial round (:monkey-specs data)) [(:items data) (into [] (repeat (count (:items data)) 0))])
-       (drop 1)
-       (take 20)
-       (last)
-       (second)
-       (sort >)
-       (take 2)
-       (apply *')))
+  (binding [*manage-worry* (fn [x] (quot x 3))]
+    (->> (iterate (partial round (:monkey-specs data)) [(:items data) (into [] (repeat (count (:items data)) 0))])
+         (drop 1)
+         (take 20)
+         (last)
+         (second)
+         (sort >)
+         (take 2)
+         (apply *'))))
 
-(println (part-1 test-data))
-
+(test/deftest test-part-1
+  (test/is (= (part-1 test-data) 10605)))
 
 (def data (eval (edn/read-string (slurp "11.edn"))))
 
-(println "Answer1: " (part-1 data))
+(def ans1 (part-1 data))
+;; = 69918
 
-(defn handle-item
-  "Build out a handler from a monkey-spec"
-  [{:keys [operation test true-monkey false-monkey]}]
-  (fn [items item]
-    (let [item (operation item)
-          item (mod item 223092870)]
-      (if (test item)
-        (update items true-monkey conj item)
-        (update items false-monkey conj item)))))
+;; ## Part 2
 
 (defn part-2 [data]
-  (->> (iterate (partial round (:monkey-specs data)) [(:items data) (into [] (repeat (count (:items data)) 0))])
-       (drop 1)
-       (take 10000)
-       (last)
-       (second)
-       (sort >)
-       (take 2)
-       (apply *')))
+  (binding [*manage-worry* (fn [x] (mod x (* 2 3 5 7 11 13 17 19 23)))]
+    (->> (iterate (partial round (:monkey-specs data)) [(:items data) (into [] (repeat (count (:items data)) 0))])
+         (drop 1)
+         (take 10000)
+         (last)
+         (second)
+         (sort >)
+         (take 2)
+         (apply *'))))
 
+(test/deftest test-part-2
+  (test/is (= 2713310158 (part-2 test-data))))
 
-(println (part-2 data))
+(def ans2 (part-2 data))
+;; = 19573408701
 
-(println (part-2 test-data))
+;; ## Main
+
+(defn -test [& _]
+  (test/run-tests 'p11))
+
+(defn -main [& _]
+  (println "Answer1:" ans1)
+  (println "Answer2:" ans2))
