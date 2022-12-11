@@ -34,6 +34,9 @@ Monkey 3:
     If true: throw to monkey 0
     If false: throw to monkey 1" #"\n\n"))
 
+(defn ->ints [s]
+  (mapv parse-long (re-seq #"\d+" s)))
+
 (defn divisible? [n]
   (fn [x] (= 0 (mod x n))))
 
@@ -45,32 +48,25 @@ Monkey 3:
 
 (defn square [x] (*' x x))
 
-(def test-data
-  {:items [[79 98]
-           [54 65 75 74]
-           [79 60 97]
-           [74]]
-   :monkey-specs
-   [{:id 0
-     :operation (mul 19)
-     :test (divisible? 23)
-     :true-monkey 2
-     :false-monkey 3}
-    {:id 1
-     :operation (add 6)
-     :test (divisible? 19)
-     :true-monkey 2
-     :false-monkey 0}
-    {:id 2
-     :operation square
-     :test (divisible? 13)
-     :true-monkey 1
-     :false-monkey 3}
-    {:id 3
-     :operation (add 3)
-     :test (divisible? 17)
-     :true-monkey 0
-     :false-monkey 1}]})
+(defn process [s]
+  (let [monkey-specs (into []
+                           (for [monkey s]
+                             (let [[id-line starting-line operation-line test-line true-line false-line] (str/split-lines monkey)]
+                               {:id (first (->ints id-line))
+                                :starting (->ints starting-line)
+                                :operation (let [[_ op arg] (re-find #"Operation: new = old ([\+|\*]) (\d+|\w+)" operation-line)]
+                                             (if (= arg "old")
+                                               square
+                                               (case op
+                                                 "+" (add (parse-long arg))
+                                                 "*" (mul (parse-long arg)))))
+                                :test (divisible? (first (->ints test-line)))
+                                :true-monkey (first (->ints true-line))
+                                :false-monkey (first (->ints false-line))})))]
+    {:monkey-specs monkey-specs
+     :items (mapv :starting monkey-specs)}))
+
+(def test-data (process test-string))
 
 (def ^:dynamic *manage-worry* (fn [x] (quot x 3)))
 
@@ -111,7 +107,7 @@ Monkey 3:
 (test/deftest test-part-1
   (test/is (= (part-1 test-data) 10605)))
 
-(def data (eval (edn/read-string (slurp "11.edn"))))
+(def data (process data-string))
 
 (def ans1 (part-1 data))
 ;; = 69918
