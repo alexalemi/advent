@@ -6,46 +6,46 @@
          [81 93 90 61 62 64]
          [69 97 88 93]
          [59 80]]
- :counts [0 0 0 0 0 0 0 0]∆
+ :counts [0 0 0 0 0 0 0 0]
  :monkey-specs [
-  {:id 0
-   :operation (fn [x] (* x 11))
-   :test (fn [x] (divisible? x 19))
-   :true-monkey 6
-   :false-monkey 7}
-  {:id 1
-   :operation (fn [x] (+ x 8))
-   :test (fn [x] (divisible? x 2))
-   :true-monkey 6
-   :false-monkey 0}
-  {:id 2
-   :operation (fn [x] (+ x 1))
-   :test (fn [x] (divisible? x 3))
-   :true-monkey 5
-   :false-monkey 3}
-  {:id 3
-   :operation (fn [x] (* x 7))
-   :test (fn [x] (divisible? x 17))
-   :true-monkey 5
-   :false-monkey 4}
-  {:id 4
-   :operation (fn [x] (+ x 4))
-   :test (fn [x] (divisible? x 13))
-   :true-monkey 0
-   :false-monkey 1}
-  {:id 5
-   :operation (fn [x] (* x 11))
-   :test (fn [x] (divisible? x 19))
-   :true-monkey 6
-   :false-monkey 7}
-  {:id 0
-   :operation (fn [x] (* x 11))
-   :test (fn [x] (divisible? x 19))
-   :true-monkey 6
-   :false-monkey 7}
-  {:id 0
-   :operation (fn [x] (* x 11))
-   :test (fn [x] (divisible? x 19))
-   :true-monkey 6
-   :false-monkey 7}
-]}
+                {:id 0
+                 :operation (fn [x] (*' x 11))
+                 :test (fn [x] (divisible? x 19))
+                 :true-monkey 6
+                 :false-monkey 7}
+                {:id 1
+                 :operation (fn [x] (+' x 8))
+                 :test (fn [x] (divisible? x 2))
+                 :true-monkey 6
+                 :false-monkey 0}
+                {:id 2
+                 :operation (fn [x] (+' x 1))
+                 :test (fn [x] (divisible? x 3))
+                 :true-monkey 5
+                 :false-monkey 3}
+                {:id 3
+                 :operation (fn [x] (*' x 7))
+                 :test (fn [x] (divisible? x 17))
+                 :true-monkey 5
+                 :false-monkey 4}
+                {:id 4
+                 :operation (fn [x] (+' x 4))
+                 :test (fn [x] (divisible? x 13))
+                 :true-monkey 0
+                 :false-monkey 1}
+                {:id 5
+                 :operation (fn [x] (+' x 7))
+                 :test (fn [x] (divisible? x 7))
+                 :true-monkey 1
+                 :false-monkey 4}
+                {:id 6
+                 :operation (fn [x] (*' x x))
+                 :test (fn [x] (divisible? x 5))
+                 :true-monkey 7
+                 :false-monkey 2}
+                {:id 7
+                 :operation (fn [x] (+' x 6))
+                 :test (fn [x] (divisible? x 11))
+                 :true-monkey 2
+                 :false-monkey 3}]}
+

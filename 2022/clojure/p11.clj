@@ -1,6 +1,7 @@
 ;; # 🎄 Advent of Code 2022 - Day 11 - Monkey in the Middle
 (ns p11
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.edn :as edn]))
 
 (def data-string (str/split (slurp "../input/11.txt") #"\n\n"))
 
@@ -42,22 +43,22 @@ Monkey 3:
            [74]]
    :monkey-specs
    [{:id 0
-     :operation (fn [x] (* x 19))
+     :operation (fn [x] (*' x 19))
      :test (fn [x] (divisible? x 23))
      :true-monkey 2
      :false-monkey 3}
     {:id 1
-     :operation (fn [x] (+ x 6))
+     :operation (fn [x] (+' x 6))
      :test (fn [x] (divisible? x 19))
      :true-monkey 2
      :false-monkey 0}
     {:id 2
-     :operation (fn [x] (* x x))
+     :operation (fn [x] (*' x x))
      :test (fn [x] (divisible? x 13))
      :true-monkey 1
      :false-monkey 3}
     {:id 3
-     :operation (fn [x] (+ x 3))
+     :operation (fn [x] (+' x 3))
      :test (fn [x] (divisible? x 17))
      :true-monkey 0
      :false-monkey 1}]})
@@ -76,11 +77,51 @@ Monkey 3:
   [[items counts] monkey-spec]
   (let [id (:id monkey-spec)]
     [(reduce (handle-item monkey-spec) (assoc items id []) (get items id))
-     (update counts id + (count (items id)))]))
+     (update counts id +' (count (items id)))]))
 
 (defn round
   "A round consists of each monkey acting on their items."
   [monkey-specs [items counts]]
   (reduce activate-monkey [items counts] monkey-specs))
 
-(def history (take 20 (drop 1 (iterate (partial round (:monkey-specs test-data)) [(:items test-data) [0 0 0 0]]))))
+(defn part-1 [data]
+  (->> (iterate (partial round (:monkey-specs data)) [(:items data) (into [] (repeat (count (:items data)) 0))])
+       (drop 1)
+       (take 20)
+       (last)
+       (second)
+       (sort >)
+       (take 2)
+       (apply *')))
+
+(println (part-1 test-data))
+
+
+(def data (eval (edn/read-string (slurp "11.edn"))))
+
+(println "Answer1: " (part-1 data))
+
+(defn handle-item
+  "Build out a handler from a monkey-spec"
+  [{:keys [operation test true-monkey false-monkey]}]
+  (fn [items item]
+    (let [item (operation item)
+          item (mod item 223092870)]
+      (if (test item)
+        (update items true-monkey conj item)
+        (update items false-monkey conj item)))))
+
+(defn part-2 [data]
+  (->> (iterate (partial round (:monkey-specs data)) [(:items data) (into [] (repeat (count (:items data)) 0))])
+       (drop 1)
+       (take 10000)
+       (last)
+       (second)
+       (sort >)
+       (take 2)
+       (apply *')))
+
+
+(println (part-2 data))
+
+(println (part-2 test-data))
