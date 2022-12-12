@@ -17,8 +17,8 @@
 (defn queue? [x] (instance? clojure.lang.PersistentQueue x))
 
 (defn queue
- ([] (QUEUE))
- ([coll] (reduce conj QUEUE coll)))
+  ([] (QUEUE))
+  ([coll] (reduce conj QUEUE coll)))
 
 (deftype Bag [^clojure.lang.IPersistentMap m
               ^long n]
@@ -121,7 +121,6 @@
              came-from
              best-score
              (rest neighs))))))))
-
 
 (comment
   (a-star
