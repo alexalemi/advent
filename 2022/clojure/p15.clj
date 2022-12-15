@@ -4,7 +4,8 @@
 (ns p15
   (:require [clojure.string :as str]
             [clojure.set :as set]
-            [clojure.test :as test]))
+            [clojure.test :as test]
+            [clojure.math.combinatorics :as combo]))
 
 (def data-string (slurp "../input/15.txt"))
 (def test-string "Sensor at x=2, y=18: closest beacon is at x=-2, y=15
@@ -47,12 +48,29 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3")
      (let [ys (map second all)]
        [(reduce min ys) (reduce max ys)])]))
 
-;; Then we can naively figure out the set of all excluded positions
-(defn excluded-beacon-locations [data y]
+;; Then we can naively figure out the set of all excluded positions.
+;; The naive way to do it is to simply create sets of all of the ranges and merge.
+(defn naive-excluded-beacon-locations [data y]
   (count (apply set/union
                 (for [{[sx sy] :sensor d :d} data]
                   (let [dx (- d (abs (- sy y)))]
                     (set (range (- sx dx) (+ sx dx))))))))
+
+;; The less naive way of doing it is to try to merge the ranges
+;; themselves without instantiating the intermediate sets.
+(defn excluded-beacon-locations [data y]
+  (let [ranges (for [{[sx sy] :sensor d :d} data]
+                 (let [dx (- d (abs (- sy y)))]
+                   [(- sx dx) (+ sx dx)]))
+        ranges (->> ranges
+                    (filter (fn [[xlo xhi]] (> xhi xlo)))
+                    (sort-by first))]
+    (dec (first
+          (reduce
+           (fn [[covered prev] [left right]]
+             [(+ covered (- (max right prev) (max (dec left) prev))) (max prev right)])
+           [0 ##-Inf]
+           ranges)))))
 
 (test/deftest test-part-1
   (test/is (= 26 (excluded-beacon-locations test-data 10))))
@@ -68,15 +86,16 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3")
 (defn boundary [{:keys [sensor beacon]}]
   (let [[x y] sensor
         d (inc (manhattan sensor beacon))]
-    (concat
-     (for [i (range d)]
-       [(+ x i) (+ y (- d i))])
-     (for [i (range d)]
-       [(+ x (- d i)) (- y i)])
-     (for [i (range d)]
-       [(- x i) (- y (- d i))])
-     (for [i (range d)]
-       [(- x (- d i)) (+ y i)]))))
+    (into #{}
+          (concat
+           (for [i (range d)]
+             [(+ x i) (+ y (- d i))])
+           (for [i (range d)]
+             [(+ x (- d i)) (- y i)])
+           (for [i (range d)]
+             [(- x i) (- y (- d i))])
+           (for [i (range d)]
+             [(- x (- d i)) (+ y i)])))))
 
 (defn within-search-space [cap]
   (fn [[x y]] (and (<= 0 x cap) (<= 0 y cap))))
