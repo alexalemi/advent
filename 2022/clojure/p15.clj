@@ -124,6 +124,33 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3")
 
 (defonce ans2 (time (distress-signal data 4000000)))
 
+(defn find-x [data y cap]
+  (let [ranges (for [{[sx sy] :sensor d :d} data]
+                 (let [dx (- d (abs (- sy y)))]
+                   [(- sx dx) (+ sx dx)]))
+        ranges (->> ranges
+                    (filter (fn [[xlo xhi]] (> xhi xlo)))
+                    (sort-by first))]
+    (reduce
+     (fn [cand [left right]]
+       (if (<= left cand)
+         (if (>= right cand)
+           (if (< right cap)
+             (inc right)
+             (reduced nil))
+           cand)
+         (reduced cand)))
+     0
+     ranges)))
+
+(defn distress-signal-2 [data cap]
+  (first
+   (keep-indexed
+    (fn [i y] (if-let [x (find-x data y cap)] [x y] nil))
+    (range (inc cap)))))
+
+(defonce ans2-alt (time (distress-signal-2 data 4000000)))
+
 ;; ## Main
 
 (defn -test [& _]
