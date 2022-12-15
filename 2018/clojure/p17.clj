@@ -63,8 +63,6 @@ y=13, x=498..504"))
 ;; `:clays` with those coordinates.  We also need access to the bounds,
 ;; which could be a function as its drived by
 
-(defn make-bounds [clay])
-
 (defn data->state [data]
   (let [clay (reduce into #{} (map line data))]
     {:clay clay
@@ -213,14 +211,14 @@ y=13, x=498..504"))
           ;; If there is something solid beneath us
           ((solid? Ω) (below spawn))
           ;; If there is nothing in our way,
-          (if ((not-solid? Ω) newspawn)
+           (if ((not-solid? Ω) newspawn)
            ;; Then continue in that direction
-            (recur Ω newspawn)
+             (recur Ω newspawn)
            ;; Otherwise mark as blocked
-            (assoc Ω :blocked spawn))
+             (assoc Ω :blocked spawn))
           ;; If there isn't anything below us mark as source
           ;; we must have gone off an edge.
-          (update Ω :sources conj spawn)))))))
+           (update Ω :sources conj spawn)))))))
 
 (defn mark-still
   "Mark a square as now a still square."
@@ -280,15 +278,15 @@ y=13, x=498..504"))
        (if
           ;; If both directions got blocked, then make those values still
           ;; and add the original parent as another source.
-          (and l r)
-          (recur
-            (above start)
-            (reduce
-               (fn [m x] (mark-still m x))
-               combined
-               (horizontal-line l r)))
+        (and l r)
+         (recur
+          (above start)
+          (reduce
+           (fn [m x] (mark-still m x))
+           combined
+           (horizontal-line l r)))
             ;; Otherwise, just return the combined thing.
-          combined)))))
+         combined)))))
 
 (defn fill
   "The main filling logic."
