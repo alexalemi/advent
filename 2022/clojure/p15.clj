@@ -109,6 +109,9 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3")
 (defn tuning-freq [[x y]]
   (+ (* x 4000000) y))
 
+;; This leads to a relatively simple implementation, and it works, but
+;; its slower than I would like.
+
 (defn naive-distress-signal [data cap]
   (tuning-freq
    (first
@@ -118,6 +121,10 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3")
       (filter (within-search-space cap))
       (remove (excluded data)))
      data))))
+
+;; To attempt to speed things up,
+;; we'll use a modified version of the fast solution to part-1
+;; and then check every height.
 
 (defn find-x [data y cap]
   (let [ranges (for [{[sx sy] :sensor d :d} data]
@@ -144,6 +151,8 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3")
     (keep-indexed
      (fn [i y] (if-let [x (find-x data y cap)] [x y] nil))
      (range (inc cap))))))
+
+;; This is faster but still not ideal.
 
 (test/deftest test-part-2
   (test/is (= 56000011 (distress-signal test-data 20))))
