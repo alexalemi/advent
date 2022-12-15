@@ -109,7 +109,7 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3")
 (defn tuning-freq [[x y]]
   (+ (* x 4000000) y))
 
-(defn distress-signal [data cap]
+(defn naive-distress-signal [data cap]
   (tuning-freq
    (first
     (sequence
@@ -118,11 +118,6 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3")
       (filter (within-search-space cap))
       (remove (excluded data)))
      data))))
-
-(test/deftest test-part-2
-  (test/is (= 56000011 (distress-signal test-data 20))))
-
-(defonce ans2 (time (distress-signal data 4000000)))
 
 (defn find-x [data y cap]
   (let [ranges (for [{[sx sy] :sensor d :d} data]
@@ -143,13 +138,17 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3")
      0
      ranges)))
 
-(defn distress-signal-2 [data cap]
-  (first
-   (keep-indexed
-    (fn [i y] (if-let [x (find-x data y cap)] [x y] nil))
-    (range (inc cap)))))
+(defn distress-signal [data cap]
+  (tuning-freq
+   (first
+    (keep-indexed
+     (fn [i y] (if-let [x (find-x data y cap)] [x y] nil))
+     (range (inc cap))))))
 
-(defonce ans2-alt (time (distress-signal-2 data 4000000)))
+(test/deftest test-part-2
+  (test/is (= 56000011 (distress-signal test-data 20))))
+
+(defonce ans2 (time (distress-signal data 4000000)))
 
 ;; ## Main
 
