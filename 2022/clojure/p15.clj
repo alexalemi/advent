@@ -40,15 +40,7 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3")
 ;; For part-1 we are given some `y` coordinate and are asked how many spots
 ;; are excluded as possible missing beacon locations.
 
-;; First we need to be able to determine the bounds of our map.
-(defn bounds [data]
-  (let [all (into (mapv :sensor data) (map :beacon data))]
-    [(let [xs (map first all)]
-       [(reduce min xs) (reduce max xs)])
-     (let [ys (map second all)]
-       [(reduce min ys) (reduce max ys)])]))
-
-;; Then we can naively figure out the set of all excluded positions.
+;; We can naively figure out the set of all excluded positions.
 ;; The naive way to do it is to simply create sets of all of the ranges and merge.
 (defn naive-excluded-beacon-locations [data y]
   (count (apply set/union
