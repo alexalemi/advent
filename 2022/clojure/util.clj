@@ -4,6 +4,13 @@
 (import 'java.security.MessageDigest
         'java.math.BigInteger)
 
+(defn seek
+  "Returns the first time from coll for which (pred item) returns true.
+   Returns nil if no such item is present or the not-found value if supplied."
+  ([pred coll] (seek pred coll nil))
+  ([pred coll not-found]
+   (reduce (fn [_ x] (if (pred x) (reduced x) not-found)) not-found coll)))
+
 (defn md5 [^String s]
   (let [algorithm (MessageDigest/getInstance "MD5")
         raw (.digest algorithm (.getBytes s))]
@@ -92,7 +99,7 @@
       ;; (println "current=" current " frontier=" frontier " neighs=" neighs " neigh=" neigh " best-score=" best-score " came-from=" came-from)
       (cond
         (and (empty? frontier) (empty? neighs)) :failure
-        (goal? current) (reconstruct-path (persistent! came-from) current)
+        (and (not= current :start) (goal? current)) (reconstruct-path (persistent! came-from) current)
         (empty? neighs)
         (let [[next _] (peek frontier)]
           (recur
