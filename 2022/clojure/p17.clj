@@ -1,9 +1,12 @@
-
+;; # 🎄 Advent of Code 2022 - Day 17 - Pyroclastic Flow
+;;  For today's puzzle, we are playing tetris.
 (ns p17
   (:require [clojure.string :as str]
             [clojure.set :as set]
-            [nextjournal.clerk :as clerk])
+            [clojure.test :as test])
   (:import [java.awt.image BufferedImage]))
+
+;; ## Data Processing
 
 (def data-string (str/trim (slurp "../input/17.txt")))
 
@@ -18,6 +21,33 @@
 
 (def WIDTH 7)
 
+;; We'll represent the state of our world
+;; with the following little object.  Our `rock` is a set
+;; of coordinates that we will manipulate, our `fixed` are all
+;; of the squares that have already frozen in place.
+;; We'll keep track of the set of all `rocks` that we will
+;; cycle through, indexed by `rock-num`, as well as the
+;; `move-str` of all of the moves we'll cycle through, our
+;; current location being `move-num`.  `time` will denote
+;; how many blocks have fallen, and `top` is the heighest
+;; `y` coordinate in `fixed.`
+
+(def state
+  {:fixed (into #{} (for [x (range WIDTH)] [x 0]))
+   :rock #{}
+   :rocks rocks
+   :rock-num 0
+   :top 0
+   :move-str data-string
+   :move-num 0
+   :time 0})
+
+(def test-state
+  (assoc state :move-str test-string))
+
+;; ## Visualization
+;; We'll build a nice image renderer so that we can see the game board.
+
 (defn x-bounds [vals]
   (reduce
    (fn [[xlo xhi] [x _]]
@@ -31,6 +61,39 @@
      [(min ylo y) (max yhi y)])
    [##Inf ##-Inf]
    vals))
+(defn bounds [state]
+  (let [{:keys [rock fixed]} state
+        all (into fixed rock)]
+    [(x-bounds all) (y-bounds all)]))
+
+(defn render-image
+  "Render the puzzle as a raw image."
+  ([Ω] (render-image Ω (bounds Ω) 1))
+  ([Ω zoom] (render-image Ω (bounds Ω) zoom))
+  ([Ω bounds zoom]
+   (let [{:keys [fixed rock hidden]} Ω
+         [[xlo xhi] [ylo yhi]] bounds
+         width (* zoom (- (inc (inc xhi)) (dec xlo)))
+         height (* zoom (- (inc yhi) ylo))
+         img (BufferedImage. width height BufferedImage/TYPE_3BYTE_BGR)]
+     (doseq [xp (range width)
+             yp (range height)]
+       (let [x (+ (quot xp zoom) (dec xlo))
+             ;y (- yhi (+ (quot yp zoom) ylo))
+             y (+ (quot yp zoom) ylo)
+             loc [x y]]
+         (.setRGB img xp (- (dec height) yp)
+                  (cond
+                    (and (= y 0) (nil? hidden)) (.getRGB (java.awt.Color. 142 142 142))
+                    (= x -1) (.getRGB (java.awt.Color. 142 142 142))
+                    (= x WIDTH) (.getRGB (java.awt.Color. 142 142 142))
+                    (rock loc) (.getRGB (java.awt.Color. 194 42 42))
+                    (fixed loc) (.getRGB (java.awt.Color. 42 42 42))
+                    :else (.getRGB java.awt.Color/WHITE)))))
+     img)))
+
+;; ## Logic
+;; To start we'll implement the basic components we need to get some blocks moving.
 
 (defn in-bounds? [rocks]
   (let [[xlo xhi] (x-bounds rocks)]
@@ -54,84 +117,43 @@
 
 (defn offset [rock dy]
   (into #{} (map (fn [[x y]] [x (+ y dy)])) rock))
+(defn wrapped-inc [x cap] (mod (inc x) cap))
 
-(def state
-  {:fixed (into #{} (for [x (range WIDTH)] [x 0]))
-   :rock #{}
-   :rocks (cycle rocks)
-   :top 0
-   :moves (cycle data-string)
-   :time 0})
-
-(def test-state
-  (assoc state :moves (cycle test-string)))
-
-(empty? #{})
-
-(defn step [state]
-  (let [{:keys [fixed rock rocks moves time top]} state]
+(defn step
+  "Core logic, does a single update to our state."
+  [state]
+  (let [{:keys [fixed rock rocks rock-num move-num move-str top]} state]
     (if (empty? rock)
+      ;; If we don't currently have a rock, load the next one at the appropriate height.
       (-> state
-          (assoc :rock (offset (first rocks) top))
-          (update :rocks rest))
-      (let [move (first moves)
+          (assoc :rock (offset (get rocks rock-num) top))
+          (update :rock-num wrapped-inc (count rocks)))
+      ;; Otherwise handle a move
+      (let [move (get move-str move-num)
             new-rock (push (case move \> move-right \< move-left) rock)
             rock (if (empty? (set/intersection new-rock fixed)) new-rock rock)
             down-rock (move-down rock)]
         (if (empty? (set/intersection down-rock fixed))
-          ;; Otherwise just a move
+          ;; Just an ordinary move, no collisions
           (-> state
               (assoc :rock down-rock)
-              (update :moves rest))
-          ;; We have a landing
+              (update :move-num wrapped-inc (count move-str)))
+          ;; We have a landing, freeze the rock, add it to fixed, clear the rock, inc the time
           (-> state
               (assoc :rock #{})
               (update :fixed into rock)
-              (update :moves rest)
+              (update :move-num wrapped-inc (count move-str))
               (update :time inc)
               (assoc :top (max top (second (y-bounds rock))))))))))
 
-(defn bounds [state]
-  (let [{:keys [rock fixed]} state
-        all (into fixed rock)]
-    [(x-bounds all) (y-bounds all)]))
-
-(defn render-image
-  "Render the puzzle as a raw image."
-  ([Ω] (render-image Ω (bounds Ω) 1))
-  ([Ω zoom] (render-image Ω (bounds Ω) zoom))
-  ([Ω bounds zoom]
-   (let [{:keys [fixed rock]} Ω
-         [[xlo xhi] [ylo yhi]] bounds
-         width (* zoom (- (inc (inc xhi)) (dec xlo)))
-         height (* zoom (- (inc yhi) ylo))
-         img (BufferedImage. width height BufferedImage/TYPE_3BYTE_BGR)]
-     (doseq [xp (range width)
-             yp (range height)]
-       (let [x (+ (quot xp zoom) (dec xlo))
-             ;y (- yhi (+ (quot yp zoom) ylo))
-             y (+ (quot yp zoom) ylo)
-             loc [x y]]
-         (.setRGB img xp (- (dec height) yp)
-                  (cond
-                    (= y 0) (.getRGB (java.awt.Color. 142 142 142))
-                    (= x -1) (.getRGB (java.awt.Color. 142 142 142))
-                    (= x WIDTH) (.getRGB (java.awt.Color. 142 142 142))
-                    (rock loc) (.getRGB (java.awt.Color. 194 42 42))
-                    (fixed loc) (.getRGB (java.awt.Color. 42 42 42))
-                    :else (.getRGB java.awt.Color/WHITE)))))
-     img)))
+;; ## Part 1
+;;  We already have what we need in place to solve the first part.
 
 (defn part-1 [state]
   (:top (first (drop-while (fn [state] (< (:time state) 2022)) (iterate step state)))))
 
-(part-1 test-state)
-
-(def ans1 (part-1 state))
-(println "Answer1:" ans1)
-
-(let [final (first (drop-while (fn [state] (< (:time state) 2022)) (iterate step test-state)))]
-  (:top final))
+(test/deftest test-part-1
+  (test/is (= 3068 (part-1 test-state))))
 
 (let [dropped 10
       state (first (drop-while (fn [x] (< (:time x) dropped)) (iterate step test-state)))
@@ -141,7 +163,9 @@
 
 ;; ## Part-2
 ;;  If we have any hope of doing a huge number of steps, we are going to have to prune our fixed set to
-;;  only have a single spot at each height.
+;;  only have a single spot at each height.  We only need to keep those blocks that are 'visible' from the
+;;  very top, at which point we can sort of shift our whole state down again to be nestled at the origin,
+;;  after doing that we'll store a `hidden` parameter that says how much height we've just eaten up.
 
 (defn neighbors [[x y]]
   [[(dec x) y]
@@ -169,48 +193,56 @@
       new-fixed (prune (:fixed state) (:top state))]
   (render-image (assoc state :fixed new-fixed) 10))
 
-(defn find-repeat [state move-str stop]
-  (let [{:keys [fixed rock time top]} state
-        inc-move (fn [x] (mod (inc x) (count move-str)))
-        inc-rocks (fn [x] (mod (inc x) (count rocks)))]
-    (loop [fixed fixed
-           rock rock
-           rock-num 0
-           move-num 0
-           time time
-           top top
-           hidden 0
+(defn seek
+  "Returns the first time from coll for which (pred item) returns true.
+   Returns nil if no such item is present or the not-found value if supplied."
+  ([pred coll] (seek pred coll nil))
+  ([pred coll not-found]
+   (reduce (fn [_ x] (if (pred x) (reduced x) not-found)) not-found coll)))
+
+(defn drop-block
+  "Drop the next block onto the configuration."
+  [state]
+  (seek (fn [x] (not= (:time x) (:time state))) (iterate step state)))
+
+(defn clean-up
+  "Prune the boundary after dropping a block"
+  [state]
+  (let [{:keys [fixed top]} state
+        pruned-fixed (prune fixed top)
+        bottom (first (y-bounds pruned-fixed))
+        new-top (- top bottom)
+        new-fixed (into #{} (map (fn [[x y]] [x (- y bottom)])) pruned-fixed)]
+    (-> state
+        (assoc :fixed new-fixed)
+        (update :hidden (fnil + 0) bottom)
+        (assoc :top new-top))))
+
+;; By normalizing our states like this, we should be able to easily detect
+;; if there is a cycle in the states.
+
+(defn find-repeat
+  "Run the game until we find a cycle."
+  [state]
+  (let [signature (juxt :move-num :rock-num :fixed)]
+    (loop [state state
            seen {}]
-      (if (= time stop) (+ top hidden)
-          (if (empty? rock)
-            (let [pruned-fixed (prune fixed top)
-                  bottom (first (y-bounds pruned-fixed))
-                  new-top (- top bottom)
-                  new-fixed (into #{} (map (fn [[x y]] [x (- y bottom)])) pruned-fixed)
-                  signature [move-num rock-num new-fixed]]
-              (if (seen signature)
-                ;; we've hit a loop
-                {:fixed new-fixed :rock-num rock-num :move-num move-num :top new-top :hidden (+ hidden bottom) :time time
-                 :old-time (first (seen signature))
-                 :old-hidden (second (seen signature))}
-                (recur new-fixed (offset (get rocks rock-num) new-top) (inc-rocks rock-num) move-num time new-top (+ hidden bottom)
-                       (assoc seen signature [time (+ hidden bottom)]))))
-            (let [move (get move-str move-num)
-                  new-rock (push (case move \> move-right \< move-left) rock)
-                  rock (if (empty? (set/intersection new-rock fixed)) new-rock rock)
-                  down-rock (move-down rock)]
-              (if (empty? (set/intersection down-rock fixed))
-                ;; Otherwise just a move
-                (recur fixed down-rock rock-num (inc-move move-num) time top hidden seen)
-                ;; We have a landing
-                (do
-                  (when (= (mod time 1000) 0) (println "time=" time " score=" (+ top hidden)))
-                  (recur (into fixed rock) #{} rock-num (inc-move move-num) (inc time)
-                         (max top (second (y-bounds rock)))
-                         hidden seen)))))))))
+      (let [new-state (clean-up (drop-block state))
+            sig (signature new-state)]
+        (if-let [prev (seen sig)]
+          ;; we've hit a loop)))))
+          (-> new-state
+              (assoc :old-time (first prev))
+              (assoc :old-hidden (second prev)))
+          (recur
+           new-state
+           (assoc seen sig [(:time new-state) (:hidden new-state)])))))))
+
+;; If we detect a cycle we can do a fast warp into the future to get near to
+;; our eventual goal.
 
 (defn warp [state stop]
-  (let [{:keys [fixed rock rock-num move-num time top hidden old-time old-hidden]} state
+  (let [{:keys [time hidden old-time old-hidden]} state
         period (- time old-time)
         hidden-inc (- hidden old-hidden)
         periods (quot (- stop time) period)
@@ -220,61 +252,43 @@
         (assoc :time new-time)
         (assoc :hidden new-hidden))))
 
-(defn continue [state move-str stop]
-  (let [{:keys [fixed rock rock-num move-num time top hidden]} state
-        inc-move (fn [x] (mod (inc x) (count move-str)))
-        inc-rocks (fn [x] (mod (inc x) (count rocks)))]
-    (loop [fixed fixed
-           rock rock
-           rock-num rock-num
-           move-num move-num
-           time time
-           top top
-           hidden hidden]
-      (if (= time stop) (+ top hidden)
-          (if (empty? rock)
-            (let [pruned-fixed (prune fixed top)
-                  bottom (first (y-bounds pruned-fixed))
-                  new-top (- top bottom)
-                  new-fixed (into #{} (map (fn [[x y]] [x (- y bottom)])) pruned-fixed)]
-              (recur new-fixed (offset (get rocks rock-num) new-top) (inc-rocks rock-num) move-num time new-top (+ hidden bottom)))
-            (let [move (get move-str move-num)
-                  new-rock (push (case move \> move-right \< move-left) rock)
-                  rock (if (empty? (set/intersection new-rock fixed)) new-rock rock)
-                  down-rock (move-down rock)]
-              (if (empty? (set/intersection down-rock fixed))
-                ;; Otherwise just a move
-                (recur fixed down-rock rock-num (inc-move move-num) time top hidden)
-                ;; We have a landing
-                (do
-                  (when (= (mod time 1000) 0) (println "time=" time " score=" (+ top hidden)))
-                  (recur (into fixed rock) #{} rock-num (inc-move move-num) (inc time)
-                         (max top (second (y-bounds rock)))
-                         hidden)))))))))
+;; We'll then just run ordinarily until we hit it, in case there are residual steps needed.
 
-(defn part-2 [state move-str stop]
-  (let [state (find-repeat state move-str stop)
-        state (warp state stop)]
-    (continue state test-string stop)))
+(defn run-until [state stop]
+  (seek (fn [x] (= (:time x) stop)) (iterate drop-block state)))
 
-(part-2
- (dissoc (dissoc test-state :rocks) :moves)
- test-string
- 2022)
+(defn block-height [state stop]
+  (let [state state
+        state (find-repeat state)
+        state (warp state stop)
+        state (run-until state stop)]
+    (+ (:hidden state) (:top state))))
 
-(part-2
- (dissoc (dissoc state :rocks) :moves)
- data-string
- 2022)
+(test/deftest test-part-1-fast
+  (test/is (= 3068 (block-height test-state 2022))))
 
-(let [state (dissoc (dissoc state :rocks) :moves)
-      move-str data-string
-      stop 2022]
-  (let [state (find-repeat state move-str stop)]
-        ;state (warp state stop)]
-    state))
-    ;(continue state test-string stop)))
+(def ans1 (block-height state 2022))
 
-;(find-repeat (dissoc state :rocks) data-string 1000000)
+(def STOP 1000000000000)
 
-#_(part-2 test-state 1000000000000)
+(test/deftest test-part-2
+  (test/is (= 1514285714288 (block-height test-state STOP))))
+
+(def ans2 (block-height state STOP))
+
+(let [state state
+      stop STOP
+      state (find-repeat state)
+      state (warp state stop)
+      state (run-until state stop)
+      state (clean-up state)]
+  (render-image state 10))
+
+;; ## Main
+
+(defn -test [& _]
+  (test/run-tests 'p17))
+
+(defn -main [& _]
+  (println "Answer1: " ans1)
+  (println "Answer2: " ans2))
