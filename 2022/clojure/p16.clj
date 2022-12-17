@@ -82,46 +82,46 @@ Valve JJ has flow rate=21; tunnel leads to valve II")
 ;; Let's see if we can limp into this by maintaining a set of all previously considered states
 ;; and then see if we can filter out those states that aren't worth considering.
 
-#_(defn dominates?
-    "Say whether state y dominates over state x."
-    [{x-loc :loc x-open :open x-released :released x-time :time :as x}
-     {y-loc :loc y-open :open y-released :released y-time :time :as y}]
-    (and (>= y-time x-time) (>= y-released x-released) (set/subset? y-open x-open)))
+(defn dominates?
+  "Say whether state y dominates over state x."
+  [{x-loc :loc x-open :open x-released :released x-time :time :as x}
+   {y-loc :loc y-open :open y-released :released y-time :time :as y}]
+  (and (>= y-time x-time) (>= y-released x-released) (set/subset? y-open x-open)))
 
-#_(defn dominations
-    "This function tries to define a notion of domination
+(defn dominations
+  "This function tries to define a notion of domination
   amongst the positions seen so far."
-    [data seen]
-    (fn find-dominator [state]
-      (let [loc (:loc state)]
-        (some (partial dominates? state) (seen loc)))))
+  [data seen]
+  (fn find-dominator [state]
+    (let [loc (:loc state)]
+      (some (partial dominates? state) (seen loc)))))
 
-#_(defn most-pressure
-    ([data state] (most-pressure data state ##Inf))
-    ([data state max-iter]
-     (let [neighbors (partial neighbors data)]
-       (loop [frontier [state] ;(list state)
-              seen {(:loc state) #{state}}
-              best-seen 0
-              counter 0]
-        ;(println "frontier=" (count frontier) " seen=" (transduce (map count) + 0  (vals seen)) " best-seen=" best-seen " counter=" counter)
-         (if (< counter max-iter)
-           (if-let [state (peek frontier)]
-             (let [find-dominator (dominations data seen)
-                   neighs (remove find-dominator (neighbors state))]
-              ;(println "frontier=" frontier " seen=" seen " best-seen=" best-seen " counter=" counter " neighs=" neighs)
-               (recur
-                (into (pop frontier) neighs)
-                (reduce (fn [m neigh] (update m (:loc neigh) conj neigh)) seen neighs)
-                (if (> (:released state) best-seen)
-                  (do
-                    (println "new best =" (:released state))
-                    (:released state))
-                  best-seen)
-               ;(max best-seen (:released state)))
-                (inc counter)))
-             [best-seen counter])
-           [best-seen counter])))))
+(defn most-pressure-dominates
+  ([data state] (most-pressure-dominates data state ##Inf))
+  ([data state max-iter]
+   (let [neighbors (partial neighbors data)]
+     (loop [frontier [state] ;(list state)
+            seen {(:loc state) #{state}}
+            best-seen 0
+            counter 0]
+       ;(println "frontier=" (count frontier) " seen=" (transduce (map count) + 0  (vals seen)) " best-seen=" best-seen " counter=" counter)
+       (if (< counter max-iter)
+         (if-let [state (peek frontier)]
+           (let [find-dominator (dominations data seen)
+                 neighs (remove find-dominator (neighbors state))]
+             ;(println "frontier=" frontier " seen=" seen " best-seen=" best-seen " counter=" counter " neighs=" neighs)
+             (recur
+              (into (pop frontier) neighs)
+              (reduce (fn [m neigh] (update m (:loc neigh) conj neigh)) seen neighs)
+              (if (> (:released state) best-seen)
+                (do
+                  (println "new best =" (:released state))
+                  (:released state))
+                best-seen)
+              ;(max best-seen (:released state)))
+              (inc counter)))
+           [best-seen counter])
+         [best-seen counter])))))
 
 ;; So far this approach hasn't really yielded fruit for me.  It doesn't seem to be reducing the search space fast
 ;; enough to let me solve the real puzzle.
@@ -154,12 +154,6 @@ Valve JJ has flow rate=21; tunnel leads to valve II")
 (defn state-max [x y]
   (if (> (:released x) (:released y)) x y))
 
-(defn heuristic [data]
-  (let [flows (update-vals data :flow)
-        locs (into #{} (keys data))]
-    (fn [{:keys [time released open]}]
-      (+ released (* time (reduce + (vals (select-keys flows (set/difference locs open)))))))))
-
 (defn simple-most-pressure
   ([data] (simple-most-pressure data init
                                 (fn [state] [(:loc state) (:open state)])
@@ -179,6 +173,12 @@ Valve JJ has flow rate=21; tunnel leads to valve II")
                     (neighbors state))))
           (dec time))
          (:released (reduce state-max (vals frontier))))))))
+
+(defn heuristic [data]
+  (let [flows (update-vals data :flow)
+        locs (into #{} (keys data))]
+    (fn [{:keys [time released open]}]
+      (+ released (* time (reduce + (vals (select-keys flows (set/difference locs open)))))))))
 
 (defn most-pressure
   ([data] (most-pressure data init
@@ -215,11 +215,14 @@ Valve JJ has flow rate=21; tunnel leads to valve II")
   (test/is (= 1651 (most-pressure test-data))))
 
 (comment
-  (most-pressure test-data)
+  (time (most-pressure test-data))
+  (time (simple-most-pressure test-data))
 
-  (most-pressure data)
+  (time (most-pressure data))
+  (time (simple-most-pressure data)))
 
-  (def ans1 (time (most-pressure data))))
+(defonce ans1 (time (simple-most-pressure data)))
+#_(println "Answer1:" ans1)
 ;; ans1 = 1792
 
 ;; ## Part 2
@@ -245,14 +248,165 @@ Valve JJ has flow rate=21; tunnel leads to valve II")
                  (fn [state] [(set [(:loc state) (:elephant state)]) (:open state)])
                  neighbors-2))
 
-(test/deftest test-part-2
-  (test/is (= 1707 (part-2 test-data))))
+(defn simple-part-2 [data]
+  (simple-most-pressure data init-2
+                        (fn [state] [(set [(:loc state) (:elephant state)]) (:open state)])
+                        neighbors-2))
+
+#_(test/deftest test-part-2
+    (test/is (= 1707 (part-2 test-data))))
+
+#_(defonce ans2 (time (simple-part-2 data)))
+#_(println "Answer2:" ans2)
 
 (comment
-  (time (part-2 test-data)))
+  (time (part-2 test-data))
+  (time (simple-part-2 test-data))
+
+  (time (part-2 data))
+  (time (simple-part-2 data))
+
+  (def ans2 (time (part-2 data)))
+  (def ans2 (time (simple-part-2 data))))
+
+;; ## Part 2 Part Deux
+;;
+;; Alright, let's try that again, this time I'll try to first "compress" our graph into something smaller and more manageable.
+
+(defn replace-connections [connections who key downstream]
+  (if (connections key)
+    (merge-with min
+                (dissoc connections key)
+                (dissoc (update-vals downstream (fn [x] (+ x (connections key)))) who))
+    connections))
+
+(defn remove-node [data loc]
+  (reduce-kv
+   (fn [m k v]
+     (assoc m k (update v :connections replace-connections k loc (:connections (data loc)))))
+   {}
+   data))
 
 (comment
-  (def ans2 (time (part-2 data))))
+  (let [original-data test-data
+        data (update-vals original-data (fn [val] (assoc val :connections (into {} (zipmap (:connections val) (repeat 1))))))
+        zero-nodes (filter (fn [[_ x]] (= (:flow x) 0)) data)
+        [loc {connections :connections}] (first zero-nodes)]
+    (let [data data
+          zero-nodes zero-nodes]
+      (if-let [goner (first zero-nodes)]
+        [:recur
+         (remove-node data goner)
+         (rest zero-nodes)]
+        data))))
+
+(defn compress [original-data]
+  (let [data (update-vals original-data (fn [val] (assoc val :connections (into {} (zipmap (:connections val) (repeat 1))))))
+        zero-nodes (into #{} (map first (filter (fn [[_ x]] (= (:flow x) 0)) data)))]
+    (loop [data data
+           queue zero-nodes]
+      (if-let [goner (first queue)]
+        (recur
+         (remove-node data goner)
+         (rest queue))
+        (reduce dissoc data (disj zero-nodes :AA))))))
+
+(def compressed-test-data (compress test-data))
+(def compressed-data (compress data))
+
+(defn compressed-neighbors [data state]
+  (let [{:keys [loc open time]} state
+        info (data loc)]
+    (filter (fn [s] (>= (:time s) 0))
+            (concat
+         ;; We could move to any of the neighboring locations
+             (for [[neigh steps] (:connections info)]
+               (-> state
+                   (assoc :loc neigh)
+                   (update :time - steps)))
+         ;; And if our own valve isn't open, we could open it
+             (when (and (not (open loc)) (pos? (:flow info)))
+               [(-> state
+                    (update :open conj loc)
+                    (update :time dec)
+                    (update :released + (* (dec time) (:flow info))))])))))
+
+(defn compressed-most-pressure
+  ([data] (compressed-most-pressure data init (fn [state] [(:loc state) (:open state) (:time state)]) compressed-neighbors))
+  ([data init keyfunc neighbors]
+   (let [neighbors (partial neighbors data)]
+     (loop [frontier {(keyfunc init) init}
+            best-seen 0]
+       (println " best-seen = " best-seen)
+       (if frontier
+         (let [new-frontier
+               (apply merge-with state-max
+                      (for [state (vals frontier)]
+                        (reduce
+                         (fn [m s] (assoc m (keyfunc s) s))
+                         {}
+                         (neighbors state))))]
+           (recur
+            new-frontier
+            (transduce
+             (map :released)
+             max
+             best-seen
+             (vals new-frontier))))
+         best-seen)))))
+
+(defn compressed-neighbors-2 [data state]
+  (let [neighbors (partial compressed-neighbors data)]
+    (apply concat (for [neigh (neighbors (swap-loc-elephant state))]
+                    (neighbors (update (swap-loc-elephant neigh) :time inc))))))
+
+(defn compressed-part-2 [data]
+  (compressed-most-pressure data init-2
+                            (fn [state] [(set [(:loc state) (:elephant state)]) (:open state) (:time state)])
+                            compressed-neighbors-2))
+
+(comment
+  (time (simple-most-pressure test-data))
+  (time (compressed-most-pressure compressed-test-data))
+
+  (time (simple-most-pressure data))
+  (time (compressed-most-pressure compressed-data))
+
+  (time (simple-part-2 test-data))
+  (time (compressed-part-2 compressed-test-data))
+
+  ; (most-pressure-dominates)
+
+  (let [init (-> init
+                 (assoc :loc :JJ)
+                 (assoc :time 28))]
+    (neighbors test-data init))
+
+  (let [data compressed-test-data
+        init init
+        keyfunc (fn [state] [(:loc state) (:open state)])
+        neighbors compressed-neighbors
+        neighbors (partial neighbors data)
+        init (-> init
+                 (assoc :loc :JJ)
+                 (assoc :time 28))]
+    (let [frontier {(keyfunc init) init}
+          best-seen 0]
+      (println "best-seen = " best-seen)
+      (println "frontier = " frontier)
+      (if frontier
+        (let [new-frontier
+              (apply merge-with state-max
+                     (for [state (vals frontier)]
+                       (reduce
+                        (fn [m s] (assoc m (keyfunc s) s))
+                        {}
+                        (neighbors state))))]
+
+          [:recur
+           new-frontier
+           (reduce max best-seen (map :released (vals new-frontier)))])
+        best-seen))))
 
 ;; ## Main
 
@@ -262,123 +416,3 @@ Valve JJ has flow rate=21; tunnel leads to valve II")
 (defn -main [& _])
   ;(println "Answer1: " ans1))
   ;(println "Answer2: " ans2))
-
-#_(defn heuristic [data]
-    (let [flows (update-vals data :flow)
-          locs (into #{} (keys data))]
-      (fn [{:keys [time released open]}]
-        (+ released (* time (reduce + (vals (select-keys flows (set/difference locs open)))))))))
-
-#_(comment
-    (let [data test-data
-          neighbors (partial neighbors data)
-          frontier {[(:loc init) (:open init)] init}]
-      (letfn [(state-max [x y] (if (> (:released x) (:released y)) x y))
-              (expand [frontier]
-                (apply merge-with state-max
-                       (for [state (vals frontier)]
-                         (reduce
-                          (fn [m k] (assoc m [(:loc k) (:open k)] k))
-                          {}
-                          (neighbors state)))))]
-        (let [frontier (nth (iterate expand frontier) 30)]
-             ;frontier (expand frontier)
-             ;frontier (expand frontier)]
-         ;(println "-------")
-         ;(pp/pprint frontier)
-          (reduce state-max (vals frontier))
-         ;(apply merge-with h-max
-         ;(println "========")
-          #_(pp/pprint (for [state (vals frontier)]
-                         [(:loc state)
-                          (reduce
-                           (fn [m k] (assoc m (:loc k) k))
-                           {}
-                           (neighbors state))])))))
-
-    (let [data test-data
-          neighbors (partial neighbors data)
-         ;heuristic (heuristic data)
-         ;heuristic (fn [state] (:released state))
-          frontier {(:loc init) [init (heuristic init)]}]
-      (letfn [(h-max [[s1 h1] [s2 h2]] (if (> h2 h1) [s2 h2] [s1 h1]))
-              (g-max [x y] (println "x=" x " y=" y) y)
-              (expand [frontier]
-                (apply merge-with h-max
-                       (for [[state _] (vals frontier)]
-                         (reduce
-                          (fn [m k] (assoc m (:loc k) [k (heuristic k)]))
-                          {}
-                          (neighbors state)))))]
-        (let [frontier (nth (iterate expand frontier) 30)]
-             ;frontier (expand frontier)
-             ;frontier (expand frontier)]
-          (println "-------")
-          (pp/pprint frontier)
-          (reduce h-max (vals frontier))
-         ;(apply merge-with h-max
-         ;(println "========")
-          #_(pp/pprint (for [[state _] (vals frontier)]
-                         [(:loc state)
-                          (reduce
-                           (fn [m k] (assoc m (:loc k) [k (heuristic k)]))
-                           {}
-                           (neighbors state))])))))
-
-    (let [data test-data
-          neighbors (partial neighbors data)
-          heuristic (heuristic data)
-          frontier {(:loc init) (priority-map init (heuristic init))}]
-      (letfn [(expand [frontier]
-                (apply merge-with into
-                       (for [frontier-at-loc (vals frontier)]
-                         (apply merge-with into
-                                (for [[state _] frontier-at-loc]
-                                  (reduce
-                                   (fn [m k] (update m (:loc k) (fnil assoc (priority-map)) k (heuristic k)))
-                                   {}
-                                   (neighbors state)))))))]
-        (let [frontier (expand frontier)
-              frontier (expand frontier)
-              frontier (expand frontier)]
-          (println "-----------")
-          (pp/pprint (expand frontier))))))
-
-#_(comment
-    (println "----------------------")
-
-    (let [[best frontier] (most-pressure test-data init 428)]
-      [best (peek frontier)])
-
-    (time (most-pressure test-data init))
-
-    (time (most-pressure data init))
-
-    (time
-     (let [data test-data]
-       (let [neighbors (partial neighbors data)]
-         (letfn [(goal? [state] (= 0 (:time state)))
-                 (heuristic [state]
-                   (* -1 (:time state) (reduce + (vals (select-keys (update-vals data :flow) (set/difference (into #{} (keys data)) (:open state)))))))
-                 (cost [current]
-                   (fn [neigh] (- (:released current) (:released neigh))))]
-           (last
-            (util/a-star
-             init
-             goal?
-             cost
-             neighbors
-             heuristic))))))
-
-    #_(let [data test-data
-            state init
-            neighbors (partial neighbors data)]
-        (let [frontier [state]
-              seen {(:loc state) #{state}}
-              best-seen 0
-              counter 0]
-          (when (< counter 5)
-            (if-let [state (peek frontier)]
-              (let [find-dominator (dominations data seen)
-                    neighs (remove find-dominator (neighbors state))]
-                neighs))))))
