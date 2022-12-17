@@ -149,11 +149,28 @@
 ;; ## Part 1
 ;;  We already have what we need in place to solve the first part.
 
+(defn seek
+  "Returns the first time from coll for which (pred item) returns true.
+   Returns nil if no such item is present or the not-found value if supplied."
+  ([pred coll] (seek pred coll nil))
+  ([pred coll not-found]
+   (reduce (fn [_ x] (if (pred x) (reduced x) not-found)) not-found coll)))
+
+(defn drop-block
+  "Drop the next block onto the configuration."
+  [state]
+  (seek (fn [x] (not= (:time x) (:time state))) (iterate step state)))
+
+(defn run-until [state stop]
+  (seek (fn [x] (= (:time x) stop)) (iterate drop-block state)))
+
 (defn part-1 [state]
-  (:top (first (drop-while (fn [state] (< (:time state) 2022)) (iterate step state)))))
+  (:top (run-until state 2022)))
 
 (test/deftest test-part-1
   (test/is (= 3068 (part-1 test-state))))
+
+(def ans1 (part-1 state))
 
 (let [dropped 10
       state (first (drop-while (fn [x] (< (:time x) dropped)) (iterate step test-state)))
@@ -192,18 +209,6 @@
       state (step state)
       new-fixed (prune (:fixed state) (:top state))]
   (render-image (assoc state :fixed new-fixed) 10))
-
-(defn seek
-  "Returns the first time from coll for which (pred item) returns true.
-   Returns nil if no such item is present or the not-found value if supplied."
-  ([pred coll] (seek pred coll nil))
-  ([pred coll not-found]
-   (reduce (fn [_ x] (if (pred x) (reduced x) not-found)) not-found coll)))
-
-(defn drop-block
-  "Drop the next block onto the configuration."
-  [state]
-  (seek (fn [x] (not= (:time x) (:time state))) (iterate step state)))
 
 (defn clean-up
   "Prune the boundary after dropping a block"
@@ -254,10 +259,7 @@
 
 ;; We'll then just run ordinarily until we hit it, in case there are residual steps needed.
 
-(defn run-until [state stop]
-  (seek (fn [x] (= (:time x) stop)) (iterate drop-block state)))
-
-(defn block-height [state stop]
+(defn part-2 [state stop]
   (let [state state
         state (find-repeat state)
         state (warp state stop)
@@ -265,16 +267,14 @@
     (+ (:hidden state) (:top state))))
 
 (test/deftest test-part-1-fast
-  (test/is (= 3068 (block-height test-state 2022))))
-
-(def ans1 (block-height state 2022))
+  (test/is (= 3068 (part-2 test-state 2022))))
 
 (def STOP 1000000000000)
 
 (test/deftest test-part-2
-  (test/is (= 1514285714288 (block-height test-state STOP))))
+  (test/is (= 1514285714288 (part-2 test-state STOP))))
 
-(def ans2 (block-height state STOP))
+(def ans2 (part-2 state STOP))
 
 (let [state state
       stop STOP
