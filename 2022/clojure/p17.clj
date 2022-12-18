@@ -274,7 +274,7 @@
 (test/deftest test-part-2
   (test/is (= 1514285714288 (part-2 test-state STOP))))
 
-(def ans2 (part-2 state STOP))
+(def ans2 (time (part-2 state STOP)))
 
 (let [state state
       stop STOP
