@@ -33,27 +33,23 @@
 (defn move [{:keys [by-loc by-val] :as data} val]
   (let [loc (by-val val)
         [_ x] val
+        ;; The start and end are the same location
         new-loc (mod (+ loc x) (dec (count by-val)))
-        new-loc (if (zero? new-loc) (dec (count by-val)) new-loc)]
-    (if (>= new-loc loc)
-      (-> data
-          (update :by-loc merge
-                  (into {new-loc val}
-                        (for [i (range (inc loc) (inc new-loc))]
-                          [(dec i) (by-loc i)])))
-          (update :by-val merge
-                  (into {val new-loc}
-                        (for [i (range (inc loc) (inc new-loc))]
-                          [(by-loc i) (dec i)]))))
-      (-> data
-          (update :by-loc merge
-                  (into {new-loc val}
-                        (for [i (range new-loc loc)]
-                          [(inc i) (by-loc i)])))
-          (update :by-val merge
-                  (into {val new-loc}
-                        (for [i (range new-loc loc)]
-                          [(by-loc i) (inc i)])))))))
+        ;; To get things to align, set 0 to the end.
+        new-loc (if (zero? new-loc) (dec (count by-val)) new-loc)
+        ;; Different behavior if we're moving left or right
+        [start stop op] (if (>= new-loc loc)
+                          [(inc loc) (inc new-loc) dec]
+                          [new-loc loc inc])]
+    (-> data
+        (update :by-loc merge
+                (into {new-loc val}
+                      (for [i (range start stop)]
+                        [(op i) (by-loc i)])))
+        (update :by-val merge
+                (into {val new-loc}
+                      (for [i (range start stop)]
+                        [(by-loc i) (op i)]))))))
 
 (defn render [data]
   (let [{by-loc :by-loc} data]
@@ -62,11 +58,13 @@
             (second (by-loc i))))))
 
 (defn grove-coordinates [coll]
-  (->> [1000 2000 3000]
+  (transduce
+    (comp
        (map (fn [i] (+ i (.indexOf coll 0))))
        (map (fn [i] (mod i (count coll))))
-       (map coll)
-       (reduce +)))
+       (map coll))
+    +
+    [1000 2000 3000]))
 
 ;; ## Part 1
 
