@@ -120,7 +120,8 @@ Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsid
 (test/deftest test-part-1
   (test/is (= 33 (part-1 test-data))))
 
-(def ans1 (part-1 data))
+(def ans1 (time (part-1 data)))
+(println "Answer 1:" ans1)
 
 ;; ## Part 2
 
@@ -136,7 +137,8 @@ Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsid
           geodes))
       data))))
 
-(def ans2 (part-2 data))
+(def ans2 (time (part-2 data)))
+(println "Answer 2:" ans2)
 
 (test/deftest test-part-2
   (test/is (= (* 56 62) (part-2 test-data))))
