@@ -59,12 +59,12 @@
 
 (defn grove-coordinates [coll]
   (transduce
-    (comp
-       (map (fn [i] (+ i (.indexOf coll 0))))
-       (map (fn [i] (mod i (count coll))))
-       (map coll))
-    +
-    [1000 2000 3000]))
+   (comp
+    (map (fn [i] (+ i (.indexOf coll 0))))
+    (map (fn [i] (mod i (count coll))))
+    (map coll))
+   +
+   [1000 2000 3000]))
 
 ;; ## Part 1
 
@@ -104,3 +104,4 @@
 (defn -main [& _]
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))
+
