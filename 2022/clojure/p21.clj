@@ -136,6 +136,14 @@ hmdt: 32")
 
 (def ans2 (part-2 data))
 
+;; ## Extrapolation
+;; Saw this online, but since the whole thing is a tree, we know its a linear function and we can simply
+;; extrapolate to get the answer
+
+(defn part-2-fast [data]
+  (letfn [(f [x] ((make-evaluate (-> data (assoc-in [:root 0] :-) (assoc :humn x))) :root))]
+    (/ (f 0) (- (f 0) (f 1)))))
+
 ;; ## Main
 
 (defn -test [& _]
