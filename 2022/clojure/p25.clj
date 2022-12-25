@@ -9,6 +9,20 @@
 
 (def data-string (slurp "../input/25.txt"))
 
+(def test-string "1=-0-2
+12111
+2=0=
+21
+2=01
+111
+20012
+112
+1=-1=
+1-12
+12
+1=
+122")
+
 (defn indexed [xs] (map-indexed vector xs))
 
 (defn exp [x n]
@@ -26,8 +40,6 @@
                  \0 0
                  \- -1
                  \= -2)))))
-
-(def tot (reduce + (map snafu (str/split-lines data-string))))
 
 (defn base5 [x]
   (loop [i 20 x x out []]
@@ -54,11 +66,15 @@
           6 (recur (conj (drop 1 (rest digits)) (inc (first (rest digits)))) (conj out \1)))
         (apply str (drop-while (fn [x] (= \0 x)) (reverse out)))))))
 
-(digit->snafu tot)
-
 ;; ## Part 1
 
-(def ans1 :undefined)
+(defn part-1 [s]
+  (digit->snafu (reduce + (map snafu (str/split-lines s)))))
+
+(test/deftest test-part-1
+  (test/is (= "2=-1=0" (part-1 test-string))))
+
+(def ans1 (part-1 data-string))
 
 ;; ## Part 2
 ;; A freebie as always
