@@ -4,6 +4,13 @@
 (import 'java.security.MessageDigest
         'java.math.BigInteger)
 
+(defn gcd [a b]
+  (if (zero? b) a
+      (recur b, (mod a b))))
+
+(defn lcm [a b]
+  (/ (* a b) (gcd a b)))
+
 (defn seek
   "Returns the first time from coll for which (pred item) returns true.
    Returns nil if no such item is present or the not-found value if supplied."
