@@ -12,20 +12,13 @@
 (def test-string "^ENWWW(NEEE|SSE(EE|N))$")
 
 ;; The first thing we're going to do is try to parse this string
-;; to figure out all of the connections in the map.  My plan is
-;; to do this by simply creating a queue wherein we keep track
-;; of the current location we are at as well as the tail end
-;; of the rest of the regex we need to parse.  If there is a
-;; single letter we'll just add the corresponding connection (as a two
-;; element set in a set of connections) and if its an opening
-;; parenthesis then we'll add children, one for each of the segments of the
-;; regex.
-
-(def QUEUE clojure.lang.PersistentQueue/EMPTY)
-
-(defn queue
-  ([] (QUEUE))
-  ([coll] (reduce conj QUEUE coll)))
+;; to figure out all of the connections in the map.
+;;
+;; The eventual goal will be to build up a datastructure representing all of the
+;; doors on the map. That will be a set of sets, the set of all doors where each door
+;; will itself be represented by a set of the two locations it services.
+;;
+;; Locations themselves will be `[x y]` tuples.
 
 (defn neighbor [[x y] direction]
   (case direction
@@ -34,51 +27,95 @@
     \N [x (inc y)]
     \S [x (dec y)]))
 
-(defn forks
-  "Find all of the forking continuations of a given regex."
-  [regex]
-  (loop [depth 0
-         forks []
-         path []
-         regex regex]
-    (let [[next & remaining] regex]
-      (case next
-        \| (if (= depth 0)
-             (recur depth (conj forks path) [] remaining)
-             (recur depth forks (conj path next) remaining))
-        \( (recur (inc depth) forks (conj path next) remaining)
-        \) (if (= depth 0)
-             (for [fork (conj forks path)]
-               (concat fork remaining))
-             (recur (dec depth) forks (conj path next) remaining))
-        (recur depth forks (conj path next) remaining)))))
+#_(defn forks
+    "Find all of the forking continuations of a given regex."
+    [regex]
+    (loop [depth 0
+           forks []
+           path []
+           regex regex]
+      (let [[next & remaining] regex]
+        (case next
+          \| (if (= depth 0)
+               (recur depth (conj forks path) [] remaining)
+               (recur depth forks (conj path next) remaining))
+          \( (recur (inc depth) forks (conj path next) remaining)
+          \) (if (= depth 0)
+               (for [fork (conj forks path)]
+                 (concat fork remaining))
+               (recur (dec depth) forks (conj path next) remaining))
+          (recur depth forks (conj path next) remaining)))))
 
-(defn peek! [tvec] (get tvec (dec (count tvec))))
+#_(defn peek! [tvec] (get tvec (dec (count tvec))))
 
 (defn assemble-connections
   "Given a regex, assemble all of the observed connections."
-  [regex]
-  (assert (str/starts-with? regex "^"))
-  (assert (str/ends-with? regex "$"))
-  (loop [connections (transient #{})
-         frontier (transient [[[0 0] (butlast (rest regex))]])]
-    (println "Total connections = " (count connections) " frontier size=" (count frontier) " strlength = " (count (second (peek frontier))))
-    (if-let [[loc [next & remaining]] (peek! frontier)]
+  [input-regex]
+  (assert (str/starts-with? input-regex "^"))
+  (assert (str/ends-with? input-regex "$"))
+  (loop [connections #{}
+         frontier []
+         loc nil
+         regex nil
+         queue []
+         jobs [{:loc [0 0]
+                :regex (butlast (rest input-regex))
+                :frontier []
+                :queue []}]]
+    ;(println "Total connections = " (count connections) " loc =" loc " frontier size=" (count frontier) " strlength = " (count regex) " count jobs = " (count jobs))
+    (if-let [next (first regex)]
+      ;; If we have a frontier to process
       (case next
-        \( (let [new (set (map vector (repeat loc) (forks remaining)))]
-             (recur connections
-                    (reduce conj! (pop! frontier) new)))
-        nil (recur connections
-                   ;seen
-                   (pop! frontier))
-        (\N \S \E \W) (let [nextloc (neighbor loc next)]
-                        (recur (conj! connections #{loc nextloc})
-                               ;seen
-                               (conj! (pop! frontier) [nextloc remaining])))
-        (recur connections
-               ;seen
-               (conj! (pop! frontier) [loc remaining])))
-      (persistent! connections))))
+        (\N \S \E \W)  ;; the usual case, just add a connection and continue
+        (let [nextloc (neighbor loc next)]
+          (recur
+           (conj connections #{loc nextloc})
+           frontier
+           nextloc
+           (rest regex)
+           queue
+           jobs))
+        \( ;; We've hit a fork, enqueue the current loc and continue
+        (recur
+         connections
+         (conj frontier #{})
+         loc
+         (rest regex)
+         (conj queue loc)
+         jobs)
+        \| ;; We've hit a branch, grab an enqueued loc
+        (recur
+         connections
+         (conj (pop frontier) (conj (peek frontier) loc))
+         (peek queue)
+         (rest regex)
+         queue
+         jobs)
+        \) ;; We've finished a branch, pop from the queue)
+        (recur
+         connections
+         (pop frontier)
+         loc
+         (rest regex)
+         (pop queue)
+         (into jobs
+               (for [branch (disj (peek frontier) loc)]
+                 [{:loc branch
+                   :regex (rest regex)
+                   :queue (pop queue)
+                   :frontier (pop frontier)}]))))
+      ;; Otherwise we're finished
+      (if-let [job (first jobs)]
+        (let [{:keys [loc regex queue frontier]} job]
+          ;(println "Popping a job, loc = " loc " regex = " regex)
+          (recur
+           connections
+           frontier
+           loc
+           regex
+           queue
+           (rest jobs)))
+        connections))))
 
 (defn raw-neighbors [[x y]]
   [[x (inc y)]
@@ -86,11 +123,17 @@
    [(inc x) y]
    [x (dec y)]])
 
+(def QUEUE clojure.lang.PersistentQueue/EMPTY)
+
+(defn queue
+  ([] (QUEUE))
+  ([coll] (reduce conj QUEUE coll)))
+
 (defn furthest-distance [connections]
   (loop [max-dist 0
          seen #{}
          frontier (queue [[0 [0 0]]])]
-    (println "Total seen = " (count seen) " max-dist = " max-dist " frontier count = " (count frontier))
+    ;(println "Total seen = " (count seen) " max-dist = " max-dist " frontier count = " (count frontier))
     (if-let [[dist loc] (peek frontier)]
       (let [neighs (sequence
                     (comp
@@ -111,14 +154,27 @@
     23 "^ESSWWN(E|NNENN(EESS(WNSE|)SSS|WWWSSSSE(SW|NNNE)))$"
     31 "^WSSEESWWWNW(S|NENNEEEENN(ESSSSW(NWSW|SSEN)|WSWWN(E|WWS(E|SS))))$"))
 
-;(def ans1 (time (furthest-distance (assemble-connections data-string))))
-(def ans1 :undefined)
-
-(def connections (time (assemble-connections data-string)))
+(def data-rooms (assemble-connections data-string))
+(def ans1 (time (furthest-distance data-rooms)))
 
 ;; ## Part 2
 
-(def ans2 :undefined)
+(defn at-least-a-distance [cutoff connections]
+  (loop [seen {}
+         frontier (queue [[0 [0 0]]])]
+    ;(println "Total seen = " (count seen) " max-dist = " max-dist " frontier count = " (count frontier))
+    (if-let [[dist loc] (peek frontier)]
+      (let [neighs (sequence
+                    (comp
+                     (remove seen)
+                     (filter (fn [x] (connections #{loc x}))))
+                    (raw-neighbors loc))]
+        (recur (into seen (for [neigh neighs] [neigh (inc dist)]))
+               (into (pop frontier) (map vector (repeat (inc dist)) neighs))))
+      ; else
+      (count (filter (fn [[_ dist]] (>= dist cutoff)) seen)))))
+
+(def ans2 (at-least-a-distance 1000 data-rooms))
 
 ;; ## Main
 
