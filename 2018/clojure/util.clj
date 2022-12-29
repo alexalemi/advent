@@ -1,8 +1,8 @@
 (ns util
   (:require ;[clojure.string :as str]
             ;[clojure.math.combinatorics :as combo]
-            [clojure.data.priority-map :refer [priority-map]]
-            [clojure.test :as t]))
+   [clojure.data.priority-map :refer [priority-map]]
+   [clojure.test :as t]))
 
 (import 'java.security.MessageDigest
         'java.math.BigInteger)
@@ -18,8 +18,8 @@
 (def QUEUE clojure.lang.PersistentQueue/EMPTY)
 
 (defn queue
- ([] (QUEUE))
- ([coll] (reduce conj QUEUE coll)))
+  ([] (QUEUE))
+  ([coll] (reduce conj QUEUE coll)))
 
 (deftype Bag [^clojure.lang.IPersistentMap m
               ^long n]
@@ -93,7 +93,7 @@
       ;; (println "current=" current " frontier=" frontier " neighs=" neighs " neigh=" neigh " best-score=" best-score " came-from=" came-from)
       (cond
         (and (empty? frontier) (empty? neighs)) :failure
-        (goal? current) (reconstruct-path (persistent! came-from) current)
+        (and (not= current :start) (goal? current)) (reconstruct-path (persistent! came-from) current)
         (empty? neighs)
         (let [[next _] (peek frontier)]
           (recur
@@ -122,7 +122,6 @@
              came-from
              best-score
              (rest neighs))))))))
-
 
 (comment
   (a-star
