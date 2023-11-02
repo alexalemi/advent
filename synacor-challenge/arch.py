@@ -193,7 +193,10 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         value = int(sys.argv[1])
-        logging.info(f"Loading the eighth register with {value}...")
+        logging.info(f"Loading the eighth register with {value} and dissabling check...")
+        # vm.memory[521] = 21
+        vm.memory[522] = HIGH
+        # vm.memory[523] = 21
         vm.registers[HIGH+7] = value
 
     logging.info("Running...")

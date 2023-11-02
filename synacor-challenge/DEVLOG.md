@@ -1,5 +1,84 @@
 # DEVLOG
 
+## 2023-01-03
+
+Revisiting this challenge.  I wrote a dirty dissassembler in `diss.py` which
+dumps the program in plain text as `challenge.txt`.  Doing this I can see that
+there are only four locations in the program that checks register 7.
+
+		00521: jt reg7 01093
+		05451: jf reg7 05605
+	  05522: set reg0 reg7
+		06042: set reg1 reg7
+	
+So, this first instruction checks to see if reg7 is nonzero, and if so it jumps
+to a part that dumps an error message that says `nonzero reg`, so that's the
+instruction I'll have to dissable to start.
+
+At this point we should be able to relaunch the runner, which I've done.
+
+While that is running, let's look at the second place `reg7` is checked.
+
+The nearby instructions are:
+
+	05454: push reg0
+	05456: push reg1
+	05458: push reg2
+	05460: set reg0 28844
+	05463: set reg1 01531
+	05466: add reg2 01977 09152
+	05470: call 01458
+	05472: pop reg2
+	05474: pop reg1
+	05476: pop reg0
+	
+Looks like we push `reg0`, `reg1` and `reg2` to the stack and then call 
+a subroutine after setting:
+
+	reg0 = 28844 = 12909!
+  reg1 = 01531 = 2!
+  reg2 = 01977 + 09152 = 8 + 20775 = 20783 
+	
+The subroutine seems to be:
+
+		01457: halt 
+		01458: push reg0
+		01460: push reg3
+		01462: push reg4
+		01464: push reg5
+		01466: push reg6
+		01468: set reg6 reg0
+		01471: set reg5 reg1
+		01474: rmem reg4 reg0
+		01477: set reg1 00000
+		01480: add reg3 00001 reg1
+		01484: gt reg0 reg3 reg4
+		01488: jt reg0 01507
+		01491: add reg3 reg3 reg6
+		01495: rmem reg0 reg3
+		01498: call reg5
+		01500: add reg1 reg1 00001
+		01504: jt reg1 01480
+		01507: pop reg6
+		01509: pop reg5
+		01511: pop reg4
+		01513: pop reg3
+		01515: pop reg0
+		01517: ret 
+
+Actually, at this point, it looks like we need to execute the program and play the whole thing over again,
+with something like
+
+		python arch.py 1 < tape.in
+		
+it runs through everything and then prints:
+
+		A strange, electronic voice is projected into your mind:
+
+			"Unusual setting detected!  Starting confirmation process!  Estimated time to completion: 1 billion years."
+			
+So this is the part of the program I need to optimize.  I should figure out where that lives.
+
 ## 2022-11-03
 
 I decided I might just as well run all of the different values that we could
