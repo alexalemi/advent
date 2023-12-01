@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 from utils import data23
 import string
-import re
+import regex
 
 data = data23(1)
 
@@ -32,25 +32,17 @@ zoneight234
 7pqrstsixteen""",281)]
 
 def filter_digits_and_words(s):
-    return re.findall("[1234567890]|one|two|three|four|five|six|seven|eight|nine", s)
-
-def first_digit_or_word(s):
-    first = next(re.finditer("[1234567890]|one|two|three|four|five|six|seven|eight|nine", s))
-    return first.group()
-
-def last_digit_or_word(s):
-    first = next(re.finditer("[1234567890]|eno|owt|eerht|ruof|evif|xis|neves|thgie|enin", s[::-1]))
-    return first.group()
+    return regex.findall("[1234567890]|one|two|three|four|five|six|seven|eight|nine", s, overlapped=True)
 
 convert = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, 
-           "eno": 1, "owt": 2, "eerht": 3, "ruof": 4, "evif": 5, "xis": 6, "neves": 7, "thgie": 8, "enin": 9, 
            "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "0": 0}
 
 
 def answer2(inp):
     lines = inp.splitlines()
-    first_and_last = ( 10 * convert[first_digit_or_word(line)] + convert[last_digit_or_word(line)] for line in lines )
-    return sum(first_and_last)
+    digits = ( filter_digits_and_words(line) for line in lines )
+    numbers = ( 10 * convert[line[0]] + convert[line[-1]] for line in digits )
+    return sum(numbers)
 
 
 if __name__ == "__main__":

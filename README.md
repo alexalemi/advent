@@ -10,6 +10,7 @@ This repository contains my solutions in several languages to [Advent Of Code](h
 ![2020](./scripts/img/2020.svg)
 ![2021](./scripts/img/2021.svg)
 ![2022](./scripts/img/2022.svg)
+![2023](./scripts/img/2023.svg)
 
 ![Total](./scripts/img/Total.svg)
 
