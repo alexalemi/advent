@@ -3,7 +3,7 @@
   (:require [clojure.string :as str]
             [clojure.test :as test]))
 
-(def data-string (slurp "../input/01.txt"))
+(def data (str/split-lines (slurp "../input/01.txt")))
 
 ;; It looks like for this puzzle we need to process lines of text that
 ;; have some digits embedded in them, so I'll create a dictionary mapping
@@ -20,17 +20,10 @@
        (map digits)
        ((fn [[x y]] (+ (* 10 x) y)))))
 
-(defn process-data [s]
-  (str/split-lines s))
-
-(def data (process-data data-string))
-
-(def test-string "1abc2
+(def test-data (str/split-lines "1abc2
 pqr3stu8vwx
 a1b2c3d4e5f
-treb7uchet")
-
-(def test-data (process-data test-string))
+treb7uchet"))
 
 (defn part-1 [data]
   (transduce (map calibration-value) + data))
@@ -44,15 +37,13 @@ treb7uchet")
 ;;
 ;; For part two, there are also words inside the stream that we need to catch.
 
-(def test-string-2 "two1nine
+(def test-data-2 (str/split-lines "two1nine
 eightwothree
 abcone2threexyz
 xtwone3four
 4nineeightseven2
 zoneight234
-7pqrstsixteen")
-
-(def test-data-2 (process-data test-string-2))
+7pqrstsixteen"))
 
 (def digits-and-words
   {"1" 1 "2" 2 "3" 3 "4" 4 "5" 5 "6" 6 "7" 7 "8" 8 "9" 9 "0" 0
