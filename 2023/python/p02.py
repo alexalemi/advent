@@ -1,7 +1,7 @@
 import parse
 import math
 from utils import data23
-from typing import Iterator, Dict
+from collections.abc import Iterator
 
 data = data23(2)
 
@@ -16,7 +16,7 @@ def find_color(line: str, color: str) -> Iterator[int]:
     return (match["num"] for match in parse.findall(f"{{num:d}} {color}", line))
 
 
-Summary = Dict[str, int]
+Summary = dict[str, int]
 
 
 def summary(line: str) -> Summary:
