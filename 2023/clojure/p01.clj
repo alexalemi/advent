@@ -66,9 +66,9 @@ zoneight234
 
 ;;
 
-(defn -test [_]
+(defn -test []
   (test/run-tests 'p01))
 
-(defn -main [_]
+(defn -main []
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))

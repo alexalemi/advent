@@ -92,9 +92,9 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green")
 
 (def ans2 (part-2 data))
 
-(defn -test [_]
+(defn -test []
   (test/run-tests 'p01))
 
-(defn -main [_]
+(defn -main []
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))
