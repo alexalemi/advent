@@ -110,6 +110,6 @@
 
 (assert (= ans2 86841457))
 
-(defn -main [_]
+(defn -main []
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))
