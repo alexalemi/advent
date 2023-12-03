@@ -49,14 +49,21 @@
   (let [n (count (str num))]
     (into #{}
           (concat
+           ; the row above
            (for [i (range -1 (inc n))] [(dec row) (+ col i)])
+           ; the row below
            (for [i (range -1 (inc n))] [(inc row) (+ col i)])
+           ; left and right
            [[row (dec col)] [row (+ col n)]]))))
 
 (defn part-1 [{nums :nums syms :syms}]
   (letfn [(touching-symbol? [[loc num]]
             (some syms (neighbors loc num)))]
-    (transduce (comp (filter touching-symbol?) (map second)) + nums)))
+    (transduce 
+      (comp 
+        (filter touching-symbol?) 
+        (map second)) 
+      + nums)))
 
 (assert (= (part-1 test-data) 4361))
 
