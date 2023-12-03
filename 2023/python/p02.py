@@ -16,7 +16,7 @@ def find_color(line: str, color: str) -> Iterator[int]:
     return (match["num"] for match in parse.findall(f"{{num:d}} {color}", line))
 
 
-Summary = dict[str, int]
+type Summary = dict[str, int]
 
 
 def summary(line: str) -> Summary:
