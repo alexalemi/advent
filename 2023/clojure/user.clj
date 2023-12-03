@@ -9,6 +9,7 @@
 ;; or let Clerk watch the given ":paths" for changes
 (clerk/serve! {:watch-paths ["."]})
 
+(clerk/show! 'nextjournal.clerk.tap)
 ;; start with watcher and show filter function to enable notebook pinning
 ; (clerk/serve! {:watch-paths ["."]})
 

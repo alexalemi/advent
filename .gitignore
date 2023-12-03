@@ -9,6 +9,8 @@ __pycache__
 scripts/.leaderboard.txt
 .solution-map
 
+scripts/*/input/
+
 2020/hy/advent
 
 */nim/p??
