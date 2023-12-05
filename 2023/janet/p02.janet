@@ -21,8 +21,6 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green`)
 (def data (->data data-string))
 (def test-data (->data test-string))
 
-(def possible? [seen])
-  
 (def target {:red 12 :green 13 :blue 14})
 
 (defn part-1 [data]
