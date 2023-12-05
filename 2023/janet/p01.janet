@@ -16,7 +16,6 @@ treb7uchet`)
 
 (def ans1 (part-1 data-string))
 
-(print "Answer1:" ans1)
 
 (assert (= 55816 ans1))
 
@@ -55,6 +54,8 @@ zoneight234
 
 (def ans2 (part-2 data-string))
 
-(print "Answer2:" ans2)
-
 (assert (= 54980 ans2))
+
+(defn main [&]
+  (print "Answer1:" ans1)
+  (print "Answer2:" ans2))
