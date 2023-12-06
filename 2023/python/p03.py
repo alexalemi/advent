@@ -1,11 +1,11 @@
 import math
-from utils import data23
 from dataclasses import dataclass
 from typing import NamedTuple
 from collections.abc import Generator
 import re
 
-data = data23(3)
+with open("../input/03.txt") as f:
+    data = f.read()
 
 test_data = """467..114..
 ...*......
