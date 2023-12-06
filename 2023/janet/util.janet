@@ -13,3 +13,11 @@
   "Everything but the head."
   [[h & r]] r)
 
+(defn map-vals [f m]
+  (from-pairs (seq [[k v] :pairs m] [k (f v)])))
+
+(defn constantly [val]
+  (fn [x] val))
+
+(defn zip [& cols]
+  (map array ;cols))

@@ -1,5 +1,6 @@
 # Advent of Code - Day j
 
+(use ./util)
 (import jimmy/set)
 
 (def data-string (slurp "../input/04.txt"))
@@ -44,11 +45,6 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11`)
 # Part 2
 # Now we win cards upon cards
 
-(defn map-vals [f m]
-  (from-pairs (seq [[k v] :pairs m] [k (f v)])))
-
-(defn constantly [val]
-  (fn [x] val))
 
 (defn part-2 [data] 
   (let [matches (map-vals winners data)
