@@ -15,7 +15,7 @@
 
 
 (defn ->data [s]
-  (util/zip ;(peg/match race-peg s)))
+  (peg/match race-peg s))
 
 (def data (->data data-string))
 (def test-data (->data test-string))
@@ -37,7 +37,7 @@
     (inc (- hi lo))))
 
 (defn part-1 [data]
-  (product (map (partial apply ways-to-beat) data)))
+  (product (map ways-to-beat ;data)))
 
 (assert (= (part-1 test-data) 288))
 
@@ -51,8 +51,9 @@
 (defn join-nums [nums]
   (parse (string ;(map string nums))))
 
+
 (defn part-2 [data] 
-  (ways-to-beat ;(map join-nums (util/zip ;data))))
+  (ways-to-beat ;(map join-nums data)))
 
 (assert (= (part-2 test-data) 71503))
 
