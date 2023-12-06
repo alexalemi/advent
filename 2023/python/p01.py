@@ -1,12 +1,12 @@
 import time
 import itertools
 import numpy as np
-from utils import data23
 import string
 import regex
 from typing import List
 
-data = data23(1)
+with open("../input/01.txt") as f:
+    data = f.read()
 
 tests = [
     (

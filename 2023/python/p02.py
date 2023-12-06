@@ -1,9 +1,9 @@
 import parse
 import math
-from utils import data23
 from collections.abc import Iterator
 
-data = data23(2)
+with open("../input/02.txt") as f:
+    data = f.read()
 
 test_data = """Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
 Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
