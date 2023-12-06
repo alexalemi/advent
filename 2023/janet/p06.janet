@@ -20,12 +20,22 @@
 (def data (->data data-string))
 (def test-data (->data test-string))
 
-(defn ways-to-beat [time distance]
+(defn roots [t d]
+  (let [x (math/sqrt (- (* t t) (* 4 d)))]
+   [(math/ceil (math/next (/ (- t x) 2) math/inf)) 
+    (math/floor (math/next (/ (+ t x) 2) 0))]))
+
+(defn ways-to-beat-slow [time distance]
   (var ways 0)
-  (loop [hold :range [0 time]]
-    (if (> (* hold (- time hold)) distance) (set ways (inc ways))))
+  (loop [hold :range [0 time]
+         :when (> (* hold (- time hold)) distance)]
+    (++ ways))
   ways)
-    
+
+(defn ways-to-beat [time distance]
+  (let [[lo hi] (roots time distance)]
+    (inc (- hi lo))))
+
 (defn part-1 [data]
   (product (map (partial apply ways-to-beat) data)))
 
@@ -41,9 +51,8 @@
 (defn join-nums [nums]
   (parse (string ;(map string nums))))
 
-
 (defn part-2 [data] 
-  (ways-to-beat ;(map join-nums (zip ;data))))
+  (ways-to-beat ;(map join-nums (util/zip ;data))))
 
 (assert (= (part-2 test-data) 71503))
 
