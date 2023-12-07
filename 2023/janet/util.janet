@@ -13,11 +13,33 @@
   "Everything but the head."
   [[h & r]] r)
 
-(defn map-vals [f m]
+(defn map-vals
+  "Apply a function to each of the values in a map."
+  [f m]
   (from-pairs (seq [[k v] :pairs m] [k (f v)])))
 
-(defn constantly [val]
+# This is the built in always
+(defn always
+  "Returns the constant value."
+  [val]
   (fn [x] val))
 
-(defn zip [& cols]
-  (map array ;cols))
+(defn zip
+  "Zip together many collections into tuples."
+  [& cols]
+  (map tuple ;cols))
+
+(defn integers
+  "Infinite sequence of integers."
+  []
+  (var x 0)
+  (generate [_ :iterate true :after (++ x)] x))
+
+(defn indexed
+  "Like python enumerate"
+  [col]
+  (map tuple (integers) col))
+
+(defn second
+ "Returns the second element of a collection."
+ [[h x & col]] x)
