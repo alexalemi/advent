@@ -24,11 +24,9 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green`)
 (def target {:red 12 :green 13 :blue 14})
 
 (defn part-1 [data]
-  (var total 0)
-  (loop [[game-id rounds] :pairs data]
-    (when (all true? (values (merge-with <= (merge-with max ;rounds) target)))
-        (set total (+ total game-id))))
-  total)
+  (sum (seq [[game-id rounds] :pairs data 
+             :when (every? (merge-with <= (merge-with max ;rounds) target))]
+            game-id)))
 
 (assert (= (part-1 test-data) 8))
 
@@ -44,7 +42,7 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green`)
 (defn part-2 [data]
   (var total 0)
   (loop [[game-id rounds] :pairs data]
-    (set total (+ total (reduce * 1 (values (merge-with max ;rounds))))))
+    (+= total (product (merge-with max ;rounds))))
   total)
 
 (assert (= (part-2 test-data) 2286))

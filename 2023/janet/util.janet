@@ -16,7 +16,7 @@
 (defn map-vals
   "Apply a function to each of the values in a map."
   [f m]
-  (from-pairs (seq [[k v] :pairs m] [k (f v)])))
+  (tabseq [[k v] :pairs m] k (f v)))
 
 # This is the built in always
 (defn always

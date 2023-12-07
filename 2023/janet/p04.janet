@@ -49,10 +49,10 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11`)
 (defn part-2 [data] 
   (let [matches (map-vals winners data)
         counts (map-vals (always 1) matches)]
-     (for id 1 (inc (length matches)) 
-       (for x 1 (inc (matches id)) 
-         (update counts (+ id x) + (counts id))))
-     (reduce + 0 (values counts))))
+    (loop [id :range-to [1 (length matches)]
+           x :range-to [1 (matches id)]]
+      (update counts (+ id x) + (counts id)))
+    (sum counts)))
 
 (assert (= (part-2 test-data) 30))
 

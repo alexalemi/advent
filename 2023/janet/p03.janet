@@ -30,6 +30,7 @@
 
 (defn neighbors [[x y] l]
   (array/concat
+    #(catseq [dx :in [-1 1] dy :range-to [-1 l]] [(+ x dx) (+ y dy)])
     (seq [i :range [-1 (inc l)]] [(dec x) (+ y i)])
     (seq [i :range [-1 (inc l)]] [(inc x) (+ y i)])
     [[x (dec y)] [x (+ y l)]]))
@@ -53,7 +54,8 @@
   (var result false)
   (each elem arr 
     (when (= x elem)
-      (set result true)))
+      (set result true)
+      (break)))
   result)
 
 

@@ -10,7 +10,7 @@ treb7uchet`)
     (+ (* 10 (first digits)) (last digits))))
 
 (defn part-1 [s]
-  (reduce + 0 (map calibration-number (string/split "\n" (string/trim s)))))
+  (sum (map calibration-number (string/split "\n" (string/trim s)))))
 
 (assert (= 142 (part-1 test-string)))
 
@@ -48,7 +48,7 @@ zoneight234
 7pqrstsixteen`)
 
 (defn part-2 [s]
-  (reduce + 0 (map extended-calibration-number (string/split "\n" (string/trim s)))))
+  (sum (map extended-calibration-number (string/split "\n" (string/trim s)))))
 
 (assert (= 281 (part-2 test-string-2)))
 
