@@ -1,6 +1,7 @@
 # Advent of Code - Day 3
 
 (use ./util)
+(use judge)
 
 (def data-string (slurp "../input/03.txt"))
 (def test-string `467..114..
@@ -27,6 +28,23 @@
 
 (def data (->data data-string))
 (def test-data (->data test-string))
+(test test-data
+  {:nums @{[1 1] 467
+           [1 6] 114
+           [3 3] 35
+           [3 7] 633
+           [5 1] 617
+           [6 8] 58
+           [7 3] 592
+           [8 7] 755
+           [10 2] 664
+           [10 6] 598}
+   :syms @{[2 4] "*"
+           [4 7] "#"
+           [5 4] "*"
+           [6 6] "+"
+           [9 4] "$"
+           [9 6] "*"}})
 
 (defn neighbors [[x y] l]
   (array/concat
@@ -40,11 +58,9 @@
     (any? (map (data :syms) (neighbors loc (length (string s))))))
   (sum (seq [[loc num] :pairs (data :nums) :when (part-number? loc num)] num)))
 
-(assert (= (part-1 test-data) 4361))
-
+(test (part-1 test-data) 4361)
 (def ans1 (part-1 data))
-
-(assert (= ans1 559_667))
+(test ans1 559667)
 
 
 # Part 2
@@ -77,16 +93,13 @@
        (* ((data :nums) loc1) ((data :nums) loc2)))
      (sum (map gear-ratio gear-word-locs))))
 
-(assert (= (part-2 test-data) 467_835))
-
+(test (part-2 test-data) 467835)
 (def ans2 (part-2 data))
-
-(assert (= ans2 86_841_457))
+(test ans2 86841457)
 
 
 (defn main [&]
   (print "Answer1:" ans1)
   (print "Answer2:" ans2))
     
-
 

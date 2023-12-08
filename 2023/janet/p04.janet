@@ -2,6 +2,7 @@
 
 (use ./util)
 (import jimmy/set)
+(use judge)
 
 (def data-string (slurp "../input/04.txt"))
 (def test-string `Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
@@ -21,6 +22,19 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11`)
 
 (def data (->data data-string))
 (def test-data (->data test-string))
+(test test-data
+  @{1 {:card "{31 48 9 53 6 83 17 86}"
+       :wins "{41 48 83 17 86}"}
+    2 {:card "{32 30 82 24 61 19 17 68}"
+       :wins "{32 16 20 13 61}"}
+    3 {:card "{72 14 21 63 69 1 82 16}"
+       :wins "{59 21 1 53 44}"}
+    4 {:card "{59 58 84 54 5 76 51 83}"
+       :wins "{41 84 73 69 92}"}
+    5 {:card "{70 12 93 30 82 36 88 22}"
+       :wins "{32 26 87 28 83}"}
+    6 {:card "{10 77 36 35 11 67 74 23}"
+       :wins "{31 56 13 72 18}"}})
 
 (defn score [num-matches]
   (if (pos? num-matches) 
@@ -36,11 +50,9 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11`)
        (map (comp score winners))
        (reduce + 0)))
 
-(assert (= (part-1 test-data) 13))
-
+(test (part-1 test-data) 13)
 (def ans1 (part-1 data))
-
-(assert (= ans1 22_193))
+(test ans1 22193)
 
 # Part 2
 # Now we win cards upon cards
@@ -54,12 +66,9 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11`)
       (update counts (+ id x) + (counts id)))
     (sum counts)))
 
-(assert (= (part-2 test-data) 30))
-
+(test (part-2 test-data) 30)
 (def ans2 (part-2 data))
-
-(assert (= ans2 5_625_994))
-
+(test ans2 5625994)
 
 (defn main [&]
   (print "Answer1:" ans1)

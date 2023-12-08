@@ -1,3 +1,4 @@
+(use judge)
 
 (def data-string (slurp "../input/01.txt"))
 (def test-string `1abc2
@@ -12,12 +13,10 @@ treb7uchet`)
 (defn part-1 [s]
   (sum (map calibration-number (string/split "\n" (string/trim s)))))
 
-(assert (= 142 (part-1 test-string)))
-
+(test (part-1 test-string) 142)
 (def ans1 (part-1 data-string))
+(test ans1 55816)
 
-
-(assert (= 55816 ans1))
 
 # Part 2
 
@@ -50,11 +49,9 @@ zoneight234
 (defn part-2 [s]
   (sum (map extended-calibration-number (string/split "\n" (string/trim s)))))
 
-(assert (= 281 (part-2 test-string-2)))
-
+(test (part-2 test-string-2) 281)
 (def ans2 (part-2 data-string))
-
-(assert (= 54980 ans2))
+(test ans2 54980)
 
 (defn main [&]
   (print "Answer1:" ans1)

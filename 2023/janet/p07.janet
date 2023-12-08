@@ -1,5 +1,5 @@
-(import ./util :fresh)
 (use ./util)
+(use judge)
 
 (def data-string (string/trim (slurp "../input/07.txt")))
 (def test-string `32T3K 765
@@ -19,6 +19,12 @@ QQQJA 483`)
 
 (def data (->data data-string))
 (def test-data (->data test-string))
+(test test-data
+  [[[3 2 10 3 13] 765]
+   [[10 5 5 11 5] 684]
+   [[13 13 6 7 7] 28]
+   [[13 10 11 11 10] 220]
+   [[12 12 12 11 14] 483]])
 
 (defn hand-type [hand]
   (case (freeze (sorted (values (frequencies hand))))
@@ -42,8 +48,9 @@ QQQJA 483`)
        (sum)))
 
 
-(assert (= (part-1 test-data) 6440) "Part 1 test failed!")
+(test (part-1 test-data) 6440)
 (def ans1 (part-1 data))
+(test ans1 250232501)
 
 # Part 2
 
@@ -78,9 +85,9 @@ QQQJA 483`)
        (map winnings)
        (sum)))
 
-(assert (= (part-2 test-data) 5905) "Failed part-2 test!")
+(test (part-2 test-data) 5905)
 (def ans2 (part-2 data))
-(assert (= ans2 249138943))
+(test ans2 249138943)
 
 
 (defn main [&]

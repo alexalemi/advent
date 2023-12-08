@@ -1,7 +1,6 @@
 
 (use "./util")
 (use judge)
-(import spork/math)
 
 (def data-string (slurp "../input/08.txt"))
 (def test-string `RL
@@ -106,11 +105,7 @@ XXX = (XXX, XXX)`)
 (defn part-2 [data]
   (->> (filter ends-A? (keys (data :tree)))  # get the locs that end with A
        (map (partial steps data))  # for each figure out the recurrance time
-       (map (comp frequencies math/factor)) # prime factorize each and count factors
-       ((partial apply merge-with max)) # combine the factorizations
-       (pairs) # get pairs
-       (map product) # take product
-       (product))) # product to reduce
+       (reduce2 math/lcm)))
 
 (test (part-2 test-data-2) 6)
 (def ans2 (part-2 data))
