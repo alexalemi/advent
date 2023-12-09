@@ -35,6 +35,12 @@
   (var x 0)
   (generate [_ :iterate true :after (++ x)] x))
 
+(defn iterate 
+  "Infinite sequence of function applications. x fx ffx ..."
+  [f x]
+  (var x x)
+  (generate [_ :iterate true :after (set x (f x))] x))
+
 (defn indexed
   "Like python enumerate"
   [col]
@@ -43,3 +49,4 @@
 (defn second
  "Returns the second element of a collection."
  [[h x & col]] x)
+
