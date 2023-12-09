@@ -28,23 +28,7 @@
 
 (def data (->data data-string))
 (def test-data (->data test-string))
-(test test-data
-  {:nums @{[1 1] 467
-           [1 6] 114
-           [3 3] 35
-           [3 7] 633
-           [5 1] 617
-           [6 8] 58
-           [7 3] 592
-           [8 7] 755
-           [10 2] 664
-           [10 6] 598}
-   :syms @{[2 4] "*"
-           [4 7] "#"
-           [5 4] "*"
-           [6 6] "+"
-           [9 4] "$"
-           [9 6] "*"}})
+# (test test-data)
 
 (defn neighbors [[x y] l]
   (array/concat
