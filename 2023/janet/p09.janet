@@ -61,15 +61,8 @@
 
 ## Part 2
 
-(defn reverse-generator [line]
-  (let [difference-seqs (take-until all-zeros? (iterate differences line))
-        accumulators (map (comp accumulator first) (reverse difference-seqs))]
-    (generate [_ :iterate true] (reduce (fn [val f] (f (- val))) 0 accumulators))))
-
-(test (resume (reverse-generator (test-data 2))) 5)
-
 (defn part-2 [data]
-  (sum (map (comp resume reverse-generator) data)))
+  (part-1 (map reverse data)))
 
 (test (part-2 test-data) 2)
 (def ans2 (part-2 data))

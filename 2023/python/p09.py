@@ -65,26 +65,8 @@ assert ans1 == 1938800261, "Failed ans1"
 ## Part 2
 
 
-def retrodict(seq: tuple[int, ...]) -> int:
-    diffs = seq
-    acc = accumulator(diffs[0])
-    acc.send(None)
-    diffs = differences(seq)
-    accs = [acc]
-    while any(diffs):
-        acc = accumulator(diffs[0])
-        acc.send(None)
-        accs.append(acc)
-        diffs = differences(diffs)
-
-    prediction = 0
-    for acc in reversed(accs):
-        prediction = acc.send(-prediction)
-    return prediction
-
-
 def part2(data: list[tuple[int, ...]]) -> int:
-    return sum(map(retrodict, data))
+    return part1(map(lambda x: tuple(reversed(x)), data))
 
 
 assert part2(test_data) == 2, "Failed part2 test"
