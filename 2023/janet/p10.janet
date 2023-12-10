@@ -83,7 +83,9 @@ LJ.LJ`)
   (let [positions (map first pts)]
     (not= (length (distinct positions)) (length positions))))
 
-(defn process-loop [data]
+(defn process-loop
+  "Construct the main loop as well as identify the correct starting symbol."
+  [data]
   (let [start ((invert data) "S")
         round* (partial round data)
         starts (filter round* (seq [edge :in [:n :s :e :w]] 
@@ -158,6 +160,7 @@ L7JLJL-JLJLJL--JLJ.L`))
         walls (->set loop-locs)
         [Y X] (extent (keys data))
         flippers (->set ["|" "J" "L"])]
+    # replace the S with the right symbol
     (var data (struct/to-table data))
     (put data start start-sym)
     (var inside (->set []))
@@ -184,6 +187,5 @@ L7JLJL-JLJLJL--JLJ.L`))
 (defn main [&]
   (print "Answer 1:" ans1)
   (print "Answer 2:" ans2))
-
 
 
