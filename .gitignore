@@ -11,6 +11,8 @@ scripts/.leaderboard.txt
 
 scripts/*/input/
 
+????/input/*.txt
+
 2020/hy/advent
 
 */nim/p??
