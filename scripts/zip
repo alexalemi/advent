@@ -1,0 +1,2 @@
+#! /usr/bin/env bash
+zip -er inputs.zip -P adventofcode ????/input/*.txt

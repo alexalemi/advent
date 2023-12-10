@@ -40,4 +40,14 @@ There is also a task to update the badges [`scripts/badges.clj`](scripts/badges.
 
 which was forked from [genmeblog](https://github.com/genmeblog/advent-of-code/blob/master/badges/badges.bb).
 	
+## Inputs
+
+Eric has requested that people don't check-in their inputs into source control,
+at the same time I really want to have the inputs in there so that I can
+continue to have a working repository.  The compromise I've settled on is to
+create a password protected zip of the input files, that way they are in the
+repository but they aren't easily scrapable by outsiders. 
+
+For this I've created `scripts/zip`, `scripts/unzip` and `scripts/clean` to aid
+with the prepations.
 
