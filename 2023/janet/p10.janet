@@ -32,10 +32,10 @@ LJ.LJ`)
   "How the symbols connect the edges."
   {"|" [:n :s]
    "-" [:e :w]
-   "L" [:n :e]
+   "L" [:e :n]
    "J" [:n :w]
    "7" [:s :w]
-   "F" [:s :e]})
+   "F" [:e :s]})
 
 (defn pipe-move
   "Given the connections, how a pipe moves an edge."
@@ -83,7 +83,7 @@ LJ.LJ`)
   (let [positions (map first pts)]
     (not= (length (distinct positions)) (length positions))))
 
-(defn loop-locations [data]
+(defn process-loop [data]
   (let [start ((invert data) "S")
         round* (partial round data)
         starts (filter round* (seq [edge :in [:n :s :e :w]] 
@@ -91,10 +91,14 @@ LJ.LJ`)
         one-step (fn [x] (filter some? (map round* x)))
         circuit (take-until has-match? (iterate one-step starts))
         end (first (round* (first (last circuit))))]
-    (tuple start end ;(map first (array/concat ;circuit)))))
+    {:loop (tuple start end ;(map first (array/concat ;circuit)))
+     :far (inc (length circuit))
+     :start start
+     :start-sym ((invert pipes) (freeze (sorted (map (comp opposite second) (first circuit)))))}))
+
 
 (defn part-1 [data]
-  (/ (length (loop-locations data)) 2))
+  ((process-loop data) :far))
 
 (test (part-1 test-data) 4)
 (test (part-1 test-data-2) 8)
@@ -124,6 +128,7 @@ L--J.L7...LJS7F-7L7.
 .....|FJLJ|FJ|F7|.LJ
 ....FJL-7.||.||||...
 ....L---J.LJ.LJLJ...`))
+
 (def test-data-5 (->data `..........
 .S------7.
 .|F----7|.
@@ -149,9 +154,12 @@ L7JLJL-JLJLJL--JLJ.L`))
    (max-of (map second ks))])
 
 (defn interior [data]
-  (let [walls (->set (loop-locations data))
+  (let [{:loop loop-locs :start start :start-sym start-sym} (process-loop data)
+        walls (->set loop-locs)
         [Y X] (extent (keys data))
         flippers (->set ["|" "J" "L"])]
+    (var data (struct/to-table data))
+    (put data start start-sym)
     (var inside (->set []))
     (for y 1 (inc Y)
       (var outside true)
