@@ -4,6 +4,9 @@
 (import 'java.security.MessageDigest
         'java.math.BigInteger)
 
+(defn range-to [a b]
+  (range a (inc b)))
+
 (defn gcd [a b]
   (if (zero? b) a
       (recur b, (mod a b))))
