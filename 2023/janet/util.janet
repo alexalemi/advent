@@ -64,3 +64,12 @@
 (defn set-difference! [a b] (eachk x b (set-remove! a x)) a)
 (defn set-union! [a b] (eachk x b (set-add! a x)) a)
 
+(defn memoize [f]
+  (var memo @{})
+  (fn [& args]
+    (when-let [ans (in memo args)]
+      (break ans))
+    (def result (apply f args))
+    (put memo args result)
+    result))
+
