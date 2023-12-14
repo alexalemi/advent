@@ -19,6 +19,11 @@
   [f m]
   (tabseq [[k v] :pairs m] k (f v)))
 
+(defn map-keys
+  "Apply a function to each of the keys in a map."
+  [f m]
+  (tabseq [[k v] :pairs m] (f k) v))
+
 # This is the built in always
 (defn always
   "Returns the constant value."
