@@ -120,7 +120,7 @@
 
 (test (part-2 test-data) 51)
 (def ans2 (part-2 data))
-(test ans2)
+(test ans2 8061)
 
 
 (defn main [&]
