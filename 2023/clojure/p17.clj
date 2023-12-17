@@ -43,13 +43,10 @@
   [(reduce max (map first (keys board)))
    (reduce max (map second (keys board)))])
 
-(def start {:loc [0 0] :life 3 :dir nil})
-(defn goal? [board {[x y] :loc}]
+(def start [[0 0] nil 3])
+(defn goal? [board [[x y]]]
     (let [[Y X] (extent board)]
         (and (= y Y )(= x X))))
-(defn cost [board _]
-    (fn [{loc :loc}] (board loc)))
-
 (defn up [[y x]]
     [(dec y) x])
 (defn down [[y x]]
@@ -64,40 +61,44 @@
 (defn maybe-add [cond xs x]
     (if cond (conj xs x) xs))
 
-(defn inside? [board {[y x] :loc}]
+(defn inside? [board [[y x]]]
     (let [[Y X] (extent board)]
         (and (<= 0 x X) (<= 0 y Y))))
 
-(defn raw-neighbors [{[x y] :as loc :loc dir :dir life :life}]
-  (case dir
-    :up (maybe-add
-         (pos? life)
-         [{:loc (right loc) :dir :right :life LIVES}
-          {:loc (left loc) :dir :left :life LIVES}]
-         {:loc (up loc) :dir :up :life (dec life)})
-    :down (maybe-add
-           (pos? life)
-           [{:loc (right loc) :dir :right :life LIVES}
-            {:loc (left loc) :dir :left :life LIVES}]
-           {:loc (down loc) :dir :down :life (dec life)})
-    :left (maybe-add
-           (pos? life)
-           [{:loc (up loc) :dir :up :life LIVES}
-            {:loc (down loc) :dir :down :life LIVES}]
-           {:loc (left loc) :dir :left :life (dec life)})
-    :right (maybe-add
-            (pos? life)
-            [{:loc (up loc) :dir :up :life LIVES}
-             {:loc (down loc) :dir :down :life LIVES}]
-            {:loc (right loc) :dir :right :life (dec life)})
-    [{:loc (up loc) :dir :up :life LIVES}
-     {:loc (down loc) :dir :down :life LIVES}
-     {:loc (left loc) :dir :left :life LIVES}
-     {:loc (right loc) :dir :right :life LIVES}]))
+(defn raw-neighbors [[loc dir]]
+    [[loc dir]])
 
-(defn heuristic [board {[y x] :loc}]
+(def dir->func
+  {:right right
+   :left left
+   :up up
+   :down down})
+
+(defn raw-neighbors [[loc dir]]
+    (let [dirs (case dir
+                  nil [:right :down]
+                  :up [:right :left]
+                  :down [:right :left]
+                  :left [:up :down]
+                  :right [:up :down])]
+      (apply concat
+       (for [dir dirs]
+        (map (fn [x] [x dir]) (take 3 (rest (iterate (dir->func dir) loc))))))))
+
+(defn manhattan [[y1 x1] [y2 x2]]
+  (+ (abs (- y1 y2)) (abs (- x2 x1))))
+
+(defn heuristic [board [loc]]
   (let [[Y X] (extent board)]
-      (+ (- Y y) (- X x))))
+    (manhattan [Y X] loc)))
+
+(defn cost [board [start-loc _]]
+  (fn [[loc dir]]
+    (transduce
+     (map board)
+     +
+     (let [d (manhattan start-loc loc)]
+        (take d (rest (iterate (dir->func dir) start-loc)))))))
 
 (defn neighbors [data x]
   (filter (partial inside? data) (raw-neighbors x)))
@@ -108,16 +109,13 @@
           cost (partial cost data)
           neighbors (partial neighbors data)
           heuristic (partial heuristic data)]
-      (transduce
-       (comp
-        (map :loc)
-        (map data))
-       +
-       (rest (util/a-star start goal? cost neighbors heuristic)))))
+      (->> (util/a-star start goal? cost neighbors heuristic)
+           (partition 2 1)
+           (map (fn [[x y]] ((cost x) y)))
+           (reduce +))))
 
 (assert (= 102 (part-1 test-data)))
 (defonce ans1 (part-1 data))
-
 
 
 (defn -main [& _]
