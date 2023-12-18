@@ -33,23 +33,27 @@ U 2 (#7a21e3)")
 (def data (->data data-string))
 (def test-data (->data test-string))
 
+;; In order to calculate the area we'll use Stoke's theorem:
+;;
+;; $$ A = \frac 12 \int y dx - x dy $$
+;;
+
 (defn area-of-instructions [data]
-  (let[[area perim end]
-       (reduce
-          (fn [[area perim [y x]] {dir :dir amt :amt}]
-            (let [[dy dx] (case dir
-                           :R [0 amt]
-                           :L [0 (- amt)]
-                           :U [(- amt) 0]
-                           :D [amt 0])
-                  newx (+ x dx)
-                  newy (+ y dy)]
-              [(+ area (* (+ y newy) (- x newx)))
-               (+ perim (abs dx) (abs dy))
-               [newy newx]]))
-          [0 0 [0 0]]
-          data)]
-   (inc (+ (/ area 2) (/ perim 2)))))
+  (let [[area perim end]
+        (reduce
+           (fn [[area perim [y x]] {dir :dir amt :amt}]
+             (let [[dy dx] (case dir
+                            :R [0 amt]
+                            :L [0 (- amt)]
+                            :U [(- amt) 0]
+                            :D [amt 0])]
+               [(+ area (* y dx) (- (* x dy)))
+                (+ perim (abs dx) (abs dy))
+                [(+ y dy) (+ x dx)]]))
+           [0 0 [0 0]]
+           data)]
+    (assert (= end [0 0]))
+    (inc (+ (/ (abs area) 2) (/ perim 2)))))
 
 
 
@@ -66,8 +70,6 @@ U 2 (#7a21e3)")
 ;;
 ;; Looks like the elves messed things up and put things into the hexadecimal codes instead.
 ;;
-;; In order to calculate the area we'll use Stoke's theorem:
-;; $$ A = \frac 12 \int y dx - x dy $$
 
 (defn hex-number [& vals]
   (let [hexval {\0 0 \1 1 \2 2 \3 3 \4 4
