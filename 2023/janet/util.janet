@@ -30,6 +30,11 @@
   [val]
   (fn [x] val))
 
+(defn repeat-forever
+  "Infinite sequence of a given value."
+  [x]
+  (generate [_ :iterate true] x))
+
 (defn zip
   "Zip together many collections into tuples."
   [& cols]
