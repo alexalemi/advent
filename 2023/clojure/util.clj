@@ -4,6 +4,9 @@
 (import 'java.security.MessageDigest
         'java.math.BigInteger)
 
+(defn enumerate [col]
+  (map list (range) col))
+
 (defn range-to [a b]
   (range a (inc b)))
 

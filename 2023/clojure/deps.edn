@@ -3,7 +3,8 @@
         org.clojure/math.combinatorics {:mvn/version "0.2.0"}
         org.clojure/data.priority-map {:mvn/version "1.1.0"}
         criterium/criterium {:mvn/version "0.4.6"}
-        complex/complex {:mvn/version "0.1.12"}}
+        complex/complex {:mvn/version "0.1.12"}
+        org.clojure/data.int-map {:mvn/version "1.2.1"}}
  :aliases
  {:nrepl ;; added by neil
   {:extra-deps {nrepl/nrepl {:mvn/version "1.1.0"}}
