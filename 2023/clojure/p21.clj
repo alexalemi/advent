@@ -69,29 +69,6 @@
 (defn repeated-wall? [{:keys [walls extent]} loc]
     (walls (project extent loc)))
 
-
-#_(defn expand-infinite-frontier
-    [data n]
-    (let [wall?* (partial repeated-wall? data)]
-      (loop [frontier #{(data :start)}
-             seen-odd #{}
-             seen-even #{}
-             t 0]
-       (if (= n t)
-         (+ (count frontier) (if (even? t) (count seen-even) (count seen-odd)))
-         (let [new-frontier (into #{} (comp (mapcat neighbors) (remove wall?*)) frontier)]
-           (recur
-            (into #{} (comp (remove seen-odd) (remove seen-even)) new-frontier)
-            (if (odd? t)
-              (into seen-odd frontier)
-              seen-odd)
-            (if (even? t)
-              (into seen-even frontier)
-              seen-even)
-            (inc t)))))))
-
-(defn into! [tset xs] (reduce conj! tset xs))
-
 (defn expand-infinite-frontier
   [data n]
   (let [wall?* (partial repeated-wall? data)]
@@ -114,29 +91,50 @@
             seen-even)
           (inc t)))))))
 
-(comment
-  (time (expand-infinite-frontier test-data 6))
-  (time (expand-infinite-frontier test-data 10))
-  (time (expand-infinite-frontier test-data 50))
-  (time (expand-infinite-frontier test-data 100))
-  (time (expand-infinite-frontier test-data 500))
-  (time (expand-infinite-frontier test-data 1000))
-  (time (expand-infinite-frontier test-data 5000))
-
-  (println "old----")
-  (println "new----"))
-
 
 (comment
-  (time (expand-infinite-frontier data 64)))
+  (time (= 16 (expand-infinite-frontier test-data 6)))
+  (time (= 50 (expand-infinite-frontier test-data 10)))
+  (time (= 1594 (expand-infinite-frontier test-data 50)))
+  (time (= 6536 (expand-infinite-frontier test-data 100)))
+  (time (= 167004 (expand-infinite-frontier test-data 500)))
+  (time (= 668697 (expand-infinite-frontier test-data 1000)))
+  (time (= 16733044 (expand-infinite-frontier test-data 5000))))
 
-(println "Answer1:" ans1)
-(time (def ans2 (expand-infinite-frontier data 26501365)))
-(println "Answer2:" ans2)
+;; If we go and look at the generated maps, its pretty
+
+(comment
+  (quot 131 2))
+
+(defn part-2 [data steps]
+  ;; The answer is a quadratic, so we need to compute the coefficients of the different pieces.
+  ;; )
+  (let [{:keys [walls extent start]} data
+        [Y X] extent
+        [y0 x0] start
+        offset y0
+        size Y
+        iters (quot (- steps offset) size)]
+    (assert (= X Y) "Grid is not square!")
+    (assert (= y0 x0) "Doesn't start in center!")
+    (assert (= (quot Y 2) y0)), "Doesn't start in center!"
+    (assert (= steps (+ offset (* iters size))) "Input isn't a nice just filled time!")
+
+    (letfn [(step [n] (+ offset (* n size)))]
+        (let [f0 (expand-infinite-frontier data (step 0))
+              f2 (expand-infinite-frontier data (step 2))
+              f4 (expand-infinite-frontier data (step 4))
+              c f0
+              a (quot (+ f4 (* -2 f2) f0) 8)
+              b (quot (+ f2 (* -4 a) (- c)) 2)]
+          (+ (* (+ (* a iters) b) iters) c)))))
+
+
+
+(defonce ans2 (part-2 data 26501365))
+(assert (= ans2 616951804315987))
 
 
 (defn -main []
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))
-
-
