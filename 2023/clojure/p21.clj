@@ -1,7 +1,6 @@
 ;; # 🎄 Advent of Code 2023 - Day 21 - Step Counter
 (ns p21
-  (:require [clojure.string :as str]
-            [clojure.set :as set]))
+  (:require [clojure.string :as str]))
 
 (def data-string (slurp "../input/21.txt"))
 (def test-string "...........
@@ -119,6 +118,16 @@
     (assert (= y0 x0) "Doesn't start in center!")
     (assert (= (quot Y 2) y0)), "Doesn't start in center!"
     (assert (= steps (+ offset (* iters size))) "Input isn't a nice just filled time!")
+
+    ;; f n = x (a x + b) + c
+    ;; f0 = c
+    ;; f2 = 4 a + 2 b + c
+    ;; f2 - f0 = 4a + 2b
+    ;; f4 = 16a + 4b + c
+    ;; f4 - 2 f2 + f0 = 8a
+    ;;  => a = (f4 - 2 f2 + f0)/8
+    ;; 
+    ;;  => b = (f2 - 4a - c)/2
 
     (letfn [(step [n] (+ offset (* n size)))]
         (let [f0 (expand-infinite-frontier data (step 0))
