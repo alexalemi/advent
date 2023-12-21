@@ -96,19 +96,21 @@
   [data n]
   (let [wall?* (partial repeated-wall? data)]
     (loop [frontier #{(data :start)}
-           seen-odd #{}
-           seen-even #{(data :start)}
+           prev #{}
+           seen-odd 0
+           seen-even 0
            t 0]
      (if (= n t)
-       (if (even? t) (count seen-even) (count seen-odd))
-       (let [new-frontier (into #{} (comp (mapcat neighbors) (remove wall?*) (remove seen-odd) (remove seen-even)) frontier)]
+       (+ (count frontier) (if (even? t) seen-even seen-odd))
+       (let [new-frontier (into #{} (comp (mapcat neighbors) (remove wall?*) (remove prev)) frontier)]
          (recur
-          (into #{} new-frontier)
+          new-frontier
+          frontier
           (if (even? t)
-            (into seen-odd new-frontier)
+            (+ seen-odd (count prev))
             seen-odd)
           (if (odd? t)
-            (into seen-even new-frontier)
+            (+ seen-even (count prev))
             seen-even)
           (inc t)))))))
 
@@ -124,25 +126,17 @@
   (println "old----")
   (println "new----"))
 
-;(time (defonce ans2 (expand-infinite-frontier data 26501365)))
 
 (comment
-  (into #{} [[1 2] [-3 4] [2 3]])
-  (count (into (i/int-set) (range 1e6))))
+  (time (expand-infinite-frontier data 64)))
 
-(comment
-   (let [foo (transient #{})]
-     (reduce conj! foo #{:x :b})))
+(println "Answer1:" ans1)
+(time (def ans2 (expand-infinite-frontier data 26501365)))
+(println "Answer2:" ans2)
 
-(comment
-    (let [data test-data
-          {:keys [walls start extent]} data]
-      (mod -1 11)))
 
 (defn -main []
-  (println "Answer1:" ans1))
-  ;(println "Answer2:" ans2))
+  (println "Answer1:" ans1)
+  (println "Answer2:" ans2))
 
 
-;(println "Answer1:" ans1)
-;(println "Answer2:" ans2)
