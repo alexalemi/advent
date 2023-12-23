@@ -58,6 +58,7 @@ function part2(data: string): int {
 	return data.split("\n").map(extractGeneralNumber).reduce((acc, val) => acc + val, 0)
 }
 
+
 assert(part2(testData2) == 281)
 const ans2 = part2(data)
 console.log("Answer2:", ans2)
