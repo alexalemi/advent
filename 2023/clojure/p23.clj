@@ -1,4 +1,4 @@
-;; # 🎄 Advent of Code 2023 - Day 22 - Sand Slabs
+;; # 🎄 Advent of Code 2023 - Day 23 - A Long Walk
 (ns p23
   (:require [clojure.string :as str]))
 

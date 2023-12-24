@@ -93,10 +93,10 @@ def astar(
     print(f"{frontier=}")
     _, _, current = heapq.heappop(frontier)
     if goal(current):
-      return reconstruct_path(came_from, current), cost_so_far[current]
+      return reconstruct_path(came_from, current)
     for n in neighbors(current):
       new_cost = cost_so_far[current] + cost(current, n)
-      if n not in cost_so_far or new_cost > cost_so_far[n]:
+      if n not in cost_so_far or new_cost < cost_so_far[n]:
         cost_so_far[n] = new_cost
         priority = new_cost + heuristic(n)
         heapq.heappush(frontier, (priority, -next(counter), n))
