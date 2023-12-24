@@ -75,7 +75,7 @@ def solver(data):
     N = len(data)
     ts = np.ones(N).astype('float128')
     ts = np.random.rand(N)
-    rho = 1.0
+    rho = 0.0
 
     def project_ts(xx, vv, ts, rho=rho):
         return (rho * ts + (xs * vv).sum(1) + (vs * xx).sum(1) - (xs * vs).sum(1) - (xx * vv).sum())/(rho + ((vs-vv)**2).sum(1))
@@ -88,105 +88,24 @@ def solver(data):
     ans = xx.sum()
     i= 0
 
-    for j in range(10): 
-        for k in range(1000): 
-            i += 1 
-            ts = project_ts(xx, vv, ts, rho=rho)
-            (xx, vv) = project_xx_vv(xx, vv, ts, rho=rho)
-        print(f"iter = {i}, guess = {xx.sum()}")
-    return xx.sum()
-
-    alpha = 0.01
-    x_ts = ts[:]
-    y_ts = ts[:]
-    z_ts = ts[:]
-    x_xx = xx[:]
-    y_xx = xx[:]
-    z_xx = xx[:]
-    x_vv = vv[:]
-    y_vv = vv[:]
-    z_vv = vv[:]
-
-    i = 0
-
-    while eps > 1e-15:
-        i += 1
-
-        # y'        PD (ts)
-        yp_xx =  z_xx + alpha * x_xx
-        yp_vv =  z_vv + alpha * x_vv
-        yp_ts  = project_ts(yp_xx, yp_vv, z_ts + alpha * x_ts, rho=rho)
-        yp_xx = np.round(yp_xx)
-        # yp_vv = np.round(yp_vv)
-        # yp_ts = np.round(yp_ts)
-
-        # z'        PC (xx, vv)
-        zp_ts = yp_ts - alpha * x_ts
-        (zp_xx, zp_vv) = project_xx_vv(yp_xx - alpha * x_xx, yp_vv - alpha * x_vv, zp_ts, rho=rho)
-
-        # x
-        x_xx += zp_xx - yp_xx
-        x_vv += zp_vv - yp_vv
-        x_ts += zp_ts - yp_ts
-
-        (y_xx, y_vv, y_ts) = (yp_xx, yp_vv, yp_ts)
-        (z_xx, z_vv, z_ts) = (zp_xx, zp_vv, zp_ts)
-
-        eps = np.abs(zp_xx - yp_xx).sum() + np.abs(zp_vv - yp_vv).sum() + np.abs(zp_ts - yp_ts).sum() 
-        print(f"iter = {i}, guess = {y_xx.sum()} guess2= {z_xx.sum()}, eps = {eps:.3g}")
-
+    while eps > 1e-5:
+        i += 1 
+        ts = project_ts(xx, vv, ts, rho=rho)
+        (xx, vv) = project_xx_vv(xx, vv, ts, rho=rho)
+        new_ans = xx.sum()
+        eps = np.abs(new_ans - ans).sum()
+        ans = new_ans
+        if i % 1000 == 0:
+            print(f"iter = {i}, guess = {xx.sum()} eps={eps:.3g}")
     return int(np.round(xx.sum()))
 
 
-# assert 47 == solver(test_data)
+assert 47 == solver(test_data)
 ans2 = solver(data)
-print("Answer 2:", ans2)
-# assert ans2 == 1007148211789625
+assert ans2 == 1007148211789625
 
 if __name__ == "__main__":
     print("Answer 1:", ans1)
     print("Answer 2:", ans2)
 
 
-## False directions Part 2
-
-import jax
-import jax.flatten_util
-import jax.numpy as jnp
-
-def jaxify(xs):
-    return Ball(jnp.array([x.p for x in xs]).astype('float64'),
-                jnp.array([x.v for x in xs]).astype('float64'))
-
-jtest_data = jaxify(test_data)
-jdata = jaxify(data)
-
-ball0 = Ball(jdata.p.mean(0), jdata.v.mean(0))
-ts = jnp.ones(len(data))
-flat_params, unravel_tree = jax.flatten_util.ravel_pytree((ball0, ts))
-
-def make_energy(balls: tuple[Ball, ...]):
-    n = len(balls)
-    @jax.jit
-    def energy(flat_params):
-        ball, ts = unravel_tree(flat_params)
-        balls_poses = jax.vmap(move)(balls, ts)
-        ball_poses = jax.vmap(move, (None, 0))(ball, ts)
-        return jnp.mean((1.0 * balls_poses - 1.0 * ball_poses)**2)
-    return energy
-
-from jax.scipy.optimize import minimize
-import optax
-
-def newtons_method(f):
-    def iter(x0):
-        hess = jax.hessian(f)(x0)
-        grad = jax.grad(f)(x0)
-        return x0 - inv(hess).dot(grad)
-        return solve(hess, hess.dot(x0) - grad)
-    return iter
-
-energy = make_energy(jdata)
-opt = optax.adabelief(1e-2)
-x = flat_params[:]
-state = opt.init(x)
