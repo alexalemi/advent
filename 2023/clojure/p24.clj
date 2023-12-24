@@ -1,7 +1,7 @@
 ;; # 🎄 Advent of Code 2023 - Day 24 - Never Tell me the Odds
 (ns p24
-  (:require [clojure.string :as str]
-            [clojure.math.combinatorics :as combo]))
+  (:require [clojure.string :as str]))
+            ;[clojure.math.combinatorics :as combo]))
 
 (def data-string (slurp "../input/24.txt"))
 (def test-string "19, 13, 30 @ -2,  1, -2
@@ -51,11 +51,11 @@
            (inside-2d? bounds (move ball1 t1))))))))
 
 
-(defn part-1 [data bounds]
-    (count (filter (fn [[x y]] (xy-collision? bounds x y)) (combo/combinations data 2))))
+;(defn part-1 [data bounds]
+;    (count (filter (fn [[x y]] (xy-collision? bounds x y)) (combo/combinations data 2)))))
 
-(assert (= 2 (part-1 test-data [7 27])))
-(def ans1 (part-1 data [200000000000000 400000000000000]))
+;(assert (= 2 (part-1 test-data [7 27])))
+;(def ans1 (part-1 data [200000000000000 400000000000000]))
 
 ; # Part 2
 ; Now we need to find the magical input that will collide with everything.
@@ -107,7 +107,7 @@
 ;
 ; for the optimal value of
 ;
-; $$ v^* = \frac{\sum t_i ((x_i - x) + t_i v_i)}{\sum_i t_i^2} $$
+; $$ v^* = \frac{\sum t_i ((p_i - p) + t_i v_i)}{\sum_i t_i^2} $$
 ;
 ; Finally, if we know the best starting position and velocity, we can work out the best intersection times, this time with:
 ;
@@ -115,7 +115,7 @@
 ;
 ; which gives
 ;
-; $$ t_i = \frac{ p\cdot v_i + v\cdot p_i - p\cdot v }{ v^2 - 2 v\cdot v_i} $$
+; $$ t_i = \frac{ p\cdot v_i + v\cdot p_i - p\cdot v - p_i \cdot v_i }{ (v_i - v)^2 } $$
 ;
 
 (defn a+ [& vs] (apply map + vs))
@@ -124,33 +124,59 @@
 (defn sum [vs] (reduce + vs))
 (defn adot [v1 v2] (sum (a* v1 v2)))
 (defn asqr [v] (adot v v))
-(defn a*-scalar [a & vs] (apply map (fn [x] (* a x)) vs))
-
+(defn a*-scalar [a v] (map (fn [x] (* a x)) v))
+(defn amean [vs]
+  (let [n (count vs)]
+    (a*-scalar (/ 1 n) (apply a+ vs))))
 
 (defn project [data state]
   (let [n (count data)
         ps (map :p data)
         vs (map :v data)
         {:keys [p v ts]} state
-        newp (a*-scalar (/ 1.0 n)
-                        (apply a+
-                               (map (fn [pi vi ti] (a+ p (a+ pi (a*-scalar ti (a- vi v)))))
-                                    ps vs ts)))
-        newv (a*-scalar (/ 1.0 (asqr ts))
-                        (apply a+
-                               (map (fn [pi vi ti] (a+ v (a*-scalar ti (a+ (a- pi p) (a*-scalar ti vi)))))
-                                    ps vs ts)))
         newts (map (fn [pi vi _ti]
                      (/ (+ (adot vi p) (adot v pi) (- (adot v p)) (- (adot vi pi)))
-                        (* 1.0 (asqr (a- vi v))))) ps vs ts)]
+                        (* 1.0 (asqr (a- vi v))))) ps vs ts)
+        ts newts
+        newp (a*-scalar (/ 1.0 n)
+                        (apply a+
+                               (map (fn [pi vi ti] (a+ pi (a*-scalar ti (a- vi v))))
+                                    ps vs ts)))
+        p newp
+        newv (a*-scalar (/ 1.0 (asqr ts))
+                        (apply a+
+                               (map (fn [pi vi ti] (a*-scalar ti (a+ (a- pi p) (a*-scalar ti vi))))
+                                    ps vs ts)))
+        v newv]
     (assoc state :p newp :v newv :ts newts)))
 
+
+(defn fixed-point [tol]
+  (fn [xf]
+    (let [prev (volatile! ::none)]
+      (fn
+       ([] (xf))
+       ([result] (xf result))
+       ([result input]
+        (let [prior @prev]
+          (vreset! prev input
+            (if (< (abs (- prior input)) tol)
+              (reduced result)
+              (xf result input)))))))))
+              
+
 (let [data test-data
-      state {:p [0 0 0]
-             :v [1 1 1]
-             :ts (take (count test-data) (repeat 1))}
+      state {:p (a*-scalar 1.0 (amean (map :p data)))
+             :v (a*-scalar 1.0 (amean (map :v data)))
+             :ts (take (count test-data) (repeat 4.0))}
       project* (partial project data)]
-  (map (comp sum :p) (take 15 (iterate project* state))))
+
+  (into []
+        (comp 
+          (drop 10000)
+          (take 5)
+          (map (comp sum :p)))
+        (iterate project* state)))
   ;(take 5 (iterate project* state)))
 
 
