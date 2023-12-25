@@ -33,6 +33,9 @@ test_data = process(test_string)
 data = process(data_string)
 
 graph = nx.Graph(data)
+# I used networkx to visualie the graph with
+# nx.draw(graph, with_labels=True)
+# and then found the three edges I had to cut.
 
 new_data = data.copy()
 to_remove = [('dgc', 'fqn'), ('vps', 'htp'), ('rpd', 'ttj')]
@@ -60,6 +63,9 @@ def find_clusters(graph):
 
 ans1 = math.prod(find_clusters(new_data))
 assert ans1 == 600225
+
+# Part 2 was the same as always, you just push the button if you 
+# have completed all of the other parts for the year.
 
 if __name__ == "__main__":
     print("Answer1:", ans1)
