@@ -19,7 +19,7 @@ O.#..O.#.#
     :cube (group (<- (* (group (* (line) (column))) "#")))
     :blank (+ "\n" ".")
     :main (some (+ :blank :rock :cube))})
-    
+
 
 (defn ->data [s]
   (var rocks @[])
@@ -43,7 +43,7 @@ O.#..O.#.#
       (when (set-has? rocks [y x])
         (var new-y y)
         (while (and (> new-y 1) (not (or (set-has? rocks [(dec new-y) x]) (set-has? cubes [(dec new-y) x]))))
-            (-- new-y))
+          (-- new-y))
         (set-remove! rocks [y x])
         (set-add! rocks [new-y x])))
     rocks))
@@ -54,7 +54,7 @@ O.#..O.#.#
 (defn part-1 [data]
   (let [rocks (raise data)
         [Y X] (extent data)]
-     (score Y rocks)))
+    (score Y rocks)))
 
 (test (part-1 test-data) 136)
 (def ans1 (part-1 data))
@@ -106,9 +106,9 @@ O.#..O.#.#
         rem (% (- 1000000000 start) period)]
     (var x x)
     (loop [i :range [0 rem]]
-       (set x (cycle x)))
+      (set x (cycle x)))
     (score Y (x :rocks))))
-    
+
 (test (part-2 test-data) 64)
 (def ans2 (part-2 data))
 (test ans2 94255)

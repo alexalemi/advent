@@ -26,7 +26,7 @@
     :main (some (+ (group :cell) :skip))})
 
 (defn process-board [board]
-  (->set (freeze (keys (from-pairs (peg/match data-peg board)))))) 
+  (->set (freeze (keys (from-pairs (peg/match data-peg board))))))
 
 (defn ->data [s]
   (map process-board (string/split "\n\n" s)))
@@ -47,7 +47,7 @@
   # to reflect, everywhere there is a cell, there is still a cell
   # and everywhere there isn't a cell, there is not a cell.
   (let [[Y X] (extent board)]
-    (if 
+    (if
       (> i (/ X 2))
       # the split is on the right half
       (count false? (seq [x :range-to [(inc i) X]
@@ -78,7 +78,7 @@
   (let [[Y X] (extent board)]
     (+ (maybe (find (comp one? (partial count-mismatch board)) (range 1 X)))
        (* 100 (maybe (find (comp one? (partial count-mismatch (transpose board))) (range 1 Y)))))))
- 
+
 (defn part-2 [data]
   (sum (map score-2 data)))
 
@@ -90,5 +90,3 @@
 (defn main [&]
   (print "Answer1: " ans1)
   (print "Answer2: " ans2))
-
-        

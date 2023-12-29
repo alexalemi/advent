@@ -50,18 +50,18 @@
                      :right :down
                      :down :right
                      :up :left
-                     :left :up)]]   
+                     :left :up)]]
       "/" [[[y x] (case direction
-                     :right :up
-                     :up :right
-                     :left :down
-                     :down :left)]]
-      "-" (if 
+                    :right :up
+                    :up :right
+                    :left :down
+                    :down :left)]]
+      "-" (if
             (or (= :right direction) (= :left direction))
             [[[y x] direction]]
             [[[y x] :right]
              [[y x] :left]])
-      "|" (if 
+      "|" (if
             (or (= :up direction) (= :down direction))
             [[[y x] direction]]
             [[[y x] :up]
@@ -83,7 +83,7 @@
             [x dir] pt
             new-x (move pt)
             kids (children* [new-x dir])]
-        (set-add! seen [x dir]) 
+        (set-add! seen [x dir])
         (if (and (inside?* new-x) kids)
           (loop [child :in kids :when (not (set-has? seen child))]
             (array/push frontier child)))))

@@ -25,7 +25,7 @@
 (test ans1 514394)
 
 (def data-peg
-  ~{:remove (group (* (constant :rem) (<- :w+ ) "-"))
+  ~{:remove (group (* (constant :rem) (<- :w+) "-"))
     :add (group (* (constant :add) (<- :w+) "=" (number :d+)))
     :main (some (+ :remove :add "," "\n"))})
 
@@ -62,8 +62,8 @@
         :add (do
                (if pk
                  (do
-                  (array/remove (boxes id) pk)
-                  (array/insert (boxes id) pk [x v]))
+                   (array/remove (boxes id) pk)
+                   (array/insert (boxes id) pk [x v]))
                  (array/push (boxes id) [x v])))
         :rem (when pk
                (array/remove (boxes id) pk)))))
@@ -71,7 +71,7 @@
   (var tot 0)
   (loop [id :range [0 256]]
     (each [i [x v]] (indexed (boxes id))
-        (+= tot (* (inc id) (inc i) v))))
+      (+= tot (* (inc id) (inc i) v))))
   tot)
 
 (test (part-2 test-data) 145)
@@ -81,5 +81,3 @@
 (defn main [&]
   (print "Answer1: " ans1)
   (print "Answer2: " ans2))
-  
-

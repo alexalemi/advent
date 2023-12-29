@@ -43,19 +43,19 @@
     {:rows (->set (filter (complement find-row*) (range 1 (inc Y))))
      :cols (->set (filter (complement find-col*) (range 1 (inc X))))}))
 
-(defn manhattan-distance [[y1 x1] [y2 x2]] 
-    (+ (math/abs (- x2 x1)) (math/abs (- y2 y1))))
+(defn manhattan-distance [[y1 x1] [y2 x2]]
+  (+ (math/abs (- x2 x1)) (math/abs (- y2 y1))))
 
-(defn distance 
-  [[y1 x1] [y2 x2] 
+(defn distance
+  [[y1 x1] [y2 x2]
    {:rows rows :cols cols}
    factor]
   (let [empty-row? (partial set-has? rows)
         empty-col? (partial set-has? cols)]
     (defn range* [a b]
       (range (inc (min a b)) (max a b)))
-    (+ (manhattan-distance [y1 x1] [y2 x2]) 
-       (* (dec factor) (length (filter empty-col? (range* x1 x2)))) 
+    (+ (manhattan-distance [y1 x1] [y2 x2])
+       (* (dec factor) (length (filter empty-col? (range* x1 x2))))
        (* (dec factor) (length (filter empty-row? (range* y1 y2)))))))
 
 (test (manhattan-distance [1 5] [11 10]) 15)
@@ -67,10 +67,10 @@
 (defn sum-of-distances [data factor]
   (let [emp (empties data)
         n (length data)]
-   (sum 
-     (seq [i :range [1 n]
-           j :range [0 i]]
-      (distance (data i) (data j) emp factor)))))
+    (sum
+      (seq [i :range [1 n]
+            j :range [0 i]]
+        (distance (data i) (data j) emp factor)))))
 
 (defn part-1 [data]
   (sum-of-distances data 2))

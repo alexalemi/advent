@@ -12,7 +12,7 @@
 ?###???????? 3,2,1`)
 
 
-(def data-peg 
+(def data-peg
   ~{:counts (group (some (+ "," (number :d+))))
     :line (<- (some (set ".?#")))
     :main (some (+ "\n" (group (* :line " " :counts))))})
@@ -23,12 +23,12 @@
 (def test-data (->data test-string))
 (def data (->data data-string))
 (test test-data
-  [["???.###" [1 1 3]]
-   [".??..??...?##." [1 1 3]]
-   ["?#?#?#?#?#?#?#?" [1 3 1 6]]
-   ["????.#...#..." [4 1 1]]
-   ["????.######..#####." [1 6 5]]
-   ["?###????????" [3 2 1]]])
+      [["???.###" [1 1 3]]
+       [".??..??...?##." [1 1 3]]
+       ["?#?#?#?#?#?#?#?" [1 3 1 6]]
+       ["????.#...#..." [4 1 1]]
+       ["????.######..#####." [1 6 5]]
+       ["?###????????" [3 2 1]]])
 
 (def yay (chr ".")) # 46
 (def nay (chr "#")) # 35
@@ -37,7 +37,7 @@
 (defn car [[x y]] x)
 (defn cdr [[x y]] y)
 (defn conj [l a] [a l])
-(defn ->list [xs] 
+(defn ->list [xs]
   (var out [])
   (each x (reverse xs) (set out (conj out x)))
   out)
@@ -66,14 +66,14 @@
             (consume-n (dec n) (cdr patt))))))
 
 (let [show (fn [x] (if (= :bad (car x)) :bad (string/from-bytes ;(<-list x))))
-      foo |(show (consume-n $0 (->list $1)))] 
+      foo |(show (consume-n $0 (->list $1)))]
   (test (foo 3 "???.#") "#")
   (test (foo 2 "???.#") ".#")
   (test (foo 1 "???.#") "?.#")
   (test (foo 1 ".???.#") :bad)
   (test (foo 0 ".???.#") "???.#")
   (test (foo nil ".???.#") :bad))
-    
+
 (var memo @{})
 (defn matches
   "Recursively compute the number of matches."
@@ -88,7 +88,7 @@
         nil (if (empty? counts) 1 0)
         yay (matches (cdr patt) counts)
         nay (matches (consume-n (car counts) patt) (cdr counts))
-        may (+ 
+        may (+
               # assume its a yay
               (matches (cdr patt) counts)
               # consume the nay
@@ -103,19 +103,19 @@
 (test (map (partial apply matches*) test-data) @[1 4 1 1 4 10])
 
 (defn part-1 [data]
-   (sum (map (partial apply matches*) data)))
- 
+  (sum (map (partial apply matches*) data)))
+
 (test (part-1 test-data) 21)
 (def ans1 (part-1 data))
 (test ans1 7753)
- 
+
 (defn expand [[patt counts]]
   [(string/join (seq [i :range [0 5]] patt) "?")
    (catseq [i :range [0 5]] counts)])
- 
+
 (defn part-2 [data]
   (part-1 (map expand data)))
- 
+
 (test (part-2 test-data) 525152)
 (def ans2 (part-2 data))
 (test ans2 280382734828319)
@@ -123,5 +123,3 @@
 (defn main [&]
   (print "Answer1: " ans1)
   (print "Answer2: " ans2))
-
-        

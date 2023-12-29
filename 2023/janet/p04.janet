@@ -23,26 +23,26 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11`)
 (def data (->data data-string))
 (def test-data (->data test-string))
 (test test-data
-  @{1 {:card "{31 48 9 53 6 83 17 86}"
-       :wins "{41 48 83 17 86}"}
-    2 {:card "{32 30 82 24 61 19 17 68}"
-       :wins "{32 16 20 13 61}"}
-    3 {:card "{72 14 21 63 69 1 82 16}"
-       :wins "{59 21 1 53 44}"}
-    4 {:card "{59 58 84 54 5 76 51 83}"
-       :wins "{41 84 73 69 92}"}
-    5 {:card "{70 12 93 30 82 36 88 22}"
-       :wins "{32 26 87 28 83}"}
-    6 {:card "{10 77 36 35 11 67 74 23}"
-       :wins "{31 56 13 72 18}"}})
+      @{1 {:card "{31 48 9 53 6 83 17 86}"
+           :wins "{41 48 83 17 86}"}
+        2 {:card "{32 30 82 24 61 19 17 68}"
+           :wins "{32 16 20 13 61}"}
+        3 {:card "{72 14 21 63 69 1 82 16}"
+           :wins "{59 21 1 53 44}"}
+        4 {:card "{59 58 84 54 5 76 51 83}"
+           :wins "{41 84 73 69 92}"}
+        5 {:card "{70 12 93 30 82 36 88 22}"
+           :wins "{32 26 87 28 83}"}
+        6 {:card "{10 77 36 35 11 67 74 23}"
+           :wins "{31 56 13 72 18}"}})
 
 (defn score [num-matches]
-  (if (pos? num-matches) 
+  (if (pos? num-matches)
     (math/pow 2 (dec num-matches))
     0))
 
 (defn winners [{:wins wins :card card}]
-    (set/count (* card wins) pos?))
+  (set/count (* card wins) pos?))
 
 (defn part-1 [data]
   (->> data
@@ -58,7 +58,7 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11`)
 # Now we win cards upon cards
 
 
-(defn part-2 [data] 
+(defn part-2 [data]
   (let [matches (map-vals winners data)
         counts (map-vals (always 1) matches)]
     (loop [id :range-to [1 (length matches)]
@@ -73,6 +73,3 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11`)
 (defn main [&]
   (print "Answer1:" ans1)
   (print "Answer2:" ans2))
-    
-
-

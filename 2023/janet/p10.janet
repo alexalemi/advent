@@ -20,7 +20,7 @@ LJ.LJ`)
     :start (<- (* (group (* (line) (column))) "S"))
     :moves (<- (group (* (* (line) (column)) (set "|-LJ7F"))))
     :main (some (+ :start :moves :blank))})
-    
+
 (defn ->data [s]
   (freeze (struct ;(peg/match maze-peg s))))
 
@@ -28,7 +28,7 @@ LJ.LJ`)
 (def test-data (->data test-string))
 (def test-data-2 (->data test-string-2))
 
-(def pipes 
+(def pipes
   "How the symbols connect the edges."
   {"|" [:n :s]
    "-" [:e :w]
@@ -39,12 +39,12 @@ LJ.LJ`)
 
 (defn pipe-move
   "Given the connections, how a pipe moves an edge."
-  [[a b] x] 
+  [[a b] x]
   (case x
     a b
     b a))
 
-(def opposite 
+(def opposite
   "The opposite of a given edge."
   {:n :s
    :s :n
@@ -67,7 +67,7 @@ LJ.LJ`)
   [[pos edge] pipe]
   (when pipe
     (if-let [new-edge (pipe-move (pipes pipe) edge)]
-      [(board-move (movements new-edge) pos) 
+      [(board-move (movements new-edge) pos)
        (opposite new-edge)])))
 
 (defn round [data [pos edge]]
@@ -88,7 +88,7 @@ LJ.LJ`)
   [data]
   (let [start ((invert data) "S")
         round* (partial round data)
-        starts (filter round* (seq [edge :in [:n :s :e :w]] 
+        starts (filter round* (seq [edge :in [:n :s :e :w]]
                                 [(board-move (movements edge) start) (opposite edge)]))
         one-step (fn [x] (filter some? (map round* x)))
         circuit (take-until has-match? (iterate one-step starts))
@@ -169,7 +169,7 @@ L7JLJL-JLJLJL--JLJ.L`))
       (for x 1 (inc X)
         (let [in-loop (set-has? walls [y x])
               sym (data [y x])]
-          (when (and (not in-loop) (not outside)) 
+          (when (and (not in-loop) (not outside))
             (set-add! inside [y x]))
           (if (and in-loop (set-has? flippers sym))
             (toggle outside)))))
@@ -187,5 +187,3 @@ L7JLJL-JLJLJL--JLJ.L`))
 (defn main [&]
   (print "Answer 1:" ans1)
   (print "Answer 2:" ans2))
-
-

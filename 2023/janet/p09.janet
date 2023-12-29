@@ -12,15 +12,15 @@
   (map parse (string/split " " line)))
 
 (defn ->data [s]
-  (freeze 
+  (freeze
     (map process-line (string/split "\n" s))))
 
 (def data (->data data-string))
 (def test-data (->data test-string))
 (test test-data
-  [[0 3 6 9 12 15]
-   [1 3 6 10 15 21]
-   [10 13 16 21 30 45]])
+      [[0 3 6 9 12 15]
+       [1 3 6 10 15 21]
+       [10 13 16 21 30 45]])
 
 (defn accumulator [state0]
   (var state state0)
@@ -71,4 +71,3 @@
 (defn main [&]
   (print "Answer1:" ans1)
   (print "Answer2:" ans2))
-

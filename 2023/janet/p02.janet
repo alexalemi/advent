@@ -10,7 +10,7 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green`)
 
 (defn ->data [s]
   (def file-peg
-    ~{:id (* "Game " (number :d+)) 
+    ~{:id (* "Game " (number :d+))
       :color (/ (<- (+ "green" "blue" "red")) ,keyword)
       :element (/ (* (number :d+) " " :color) ,|[$1 $0])
       :obs (/ (group (some (+ ", " :element))) ,from-pairs)
@@ -22,27 +22,27 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green`)
 (def data (->data data-string))
 (def test-data (->data test-string))
 (test test-data
-  @{1 @[@{:blue 3 :red 4}
-        @{:blue 6 :green 2 :red 1}
-        @{:green 2}]
-    2 @[@{:blue 1 :green 2}
-        @{:blue 4 :green 3 :red 1}
-        @{:blue 1 :green 1}]
-    3 @[@{:blue 6 :green 8 :red 20}
-        @{:blue 5 :green 13 :red 4}
-        @{:green 5 :red 1}]
-    4 @[@{:blue 6 :green 1 :red 3}
-        @{:green 3 :red 6}
-        @{:blue 15 :green 3 :red 14}]
-    5 @[@{:blue 1 :green 3 :red 6}
-        @{:blue 2 :green 2 :red 1}]})
+      @{1 @[@{:blue 3 :red 4}
+            @{:blue 6 :green 2 :red 1}
+            @{:green 2}]
+        2 @[@{:blue 1 :green 2}
+            @{:blue 4 :green 3 :red 1}
+            @{:blue 1 :green 1}]
+        3 @[@{:blue 6 :green 8 :red 20}
+            @{:blue 5 :green 13 :red 4}
+            @{:green 5 :red 1}]
+        4 @[@{:blue 6 :green 1 :red 3}
+            @{:green 3 :red 6}
+            @{:blue 15 :green 3 :red 14}]
+        5 @[@{:blue 1 :green 3 :red 6}
+            @{:blue 2 :green 2 :red 1}]})
 
 (def target {:red 12 :green 13 :blue 14})
 
 (defn part-1 [data]
-  (sum (seq [[game-id rounds] :pairs data 
+  (sum (seq [[game-id rounds] :pairs data
              :when (every? (merge-with <= (merge-with max ;rounds) target))]
-            game-id)))
+         game-id)))
 
 (test (part-1 test-data) 8)
 (def ans1 (part-1 data))
@@ -64,6 +64,3 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green`)
 (defn main [&]
   (print "Answer1:" ans1)
   (print "Answer2:" ans2))
-    
-
-

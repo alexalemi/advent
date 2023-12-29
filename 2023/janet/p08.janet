@@ -1,4 +1,3 @@
-
 (use "./util")
 (use judge)
 
@@ -18,45 +17,45 @@ ZZZ = (ZZZ, ZZZ)`)
 (def data-peg
   ~{:keyword (/ (<- (some :w+)) ,keyword)
     :children (group (* :keyword ", " :keyword))
-    :line (group (* :keyword " = (" :children ")")) 
+    :line (group (* :keyword " = (" :children ")"))
     :directions (group (some (/ (<- (set "RL")) ,keyword)))
     :main (* :directions "\n\n" (some (+ :line "\n")))})
 
 (test (peg/match data-peg test-string)
-  @[@[:R :L]
-    @[:AAA @[:BBB :CCC]]
-    @[:BBB @[:DDD :EEE]]
-    @[:CCC @[:ZZZ :GGG]]
-    @[:DDD @[:DDD :DDD]]
-    @[:EEE @[:EEE :EEE]]
-    @[:GGG @[:GGG :GGG]]
-    @[:ZZZ @[:ZZZ :ZZZ]]])
+      @[@[:R :L]
+        @[:AAA @[:BBB :CCC]]
+        @[:BBB @[:DDD :EEE]]
+        @[:CCC @[:ZZZ :GGG]]
+        @[:DDD @[:DDD :DDD]]
+        @[:EEE @[:EEE :EEE]]
+        @[:GGG @[:GGG :GGG]]
+        @[:ZZZ @[:ZZZ :ZZZ]]])
 
 (defn ->data [s]
-   (let [[directions & nodes] (peg/match data-peg s)]
-      {:directions (freeze directions)
-       :tree (freeze (from-pairs nodes))}))
+  (let [[directions & nodes] (peg/match data-peg s)]
+    {:directions (freeze directions)
+     :tree (freeze (from-pairs nodes))}))
 
 (test (->data test-string)
-  {:directions [:R :L]
-   :tree {:AAA [:BBB :CCC]
-          :BBB [:DDD :EEE]
-          :CCC [:ZZZ :GGG]
-          :DDD [:DDD :DDD]
-          :EEE [:EEE :EEE]
-          :GGG [:GGG :GGG]
-          :ZZZ [:ZZZ :ZZZ]}})
+      {:directions [:R :L]
+       :tree {:AAA [:BBB :CCC]
+              :BBB [:DDD :EEE]
+              :CCC [:ZZZ :GGG]
+              :DDD [:DDD :DDD]
+              :EEE [:EEE :EEE]
+              :GGG [:GGG :GGG]
+              :ZZZ [:ZZZ :ZZZ]}})
 
 (def data (->data data-string))
 (def test-data (->data test-string))
 
 (defn step [{:directions directions :tree tree} t loc]
-   (let [n (length directions)
-         direction (get directions (% t n))
-         [left right] (tree loc)]
-     (case direction
-       :R right
-       :L left)))
+  (let [n (length directions)
+        direction (get directions (% t n))
+        [left right] (tree loc)]
+    (case direction
+      :R right
+      :L left)))
 
 (test (step test-data 0 :AAA) :CCC)
 (test (step test-data 1 :AAA) :BBB)
@@ -103,8 +102,8 @@ XXX = (XXX, XXX)`)
   (walk start 0))
 
 (defn part-2 [data]
-  (->> (filter ends-A? (keys (data :tree)))  # get the locs that end with A
-       (map (partial steps data))  # for each figure out the recurrance time
+  (->> (filter ends-A? (keys (data :tree))) # get the locs that end with A
+       (map (partial steps data)) # for each figure out the recurrance time
        (reduce2 math/lcm)))
 
 (test (part-2 test-data-2) 6)

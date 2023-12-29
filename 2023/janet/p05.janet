@@ -46,7 +46,7 @@ humidity-to-location map:
 
 (defn transform [entry x]
   (let [[dest init _] entry]
-    (if (contains? entry x) 
+    (if (contains? entry x)
       (+ dest (- x init))
       x)))
 
@@ -78,22 +78,22 @@ humidity-to-location map:
 
 (def test-data (->data test-string))
 (test test-data
-  {:maps [[[50 98 100] [52 50 98]]
-          [[0 15 52] [37 52 54] [39 0 15]]
-          [[49 53 61] [0 11 53] [42 0 7] [57 7 11]]
-          [[88 18 25] [18 25 95]]
-          [[45 77 100] [81 45 64] [68 64 77]]
-          [[0 69 70] [1 0 69]]
-          [[60 56 93] [56 93 97]]]
-   :seeds [79 14 55 13]})
+      {:maps [[[50 98 100] [52 50 98]]
+              [[0 15 52] [37 52 54] [39 0 15]]
+              [[49 53 61] [0 11 53] [42 0 7] [57 7 11]]
+              [[88 18 25] [18 25 95]]
+              [[45 77 100] [81 45 64] [68 64 77]]
+              [[0 69 70] [1 0 69]]
+              [[60 56 93] [56 93 97]]]
+       :seeds [79 14 55 13]})
 (def data (->data data-string))
 
 (defn map-transform [x entries]
   (var result x)
   (each entry entries
     (when (contains? entry x)
-        (set result (transform entry x))
-        (break)))
+      (set result (transform entry x))
+      (break)))
   result)
 
 (test (map-transform 97 [[50 98 100] [52 50 98]]) 99)
@@ -143,12 +143,12 @@ humidity-to-location map:
      [(transform entry init) (transform* entry tail)]]))
 
 (test (range-transform [50 70] [50 98 100]) [[[50 70]] []])
-(test (range-transform [500 700] [50 98 100]) [[[500 700]] []]) 
-(test (range-transform [120 150] [50 100 200]) [[[]] [70 100]]) 
-(test (range-transform [50 150] [75 100 200]) [[[50 100]] [75 125]]) 
-(test (range-transform [150 250] [75 100 200]) [[[200 250]] [125 175]]) 
-(test (range-transform [100 300] [75 150 200]) 
-      [[[100 150] [200 300]] [75 125]]) 
+(test (range-transform [500 700] [50 98 100]) [[[500 700]] []])
+(test (range-transform [120 150] [50 100 200]) [[[]] [70 100]])
+(test (range-transform [50 150] [75 100 200]) [[[50 100]] [75 125]])
+(test (range-transform [150 250] [75 100 200]) [[[200 250]] [125 175]])
+(test (range-transform [100 300] [75 150 200])
+      [[[100 150] [200 300]] [75 125]])
 
 (defn transform-range-with-map [x entries]
   (var old @[x])
@@ -193,4 +193,3 @@ humidity-to-location map:
 (defn main [&]
   (print "Answer 1:" ans1)
   (print "Answer 2:" ans2))
-

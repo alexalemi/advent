@@ -24,8 +24,8 @@
 
 (defn roots [t d]
   (let [x (math/sqrt (- (* t t) (* 4 d)))]
-   [(math/ceil (math/next (/ (- t x) 2) math/inf)) 
-    (math/floor (math/next (/ (+ t x) 2) 0))]))
+    [(math/ceil (math/next (/ (- t x) 2) math/inf))
+     (math/floor (math/next (/ (+ t x) 2) 0))]))
 
 (defn ways-to-beat-slow [time distance]
   (var ways 0)
@@ -52,7 +52,7 @@
   (parse (string ;(map string nums))))
 
 
-(defn part-2 [data] 
+(defn part-2 [data]
   (ways-to-beat ;(map join-nums data)))
 
 (test (part-2 test-data) 71503)
@@ -63,6 +63,3 @@
 (defn main [&]
   (print "Answer1:" ans1)
   (print "Answer2:" ans2))
-    
-
-

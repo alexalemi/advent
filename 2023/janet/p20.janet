@@ -1,5 +1,5 @@
 # Advent of Code 2023 - Day 20
- 
+
 (use "./util")
 (use judge)
 
@@ -24,10 +24,10 @@
   (map first (filter (fn [[k v]] (= (v :kind) :&)) (pairs data))))
 
 (defn parents [data module]
-    (map first (filter (fn [[k v]] (index-of module (v :outputs))) (pairs data))))
+  (map first (filter (fn [[k v]] (index-of module (v :outputs))) (pairs data))))
 
 (defn initial-memory [data comparator]
-  (zipcoll 
+  (zipcoll
     (parents data comparator)
     (repeat-forever :lo)))
 
@@ -40,13 +40,13 @@
 (defn ->data [s]
   (var modules @{})
   (let [lines (peg/match data-peg s)]
-   (loop [[kind name outputs] :in lines]
-     (case kind
-       :% (put modules name @{:outputs outputs :kind kind :state :off})
-       :& (put modules name @{:outputs outputs :kind kind :memory @[]})
-       (if (= name :broadcaster)
-         (put modules name @{:outputs outputs :kind :broadcaster})
-         (put modules name @{:outputs outputs})))))
+    (loop [[kind name outputs] :in lines]
+      (case kind
+        :% (put modules name @{:outputs outputs :kind kind :state :off})
+        :& (put modules name @{:outputs outputs :kind kind :memory @[]})
+        (if (= name :broadcaster)
+          (put modules name @{:outputs outputs :kind :broadcaster})
+          (put modules name @{:outputs outputs})))))
   (initialize-memory modules))
 
 (def data (->data data-string))
@@ -63,43 +63,43 @@
 (defn array/queue [arr v] (array/insert arr 0 v))
 
 (defn process [data [to frm sig]]
-    (if-let [module (data to)]
-      (let [{:kind kind :state state :outputs outputs :memory memory} module]
-        (case (module :kind)
-          :% (when (= sig :lo)
-               (do
-                 (put-in data [to :state] (toggle* state))
-                 (seq [out :in outputs]
-                   [out to (if (on? state) :lo :hi)])))
-          :& (do
-               (put-in data [to :memory frm] sig)
+  (if-let [module (data to)]
+    (let [{:kind kind :state state :outputs outputs :memory memory} module]
+      (case (module :kind)
+        :% (when (= sig :lo)
+             (do
+               (put-in data [to :state] (toggle* state))
                (seq [out :in outputs]
-                   [out to (if 
-                             (all hi? (values (get-in data [to :memory])))
-                             :lo
-                             :hi)]))
-          :broadcaster
-            (seq [out :in outputs]
-              [out to sig])))))
+                 [out to (if (on? state) :lo :hi)])))
+        :& (do
+             (put-in data [to :memory frm] sig)
+             (seq [out :in outputs]
+               [out to (if
+                         (all hi? (values (get-in data [to :memory])))
+                         :lo
+                         :hi)]))
+        :broadcaster
+        (seq [out :in outputs]
+          [out to sig])))))
 
 (defn deep-copy [x]
   (thaw (freeze x)))
 
 (defn push-button [data]
-    (var queue @[[:broadcaster :button :lo]])
-    (var los 0)
-    (var his 0)
-    (while (not (empty? queue))
-      (def message (array/pop queue))
-      # (pp message)
-      (let [[to frm sig] message]
-        (if (hi? sig) 
-          (++ his) 
-          (++ los)))
-      (when-let [messages (process data message)]
-        (loop [msg :in messages]
-          (array/queue queue msg))))
-    [los his])
+  (var queue @[[:broadcaster :button :lo]])
+  (var los 0)
+  (var his 0)
+  (while (not (empty? queue))
+    (def message (array/pop queue))
+    # (pp message)
+    (let [[to frm sig] message]
+      (if (hi? sig)
+        (++ his)
+        (++ los)))
+    (when-let [messages (process data message)]
+      (loop [msg :in messages]
+        (array/queue queue msg))))
+  [los his])
 
 (defn part-1 [data]
   (var los 0)
@@ -110,28 +110,28 @@
         (+= los lo)
         (+= his hi))))
   (* los his))
-        
+
 (test (part-1 test-data-1) 32000000)
 (test (part-1 test-data-2) 11687500)
-(def ans1 (part-1 data)) 
+(def ans1 (part-1 data))
 (test ans1 819397964)
 
 # Part 2
 # Now we want to know which things feed into the output, rx
 
 (defn push-button-watch [data catch-to catch-fm sentinel]
-    (var queue @[[:broadcaster :button :lo]])
-    (var seen false)
-    (while (not (empty? queue))
-      (def message (array/pop queue))
-      # (pp message)
-      (let [[to frm sig] message]
-        (when (and (= sig sentinel) (= to catch-to) (= frm catch-fm))
-          (set seen true)))
-      (when-let [messages (process data message)]
-        (loop [msg :in messages]
-          (array/queue queue msg))))
-    seen)
+  (var queue @[[:broadcaster :button :lo]])
+  (var seen false)
+  (while (not (empty? queue))
+    (def message (array/pop queue))
+    # (pp message)
+    (let [[to frm sig] message]
+      (when (and (= sig sentinel) (= to catch-to) (= frm catch-fm))
+        (set seen true)))
+    (when-let [messages (process data message)]
+      (loop [msg :in messages]
+        (array/queue queue msg))))
+  seen)
 
 (defn count-until [data to fm sentinel]
   (var n 0)
@@ -159,7 +159,3 @@
 (defn -main []
   (print "Answer1:" ans1)
   (print "Answer1:" ans1))
-
-              
-      
-

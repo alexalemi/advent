@@ -23,8 +23,8 @@
 
 (defn ->data [s]
   (let [x (peg/match board-peg s)]
-     {:nums (from-pairs (map rest (filter |(= (first $0) :num) x)))
-      :syms (from-pairs (map rest (filter |(= (first $0) :sym) x)))}))
+    {:nums (from-pairs (map rest (filter |(= (first $0) :num) x)))
+     :syms (from-pairs (map rest (filter |(= (first $0) :sym) x)))}))
 
 (def data (->data data-string))
 (def test-data (->data test-string))
@@ -52,7 +52,7 @@
 
 (defn contains? [arr x]
   (var result false)
-  (each elem arr 
+  (each elem arr
     (when (= x elem)
       (set result true)
       (break)))
@@ -62,20 +62,20 @@
 (defn part-2 [data]
   (let [max-num-length (max ;(map |(length (string $0)) (values (data :nums))))
         star-locs (seq [[loc char] :pairs (data :syms) :when (= char "*")] loc)]
-     (defn search-points [[x y]]
-        (array/concat
-          (seq [i :range [(- max-num-length) 2]] [(dec x) (+ y i)])
-          (seq [i :range [(- max-num-length) 2]] [(inc x) (+ y i)])
-          (seq [i :range [(- max-num-length) 2]] [x (+ y i)])))
-     (defn touching-nums [loc]
-       (let [cands (filter (data :nums) (search-points loc))]
-         (defn touches? [num-loc]
-           (contains? (neighbors num-loc (length (string ((data :nums) num-loc)))) loc))
-         (filter touches? cands)))
-     (def gear-word-locs (filter |(= (length $0) 2) (map touching-nums star-locs)))
-     (defn gear-ratio [[loc1 loc2]]
-       (* ((data :nums) loc1) ((data :nums) loc2)))
-     (sum (map gear-ratio gear-word-locs))))
+    (defn search-points [[x y]]
+      (array/concat
+        (seq [i :range [(- max-num-length) 2]] [(dec x) (+ y i)])
+        (seq [i :range [(- max-num-length) 2]] [(inc x) (+ y i)])
+        (seq [i :range [(- max-num-length) 2]] [x (+ y i)])))
+    (defn touching-nums [loc]
+      (let [cands (filter (data :nums) (search-points loc))]
+        (defn touches? [num-loc]
+          (contains? (neighbors num-loc (length (string ((data :nums) num-loc)))) loc))
+        (filter touches? cands)))
+    (def gear-word-locs (filter |(= (length $0) 2) (map touching-nums star-locs)))
+    (defn gear-ratio [[loc1 loc2]]
+      (* ((data :nums) loc1) ((data :nums) loc2)))
+    (sum (map gear-ratio gear-word-locs))))
 
 (test (part-2 test-data) 467835)
 (def ans2 (part-2 data))
@@ -85,5 +85,3 @@
 (defn main [&]
   (print "Answer1:" ans1)
   (print "Answer2:" ans2))
-    
-
