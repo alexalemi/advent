@@ -1,5 +1,9 @@
 {:paths ["scripts/"]
- :tasks {fetch {:doc "Fetch an input file"
+ :tasks {zip {:doc "Zip up all of the input files."
+              :task (shell "./scripts/zip")}
+         unzip {:doc "Unzip the input files."
+                :task (shell "./scripts/unzip")}
+         fetch {:doc "Fetch an input file"
                 :task (exec 'fetch/fetch)}
          badges {:doc "Regenerate badges."
                  :task (exec 'badges/update-badges)}
