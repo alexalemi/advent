@@ -60,7 +60,7 @@ def get_data(day=None, year=None, token=DEFAULT_TOKEN, suffix=''):
   p = Path(__file__).resolve().parent
   year = year or TODAY.year
   if year is not None:
-    p = p / f"{year}"
+    p = p / f".." / f"{year}"
   p = p / "input" / f"{day:02d}{suffix}.txt"
   try:
     logging.info(f"Attempting to load {p}...")

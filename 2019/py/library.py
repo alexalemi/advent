@@ -1,1 +1,1 @@
-../../library.py
+../../scripts/library.py

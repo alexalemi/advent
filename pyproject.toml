@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "advent"
+version = "0.1.0"
+description = "Advent of Code Solutions"
+authors = ["Alex Alemi <alexalemi@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+numpy = "^2.1.2"
+regex = "^2024.9.11"
+parse = "^1.20.2"
+tqdm = "^4.66.5"
+networkx = "^3.3"
+pytz = "^2024.2"
+ipython = "^8.28.0"
+frozendict = "^2.4.5"
+toolz = "^1.0.0"
+matplotlib = "^3.9.2"
+jax = {extras = ["cpu"], version = "^0.4.34"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

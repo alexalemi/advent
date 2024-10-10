@@ -36,6 +36,7 @@ def answer2(inp, x=None):
   direction = 1j
   colors = {}
   colors[location] = 1
+  seen = set()
 
   computer = intcode.Computer(intcode.getcodes(inp))
 
