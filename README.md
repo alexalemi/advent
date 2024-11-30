@@ -11,7 +11,6 @@ This repository contains my solutions in several languages to [Advent Of Code](h
 ![2021](./scripts/img/2021.svg)
 ![2022](./scripts/img/2022.svg)
 ![2023](./scripts/img/2023.svg)
-![2023](./scripts/img/2024.svg)
 
 ![Total](./scripts/img/Total.svg)
 
