@@ -1,7 +1,16 @@
 {:paths ["."]
  :deps
- {org.clojure/clojure {:mvn/version "1.11.1"}
-  instaparse/instaparse {:mvn/version "1.4.11"}
-  org.clojure/data.json {:mvn/version "2.4.0"}
-  org.clojure/math.combinatorics {:mvn/version "0.1.6"}
-  org.clojure/data.priority-map {:mvn/version "1.1.0"}}}
+ {org.clojure/clojure {:mvn/version "1.12.0"}
+  instaparse/instaparse {:mvn/version "1.5.0"}
+  org.clojure/data.json {:mvn/version "2.5.1"}
+  org.clojure/math.combinatorics {:mvn/version "0.3.0"}
+  org.clojure/data.priority-map {:mvn/version "1.2.0"}
+  io.github.nextjournal/clerk {:mvn/version "0.17.1102"}
+  org.babashka/cli {:mvn/version "0.8.61"}
+  ;; silence log warnings
+  org.slf4j/slf4j-nop {:mvn/version "2.0.16"}
+  io.github.alexalemi/jpeg {:git/sha "eaee9256a15a71cbebaa1e8b6eacff95896c191e"}}
+ 
+ :aliases {:nextjournal/clerk {:exec-fn nextjournal.clerk/serve!
+                               :exec-args {:port 7879 :watch-paths ["."] :host "0.0.0.0"}
+                               :main-opts ["-m" "babashka.cli.exec"]}}}
