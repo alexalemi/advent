@@ -19,6 +19,7 @@ frozendict = "^2.4.5"
 toolz = "^1.0.0"
 matplotlib = "^3.9.2"
 jax = {extras = ["cpu"], version = "^0.4.34"}
+cytoolz = "^1.0.0"
 
 
 [build-system]
