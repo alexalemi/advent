@@ -27,7 +27,7 @@
        (apply map -)
        (map abs)
        (reduce +)))
-      
+
 
 (test/deftest test-part-1
   (test/is (= 11 (part-1 test-data))))
