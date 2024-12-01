@@ -1,0 +1,2 @@
+{:paths ["."]
+ :deps {io.github.alexalemi/jpeg {:git/sha "eaee9256a15a71cbebaa1e8b6eacff95896c191e"}}}
