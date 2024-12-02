@@ -2,7 +2,7 @@
 
 (use judge)
 
-(def data (slurp "../input/01.txt"))
+(def data (string/trim (slurp "../input/01.txt")))
 (def test-data `3   4
 4   3
 2   5
@@ -11,9 +11,8 @@
 3   3`)
 
 (def grammar
-  ~{:main (some :line)
-    :end (+ "\n" -1)
-    :line (group (* (number (some :d)) (some :s) (number (some :d)) :end))})
+  ~{:main (split "\n" (group :line))
+    :line (* (number :d+) :s+ (number :d+))})
 
 
 (defn parse-lists [s]

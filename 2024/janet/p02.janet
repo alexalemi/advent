@@ -1,6 +1,6 @@
 # Advent of Code 2024 - Day 2
 
-(def data (slurp "../input/02.txt"))
+(def data (string/trim (slurp "../input/02.txt")))
 (def test-data `7 6 4 2 1
 1 2 7 8 9
 9 7 6 2 1
@@ -9,13 +9,9 @@
 1 3 6 7 9`)
 
 (def grammar
-  ~{:main (some (group :line))
-    :end (+ "\n" -1)
-    # :line (group (* (some (* (number (some :d)) (some :s))) :end))
-    :line (* (number (some :d)) 
-             (some (* (some " ") 
-                      (number (some :d))))
-             :end)})
+  ~{:main (split "\n" (group :line))
+    :line (split :s+ :number)
+    :number (any (number :d+))})
 
 (defn spread [f] (fn [x] (apply f x)))
 
