@@ -1,10 +1,10 @@
+#include "dynarray.h"
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define N 1000
-
-void populateArrays(int *one, int *two) {
+void populateArrays(IntArray *one, IntArray *two) {
   FILE *file = fopen("../input/01.txt", "r");
   if (file == NULL) {
     fprintf(stderr, "Error: Could not open file\n");
@@ -13,42 +13,40 @@ void populateArrays(int *one, int *two) {
 
   int a;
   int b;
-  int i = 0;
 
   while (fscanf(file, "%d %d", &a, &b) == 2) {
-    one[i] = a;
-    two[i] = b;
-    i++;
+    array_push(one, a);
+    array_push(two, b);
   }
+
   fclose(file);
 }
 
-int compare(const void *a, const void *b) { return (*(int *)a - *(int *)b); }
+int64_t part1(IntArray *one, IntArray *two) {
+  array_sort(one);
+  array_sort(two);
 
-int part1(int *one, int *two) {
-  qsort(one, N, sizeof(int), compare);
-  qsort(two, N, sizeof(int), compare);
-
-  int total = 0;
-  for (size_t i = 0; i < N; i++) {
-    total += abs(one[i] - two[i]);
+  int64_t total = 0;
+  for (size_t i = 0; i < one->size; i++) {
+    total += labs(array_get(one, i) - array_get(two, i));
   }
   return total;
 }
 
 // Figure out how many times a
 // number appears in a sorted array
-int counts(int num, const int *two) {
-  int count = 0;
-  int *found = bsearch(&num, two, N, sizeof(int), compare);
+int64_t counts(int64_t num, const IntArray *two) {
+  int64_t count = 0;
+  int64_t *found =
+      bsearch(&num, two->data, two->size, sizeof(int64_t), compare);
   if (found) {
-    int *pos = found;
-    while (pos < two + N && *pos == num) {
+    int64_t *pos = found;
+    while (pos < two->data + two->size && *pos == num) {
       count++;
       pos++;
     }
     pos = found - 1;
-    while (pos >= two && *pos == num) {
+    while (pos >= two->data && *pos == num) {
       count++;
       pos--;
     }
@@ -56,23 +54,26 @@ int counts(int num, const int *two) {
   return count;
 }
 
-int part2(int *one, int *two) {
-  int total = 0;
-  for (size_t i = 0; i < N; i++) {
-    total += one[i] * counts(one[i], two);
+int64_t part2(IntArray *one, IntArray *two) {
+  int64_t total = 0;
+  for (size_t i = 0; i < one->size; i++) {
+    const int64_t x = array_get(one, i);
+    total += x * counts(x, two);
   }
   return total;
 }
 
 int main() {
-  int one[N];
-  int two[N];
+  IntArray one = array_create(1000);
+  IntArray two = array_create(1000);
 
-  populateArrays(one, two);
+  populateArrays(&one, &two);
 
-  const int ans1 = part1(one, two);
+  const int ans1 = part1(&one, &two);
+  assert(ans1 == 1222801);
   printf("Answer 1: %d\n", ans1);
 
-  const int ans2 = part2(one, two);
+  const int ans2 = part2(&one, &two);
+  assert(ans2 == 22545250);
   printf("Answer 2: %d\n", ans2);
 }
