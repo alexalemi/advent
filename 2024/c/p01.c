@@ -2,12 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-const int N = 1000;
+#define N 1000
 
 void populateArrays(int *one, int *two) {
   FILE *file = fopen("../input/01.txt", "r");
   if (file == NULL) {
     fprintf(stderr, "Error: Could not open file\n");
+    exit(1);
   }
 
   int a;
@@ -29,7 +30,7 @@ int part1(int *one, int *two) {
   qsort(two, N, sizeof(int), compare);
 
   int total = 0;
-  for (int i = 0; i < N; i++) {
+  for (size_t i = 0; i < N; i++) {
     total += abs(one[i] - two[i]);
   }
   return total;
@@ -37,7 +38,7 @@ int part1(int *one, int *two) {
 
 // Figure out how many times a
 // number appears in a sorted array
-int counts(int num, int *two) {
+int counts(int num, const int *two) {
   int count = 0;
   int *found = bsearch(&num, two, N, sizeof(int), compare);
   if (found) {
@@ -57,7 +58,7 @@ int counts(int num, int *two) {
 
 int part2(int *one, int *two) {
   int total = 0;
-  for (int i = 0; i < N; i++) {
+  for (size_t i = 0; i < N; i++) {
     total += one[i] * counts(one[i], two);
   }
   return total;
