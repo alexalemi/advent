@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 USER_AGENT = "github.com/alexalemi/advent by alexalemi@gmail.com"
 EAST_COAST = pytz.timezone("America/New_York")
 TODAY = datetime.datetime.now().astimezone(EAST_COAST)
-YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
+YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
 DEFAULT_TOKEN = open(Path(__file__).resolve().parent / "../.token", 'r')
 # B_TOKEN = open(Path(__file__).resolve().parent / ".tokenb", 'r')
 
