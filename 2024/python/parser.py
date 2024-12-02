@@ -15,7 +15,7 @@ def mapt(function: Callable, *sequences) -> tuple:
     """`map` with the result as a tuple."""
     return tuple(map(function, *sequences))
 
-def parse(text, parser=str, sections=lines, show=8) -> tuple:
+def parse(text, parser=str, sections=lines) -> tuple:
     """Split the input text into `sections`, and apply `parser` to each."""
     return mapt(parser, sections(text.rstrip()))
 
