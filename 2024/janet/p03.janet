@@ -19,9 +19,7 @@
 
 
 (assert (= (part-1 test-data) 161))
-
 (def ans1 (part-1 data))
-
 (assert (= ans1 174561379))
 
 
