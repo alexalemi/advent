@@ -14,7 +14,7 @@
 
 (defn part-1 [s]
   (->> (peg/match grammar s)
-       (map (fn [[a b]] (* a b)))
+       (map product)
        (sum)))
 
 
