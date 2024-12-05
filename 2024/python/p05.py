@@ -86,36 +86,21 @@ assert ans1 == 4957, "Part 1 failed!"
 ## Part 2
 
 
-def bubble_sort(xs: tuple[int], rules: Rules) -> tuple[int]:
-    """Do bubble sort using the rules as the comparisons."""
-    xs = list(xs)
-    n = len(xs)
-    swapped = True
-    while swapped:
-        swapped = False
-        for i in range(1, n):
-            if (xs[i-1], xs[i]) in rules:
-                (xs[i-1], xs[i]) = (xs[i], xs[i-1])
-                swapped = True
-    return xs
-
-
-
-def fix_update(update: Update, rules: Rules) -> Update:
-    """Fix and update to be in order according to the rules."""
-    return bubble_sort(update, rules)
-
 def part2(data: tuple[Rules, Updates]) -> int:
     rules, updates = data
     rules = set(rules)
     total = 0
+
+    cmp = lambda x, y: 1 if (x, y) in rules else -1
+
     for update in updates:
         if not is_valid(update, rules):
-            update = fix_update(update, rules)
+            update = list(update)
+            update.sort(key=functools.cmp_to_key(cmp))
             total += update[len(update)//2]
     return total
 
-assert part2(test_data) == 123, "Part 1 test failed!"
+assert part2(test_data) == 123, "Part 2 test failed!"
 ans2 = part2(data)
 assert ans2 == 6938, "Part 2 failed!"
 
