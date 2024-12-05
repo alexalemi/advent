@@ -1,21 +1,22 @@
 # Advent of Code 2024 - Day 5
 
-from collections import defaultdict
-import itertools
+from typing import Callable
 import parser
 import functools
 
 type Rule = tuple[int, int]
-type Rules = tuple[Rule]
-type Update = tuple[int]
-type Updates = tuple[Update]
+type Rules = tuple[Rule, ...]
+type Update = tuple[int, ...]
+type Updates = tuple[Update, ...]
 type Children = dict[int, set[int]]
 
 parse = functools.partial(parser.parse, parser=parser.digits)
 
+
 def process(s: str) -> tuple[Rules, Updates]:
-    rules, sections = s.split('\n\n')
+    rules, sections = s.split("\n\n")
     return (parse(rules), parse(sections))
+
 
 with open("../input/05.txt") as f:
     data = process(f.read())
@@ -51,31 +52,32 @@ test_string = """47|53
 
 test_data = process(test_string)
 
-def satisfies(rule: Rule, update: Update) -> bool:
-    """Tests whether the update satisfies the rule."""
 
-def build_valid(update: Update):
-    indices = {x: i for i, x in enumerate(update)}
-    n = len(update)
+def build_sort(rules: Rules) -> Callable[[tuple[int, ...]], tuple[int, ...]]:
+    rule_set = set(rules)
 
-    def valid(rule: Rule) -> bool:
-        parent, child = rule
-        return indices.get(parent, -1) < indices.get(child, n)
+    def cmp(x, y):
+        return 1 if (x, y) in rule_set else -1
 
-    return valid
+    key = functools.cmp_to_key(cmp)
+
+    def sort(xs: tuple[int, ...]) -> tuple[int, ...]:
+        return tuple(sorted(xs, key=key, reverse=True))
+
+    return sort
 
 
-def is_valid(update: Update, rules: Rules) -> bool:
-    valid = build_valid(update)
-    return all(valid(rule) for rule in rules)
+def middle(xs: tuple[int, ...]) -> int:
+    return xs[len(xs) // 2]
 
 
 def part1(data: tuple[Rules, Updates]) -> int:
     rules, updates = data
+    sort = build_sort(rules)
     total = 0
     for update in updates:
-        if is_valid(update, rules):
-            total += update[len(update)//2]
+        if update == sort(update):
+            total += middle(update)
     return total
 
 
@@ -88,17 +90,13 @@ assert ans1 == 4957, "Part 1 failed!"
 
 def part2(data: tuple[Rules, Updates]) -> int:
     rules, updates = data
-    rules = set(rules)
+    sort = build_sort(rules)
     total = 0
-
-    cmp = lambda x, y: 1 if (x, y) in rules else -1
-
     for update in updates:
-        if not is_valid(update, rules):
-            update = list(update)
-            update.sort(key=functools.cmp_to_key(cmp))
-            total += update[len(update)//2]
+        if update != (sorted_update := sort(update)):
+            total += middle(sorted_update)
     return total
+
 
 assert part2(test_data) == 123, "Part 2 test failed!"
 ans2 = part2(data)

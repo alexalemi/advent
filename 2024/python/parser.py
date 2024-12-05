@@ -37,7 +37,7 @@ def words(text: str) -> tuple[str]:
     """A tuple of all the alphabetic words in text, ignoring non-letters."""
     return tuple(re.findall(r'[a-zA-Z]+', text))
 
-def atoms(text: str) -> Atom:
+def atoms(text: str) -> tuple[Atom]:
     """A tuple of all the atoms (numbers or identifiers) in text. Skip punctuation."""
     return mapt(atom, re.findall(r'[+-]?\d+\?\d*|w+', text))
 
