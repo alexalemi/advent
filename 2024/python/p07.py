@@ -1,8 +1,10 @@
 # Advent of Code 2024 - Day 7
 
-from typing import Sequence
+from functools import partial
+from typing import Sequence, Callable
 
 type Ints = list[int]
+type UnFunc = Callable[[int, int], int | None]
 
 with open("../input/07.txt") as f:
     raw_data = f.read()
@@ -30,16 +32,31 @@ data = process(raw_data)
 test_data = process(raw_test_data)
 
 
-def possibly_true(target: int, nums: Ints) -> bool:
+def unadd(target: int, num: int) -> int | None:
+    if num < target:
+        return target - num
+
+
+def unmul(target: int, num: int) -> int | None:
+    if target % num == 0:
+        return target // num
+
+
+def possibly_true(
+    target: int, nums: Ints, branches: Sequence[UnFunc] = (unadd, unmul)
+) -> bool:
     # test final case
     if len(nums) == 1:
         return target == nums[0]
 
     nums = nums[:]
     last_num = nums.pop()
-    return possibly_true(target - last_num, nums) or (
-        possibly_true(target // last_num, nums) if target % last_num == 0 else False
-    )
+    for branch in branches:
+        if new_num := branch(target, last_num):
+            if possibly_true(new_num, nums, branches):
+                return True
+    else:
+        return False
 
 
 def part1(data: Sequence[tuple[int, Ints]]) -> int:
@@ -54,35 +71,14 @@ assert ans1 == 1399219271639, "Failed part 1"
 
 
 def unconcat(x, y):
-    if y >= x:
-        return False
     x_string = str(x)
     y_string = str(y)
     if x_string.endswith(y_string):
-        return int(x_string.removesuffix(y_string))
-    else:
-        return False
-
-
-def possibly_true2(target: int, nums: Ints) -> bool:
-    # test final case
-    if len(nums) == 1:
-        return target == nums[0]
-
-    nums = nums[:]
-    last_num = nums.pop()
-    if last_num < target and possibly_true2(target - last_num, nums):
-        return True
-    if target % last_num == 0 and possibly_true2(target // last_num, nums):
-        return True
-    if (unconcatted := unconcat(target, last_num)) and possibly_true2(
-        unconcatted, nums
-    ):
-        return True
-    return False
+        return int(x_string.removesuffix(y_string) or 0)
 
 
 def part2(data: Sequence[tuple[int, Ints]]) -> int:
+    possibly_true2 = partial(possibly_true, branches=(unadd, unmul, unconcat))
     return sum(example[0] for example in data if possibly_true2(*example))
 
 
