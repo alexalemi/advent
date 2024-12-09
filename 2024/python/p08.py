@@ -96,7 +96,7 @@ def build_all_antinodes(data: tuple[Antenna, Board]) -> set[Loc]:
     nodes = set()
     for freq, locs in antenna.items():
         for a, b in itertools.combinations(locs, 2):
-            nodes |= all_antinodes(a, b, board) & board
+            nodes |= all_antinodes(a, b, board)
     return nodes
 
 
