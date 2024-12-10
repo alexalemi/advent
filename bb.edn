@@ -5,6 +5,10 @@
                 :task (shell "./scripts/unzip")}
          fetch {:doc "Fetch an input file"
                 :task (exec 'fetch/fetch)}
+         leaderboard {:doc "Show the latest leaderboard data."
+                      :task  (exec 'fetch/show-leaderboard)}
+         update {:doc "Update the leaderboards"
+                 :task (exec 'fetch/update-leaderboards)}
          badges {:doc "Regenerate badges."
                  :task (exec 'badges/update-badges)}
          lint {:doc "Run clj-kondo over all clojure code."
