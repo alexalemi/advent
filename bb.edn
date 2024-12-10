@@ -8,7 +8,9 @@
          leaderboard {:doc "Show the latest leaderboard data."
                       :task  (exec 'fetch/show-leaderboard)}
          update {:doc "Update the leaderboards"
-                 :task (exec 'fetch/update-leaderboards)}
+                 :task (do
+                         (exec 'fetch/update-leaderboards)
+                         (exec 'fetch/show-leaderboard))}
          badges {:doc "Regenerate badges."
                  :task (exec 'badges/update-badges)}
          lint {:doc "Run clj-kondo over all clojure code."
