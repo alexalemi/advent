@@ -7,8 +7,8 @@ __pycache__
 .tokenb
 .vscode
 scripts/.leaderboard.txt
+scripts/.leaderboards.json
 .solution-map
-
 scripts/*/input/
 
 ????/input/*.txt
