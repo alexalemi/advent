@@ -117,6 +117,7 @@
                   (map (fn [[a b]] {(RENAME (b :name)) 
                                     (b :completion_day_level)})) 
                   (apply merge-with into))
+        data (into {} (filter (fn [[a b]] (> (count b) 0)) data))
         stars (fn [who] 
                 (let [x (data who)]
                   (apply str 
@@ -125,18 +126,20 @@
                      (get-in x [(keyword (str i)) :2]) STAR
                      (get-in x [(keyword (str i)) :1]) HALF-STAR
                      :else " ")))))
-         line (fn [who] (format "%9s: %s" who (stars who)))
-         extract-events (fn [[who puzzles]]
-                          (mapcat (fn [[puzzle-num parts]]
-                                    (mapcat (fn [[part {:keys [get_star_ts]}]]
-                                              [[get_star_ts who puzzle-num part]])
-                                            parts))
-                                  puzzles))
-         recent-events (take 15 (sort-by first > (mapcat extract-events data)))]
+        line (fn [who] (format "%9s: %s" who (stars who)))
+        extract-events (fn [[who puzzles]]
+                         (mapcat (fn [[puzzle-num parts]]
+                                   (mapcat (fn [[part {:keys [get_star_ts]}]]
+                                             [[get_star_ts who puzzle-num part]])
+                                           parts))
+                                 puzzles))
+        recent-events (take 15 (sort-by first > (mapcat extract-events data)))]
       (println "\n***LEADERBOARD***")
       (println "                    1111111111222222")
       (println "           1234567890123456789012345")
-      (println  (str/join "\n" (map line (keys (sort-by (fn [[a b]] (- (count b))) data)))))
+      (println  (str/join "\n" (map line (keys (sort-by (fn [[a b]] (- (count b))) 
+
+                                                        data)))))
       (println)
       (println "RECENT EVENTS:")
       (println (str/join "\n" (map format-event recent-events)))))
