@@ -137,9 +137,9 @@
       (println "\n***LEADERBOARD***")
       (println "                    1111111111222222")
       (println "           1234567890123456789012345")
-      (println  (str/join "\n" (map line (keys (sort-by (fn [[a b]] (- (count b))) 
-
-                                                        data)))))
+      (println  (str/join "\n" (map line (keys 
+                                           (sort-by (fn [[a b]] (- (reduce + 0 (map count b)))) 
+                                                    data)))))
       (println)
       (println "RECENT EVENTS:")
       (println (str/join "\n" (map format-event recent-events)))))
