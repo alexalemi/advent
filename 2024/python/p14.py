@@ -2,7 +2,7 @@
 
 import tqdm
 import math
-from collections import defaultdict, Counter
+from collections import Counter
 import parser
 
 with open("../input/14.txt") as f:
@@ -97,7 +97,7 @@ assert ans1 == 224357412, "Failed part 1"
 ## Part 2
 
 
-def printer(data, extent=EXTENT, file=None):
+def simple_printer(data, extent=EXTENT, file=None):
     counts = Counter(x[0] for x in data)
     width, height = extent
     for y in range(height):
@@ -106,35 +106,101 @@ def printer(data, extent=EXTENT, file=None):
         print(file=file)
 
 
-# 1_000 too low
-# 1_000_000  is too high
+def xlogx(x):
+    if x == 0:
+        return 0
+    return x * math.log(x)
 
 
-def is_symmetric(data, extent):
+def entropy(data, extent):
     width, height = extent
-    obs = {x[0] for x in data}
-    rev = {(width - x - 1, y) for (x, y) in obs}
-    return obs == rev
+    pos8 = Counter((x // 8, y // 8) for ((x, y), _) in data)
+    n = 0
+    nlogn = 0
+    for i in range(((width - 1) // 8) + 1):
+        for j in range(((height - 1) // 8) + 1):
+            x = pos8[(i, j)]
+            n += x
+            nlogn += xlogx(x)
+    return math.log(n) - nlogn / n
+
+
+def teletext(topleft, topright, middleleft, middleright, bottomleft, bottomright):
+    return (
+        0xA0
+        + topleft * 1
+        + topright * 2
+        + middleleft * 4
+        + middleright * 8
+        + bottomleft * 16
+        + bottomright * 64
+    )
+
+
+def box(topleft, topright, bottomleft, bottomright):
+    match (topleft, topright, bottomleft, bottomright):
+        case (False, False, False, False):
+            return " "
+        case (False, False, False, True):
+            return "▗"
+        case (False, False, True, False):
+            return "▖"
+        case (False, False, True, True):
+            return "▄"
+        case (False, True, False, False):
+            return "▝"
+        case (False, True, False, True):
+            return "▐"
+        case (False, True, True, False):
+            return "▞"
+        case (False, True, True, True):
+            return "▟"
+        case (True, False, False, False):
+            return "▘"
+        case (True, False, False, True):
+            return "▚"
+        case (True, False, True, False):
+            return "▌"
+        case (True, False, True, True):
+            return "▙"
+        case (True, True, False, False):
+            return "▀"
+        case (True, True, False, True):
+            return "▜"
+        case (True, True, True, False):
+            return "▛"
+        case (True, True, True, True):
+            return "█"
+
+
+def printer(data, extent=EXTENT, file=None):
+    counts = Counter(x[0] for x in data)
+    width, height = extent
+    for y in range(math.ceil(height / 2)):
+        for x in range(math.ceil(width / 2)):
+            topleft = counts[(2 * x, 2 * y)] > 0
+            topright = counts[(2 * x + 1, 2 * y)] > 0
+            bottomleft = counts[(2 * x, 2 * y + 1)] > 0
+            bottomright = counts[(2 * x + 1, 2 * y + 1)] > 0
+            print(box(topleft, topright, bottomleft, bottomright), end="", file=file)
+        print(file=file)
 
 
 def part2(data, extent):
     width, height = extent
-    min_seen = 224357412
+    min_ent = 4.0
     at_min = 0
 
     for t in tqdm.trange(10_000):
         data = step(data, extent)
-        # obs = {x[0] for x in data}
-        # rev = {(width - x - 1, y) for (x, y) in obs}
-        local_score = score(data, extent)
-        if local_score < min_seen:
-            print(t, local_score)
+        ent = entropy(data, extent)
+        if ent < min_ent:
             print()
-            print(t + 1)
+            print(t + 1, ent)
             printer(data, EXTENT)
             print()
             at_min = t + 1
-        min_seen = min(local_score, min_seen)
+        min_ent = min(min_ent, ent)
     return at_min
 
 
