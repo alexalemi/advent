@@ -47,14 +47,19 @@ def mod(a, b):
     return (x1 % x2, y1 % y2)
 
 
+def times(v, t):
+    vx, vy = v
+    return (t * vx, t * vy)
+
+
 def plus(pos, vel):
     x, y = pos
     vx, vy = vel
     return (x + vx, y + vy)
 
 
-def step(data, extent):
-    return [(mod(plus(x, v), extent), v) for (x, v) in data]
+def step(data, extent, t=1):
+    return [(mod(plus(x, times(v, t)), extent), v) for (x, v) in data]
 
 
 def quadrant(pos, extent):
@@ -81,8 +86,7 @@ def score(data, extent):
 
 
 def part1(data, extent=EXTENT, rounds=100) -> int:
-    for _ in range(rounds):
-        data = step(data, extent)
+    data = step(data, extent, 100)
     return score(data, extent)
 
 
