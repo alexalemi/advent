@@ -188,7 +188,7 @@ def printer(data, extent=EXTENT, file=None):
 
 def part2(data, extent):
     width, height = extent
-    min_ent = 4.0
+    min_ent = math.inf
     at_min = 0
 
     for t in tqdm.trange(10_000):
