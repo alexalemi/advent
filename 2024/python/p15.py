@@ -165,6 +165,7 @@ def part1(data) -> int:
 assert part1(test_data2) == 2028, "Failed part 1 small test"
 assert part1(test_data) == 10092, "Failed part 1 test"
 ans1 = part1(data)
+assert ans1 == 1429911, "Failed part 1"
 
 
 ## Part 2
@@ -308,6 +309,7 @@ def part2(data) -> int:
 
 assert part2(new_test_data) == 9021, "Failed part 2 test"
 ans2 = part2(new_data)
+assert ans2 == 1453087, "Failed part 2"
 
 
 if __name__ == "__main__":
