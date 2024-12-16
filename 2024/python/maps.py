@@ -46,7 +46,7 @@ def get_bounds(world: Sequence[Location]):
 def render(
     bounds: Bounds,
     world: Mapping[Location, Value],
-    symbol: Callable[[Value], chr] = lambda x: x,
+    symbol: Callable[[Value], str] = lambda x: x,
     make=lambda x, y: x + 1j * y,
     default=" ",
 ):

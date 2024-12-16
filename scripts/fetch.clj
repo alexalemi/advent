@@ -100,10 +100,17 @@
       (pos? minutes) (format "%d minutes %d seconds ago" minutes seconds)
       :else (format "%d seconds ago" seconds))))
 
+(defn format-time [ts]
+  (.format 
+           (java.time.LocalDateTime/ofInstant 
+             (java.time.Instant/ofEpochSecond ts)
+             (java.time.ZoneId/systemDefault))
+           (java.time.format.DateTimeFormatter/ofPattern "HH:mm:ss")))
+
 (defn format-event [[ts who day part]]
   (let [day (read-string (name day))
         part (read-string (name part))]
-    (format "%9s got star %02d-%02d %s" who day part (format-duration ts (.toEpochSecond (now))))))
+    (format "%9s got star %02d-%02d @ %s : %s" who day part (format-time ts) (format-duration ts (.toEpochSecond (now))))))
 
 (defn show-leaderboard
   "Print out the combined leaderboard" 
