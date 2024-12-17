@@ -14,3 +14,6 @@
  :aliases {:nextjournal/clerk {:exec-fn nextjournal.clerk/serve!
                                :exec-args {:port 7879 :watch-paths ["."] :host "0.0.0.0"}
                                :main-opts ["-m" "babashka.cli.exec"]}}}
+
+;; To launch the watcher
+;; clj -X:nextjournal/clerk
