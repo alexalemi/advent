@@ -16,14 +16,14 @@ Program: 0,1,5,4,3,0"""
 
 
 class OpCode(enum.Enum):
-    adv = 0
-    bxl = 1
-    bst = 2
-    jnz = 3
-    bxc = 4
-    out = 5
-    bdv = 6
-    cdv = 7
+    adv = 0  # A = A << combo
+    bxl = 1  # B = B ^ literal
+    bst = 2  # B = combo % 8
+    jnz = 3  # if A != 0: jump literal
+    bxc = 4  # B = B ^ C
+    out = 5  # out <- combo % 8
+    bdv = 6  # B = A << combo
+    cdv = 7  # C = A << combo
 
 
 @dataclasses.dataclass
@@ -166,7 +166,9 @@ def exhaustive_part2(data: Machine) -> int:
 
 # assert exhaustive_part2(test_data2) == 117440, "Failed exhaustive reversal"
 
+
 def inner_loop(a: int) -> int:
+    """A python implemenation of the inner loop of the program."""
     b = a % 8
     b = b ^ 3
     c = a >> b
@@ -177,6 +179,7 @@ def inner_loop(a: int) -> int:
 
 
 def program(a: int) -> str:
+    """A python version of the problem program."""
     out = []
     while a != 0:
         # print(f"a={bin(a)}: {a} -> {inner_loop(a)[1]}")
@@ -207,6 +210,7 @@ def reconstructions(target: list[int]) -> int:
         new = set()
         for sol in sols:
             for tail in range(8):
+                # get if any of the 3 bit tails works
                 cand = (sol << 3) | tail
                 newa, out = inner_loop(cand)
                 if out == val:
