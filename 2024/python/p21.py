@@ -1,7 +1,7 @@
 # Advent of Code - Day 21
 
 from collections import defaultdict
-from functools import partial
+from functools import cache
 from typing import Iterator
 
 type Code = str
@@ -119,57 +119,59 @@ def best_paths(keymap: KeyMap) -> dict[tuple[Key, Key], set[Instructions]]:
 all_door_paths = best_paths(door_keymap)
 all_robot_paths = best_paths(robot_keymap)
 
-## Part 1
 
-
-def expand_instructions(
-    paths: dict[tuple[Key, Key], set[Instructions]], inp: Code | Instructions
-) -> set[Instructions]:
+def door_path(code: Code) -> set[Instructions]:
+    instructions = {""}
     loc = "A"
-    outputs = {""}
-    for c in inp:
-        outputs = {prev + new + "A" for prev in outputs for new in paths[(loc, c)]}
-        loc = c
-    return outputs
+    for num in code:
+        instructions = {
+            inst + new + "A"
+            for inst in instructions
+            for new in all_door_paths[(loc, num)]
+        }
+        loc = num
+    return instructions
 
 
-def prune(instructions: set[Instructions]) -> set[Instructions]:
-    """Prune instruction sets longer than the minimum one."""
-    shortest_length = min(map(len, instructions))
-    return {x for x in instructions if len(x) == shortest_length}
+## Part 1 and 2
 
 
-def door_path(code: Code) -> Instructions:
-    return prune(expand_instructions(all_door_paths, code))
+# We aren't going to be able to track much, so let's focus on just the button presses.
+# Our strategy is going to be to use a recursive function that uses the
+# optimal number of key presses at the level below to compute the optimal
+# number of key presses for a given transition at our current level.
 
 
-def robot_path(code: Code) -> Instructions:
-    return prune(expand_instructions(all_robot_paths, code))
+@cache
+def optimal_moves(start: Key, end: Key, level: int) -> int:
+    """Gives the optimal number of button presses to get the robot to move from start to end."""
+    if level == 0:
+        return 1
+    else:
+        return min(
+            score_robot_path(path + "A", level=level - 1)
+            for path in all_robot_paths[(start, end)]
+        )
 
 
-def first(instructions: set[Instructions]) -> Instructions:
-    return next(iter(instructions))
+def score_robot_path(instructions: Instructions, level: int) -> int:
+    loc = "A"
+    total = 0
+    for button in instructions:
+        total += optimal_moves(loc, button, level)
+        loc = button
+    return total
 
 
-assert len(first(door_path("029A"))) == len(
-    "<A^A^^>AvvvA"
-), "Failed to find shortest path on door code 029A!"
-assert door_path("029A") < {"<A^A>^^AvvvA", "<A^A^>^AvvvA", "<A^A^^>AvvvA"}
+def shortest_sequence(code: Code, levels: int = 2) -> int:
+    return min(
+        score_robot_path(instructions, level=levels) for instructions in door_path(code)
+    )
 
 
-def comp(*fns):
-    def comp_fn(x):
-        for fn in reversed(fns):
-            x = fn(x)
-        return x
-
-    return comp_fn
-
-
-def shortest_sequence(code: Code) -> int:
-    door_robot = door_path(code)
-    second_robot_path = prune(set.union(*map(robot_path, door_robot)))
-    return min(map(comp(len, first, robot_path), second_robot_path))
+assert shortest_sequence("029A", 0) == 12, "Failed 029A 0"
+assert shortest_sequence("029A", 1) == 28, "Failed 029A 1"
+assert shortest_sequence("029A", 2) == 68, "Failed 029A 2"
 
 
 sequence_tests = """029A: <vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A
@@ -178,139 +180,44 @@ sequence_tests = """029A: <vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A
 456A: <v<A>>^AA<vA<A>>^AAvAA<^A>A<vA>^A<A>A<vA>^A<A>A<v<A>A>^AAvA<^A>A
 379A: <v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A"""
 
+# Test cases
 for line in sequence_tests.splitlines():
     code, found = line.split(": ")
     best = shortest_sequence(code)
     exp = len(found)
     assert (
         best == exp
-    ), f"Failed to find a short sequence on code {code}, wanted {exp}, got {best}!"
+    ), f"Failed to find a short sequence on new code {code}, wanted {exp}, got {best}!"
 
 
 def numeric_part(code: Code) -> int:
     return int(code[:-1])
 
 
-def complexity(code: Code) -> int:
-    return numeric_part(code) * shortest_sequence(code)
+def complexity(code: Code, levels: int = 2) -> int:
+    return numeric_part(code) * shortest_sequence(code, levels=levels)
+
+
+def total_complexity(codes: list[Code], levels: int) -> int:
+    return sum(complexity(code, levels=levels) for code in codes)
 
 
 def part1(codes: list[Code]) -> int:
-    return sum(complexity(code) for code in codes)
+    return total_complexity(codes, levels=2)
+
+
+def part2(codes: list[Code]) -> int:
+    return total_complexity(codes, levels=25)
 
 
 assert (
     part1(test_data) == 126384
 ), f"Failed part 1 test! Wanted 126384, got {part1(test_data)}"
 ans1 = part1(data)
-print(f"Answer 1: {ans1}")
+assert ans1 == 177814, "Failed part 1!"
 
-### Part 2
-print("ENTERING PART 2")
-
-door_paths = {pair: first(paths) for pair, paths in all_door_paths.items()}
-robot_paths = {pair: first(paths) for pair, paths in all_robot_paths.items()}
-# {('^', '^'): '', ('^', 'A'): '>', ('^', 'v'): 'v',
-#  ('^', '>'): 'v>', ('^', '<'): 'v<', ('A', 'A'): '',
-#  ('A', '>'): 'v', ('A', '^'): '<', ('A', 'v'): '<v',
-#  ('A', '<'): 'v<<', ('<', '<'): '', ('<', 'v'): '>',
-#  ('<', '^'): '>^', ('<', '>'): '>>', ('<', 'A'): '>>^',
-#  ('v', 'v'): '', ('v', '^'): '^', ('v', '>'): '>', ('v', '<'): '<',
-#  ('v', 'A'): '^>', ('>', '>'): '', ('>', 'A'): '^', ('>', 'v'): '<',
-#  ('>', '^'): '<^', ('>', '<'): '<<'}
-
-
-def expand_instructions(
-    paths: dict[tuple[Key, Key], Instructions], inp: Code | Instructions
-) -> Instructions:
-    output = ""
-    loc = "A"
-    for c in inp:
-        output += paths[(loc, c)]
-        output += "A"
-        loc = c
-    return output
-
-
-def door_path(code: Code) -> Instructions:
-    return expand_instructions(door_paths, code)
-
-
-def robot_path(instructions: Instructions) -> Instructions:
-    return expand_instructions(robot_paths, instructions)
-
-
-assert len(robot_path(door_path("029A"))) == len(
-    "v<<A>>^A<A>AvA<^AA>A<vAAA>^A"
-), "Failed to find a short sequence for telling the door robot!"
-
-assert len(robot_path(robot_path(door_path("029A")))) == len(
-    "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A"
-), "Failed to find a short sequence for the second order robot!"
-
-
-def shortest_sequence(code: Code, levels: int = 2) -> Instructions:
-    instructions = door_path(code)
-    for _ in range(levels):
-        instructions = robot_path(instructions)
-    return instructions
-
-
-def execute_code(keymap: KeyMap, instructions: Instructions) -> Instructions:
-    ikeymap = invert(keymap)
-    key = "A"
-    loc = keymap[key]
-    output = ""
-    for i in instructions:
-        if i == "A":
-            output += key
-        else:
-            loc = directions[i](loc)
-            key = ikeymap[loc]
-    return output
-
-
-execute_doorcode = partial(execute_code, door_keymap)
-execute_robotcode = partial(execute_code, robot_keymap)
-
-
-assert (
-    execute_doorcode(door_path("379A")) == "379A"
-), "Execute doorcode failed to roundtrip."
-assert execute_robotcode(robot_path(door_path("029A"))) == door_path(
-    "029A"
-), "Execute robotcode failed to roundtrip."
-
-
-for line in sequence_tests.splitlines():
-    code, found = line.split(": ")
-    best = len(shortest_sequence(code))
-    exp = len(found)
-    assert (
-        best == exp
-    ), f"Failed to find a short sequence on code {code}, wanted {exp}, got {best}!"
-
-
-def numeric_part(code: Code) -> int:
-    return int(code[:-1])
-
-
-def complexity(code: Code) -> int:
-    return numeric_part(code) * shortest_sequence(code)
-
-
-def part1(codes: list[Code]) -> int:
-    return sum(complexity(code) for code in codes)
-
-
-assert (
-    part1(test_data) == 126384
-), f"Failed part 1 test! Wanted 126384, got {part1(test_data)}"
-ans1 = part1(data)
-assert ans1 == 177814, f"Failed part 1, got {ans1=} != 177814"
-
-## Part 2
-
+ans2 = part2(data)
+assert ans2 == 220493992841852, "Failed part 2!"
 
 ## Main
 

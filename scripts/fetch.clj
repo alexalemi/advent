@@ -23,6 +23,8 @@
    "Andy Bohn" "Andy"
    "Oliver Alemi" "Anax"
    "John Stout" "John"
+   "Brian Rosen" "brosen"
+   "aparajit" "aparajit"
    "rwharton" "Corky"
    "Colin Clement" "Colin"
    "back2bakula" "Corky"})
