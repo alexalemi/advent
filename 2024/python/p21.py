@@ -1,5 +1,6 @@
 # Advent of Code - Day 21
 
+from collections import defaultdict
 from functools import partial
 from typing import Iterator
 
@@ -67,12 +68,18 @@ def neighbors(loc: Coord) -> Iterator[tuple[Key, Coord]]:
 def invert(x: dict) -> dict:
     return {val:key for key, val in x.items()}
 
-def shortest_paths(keymap: KeyMap, start_key: Key) -> dict[Key, Instructions]:
+
+COSTS = {'<': 4, 'v': 3, '^': 2, '>': 1}
+def is_monotonic(s: str) -> bool:
+    return ((s == ''.join(sorted(s, key=COSTS.get)))
+            or (s == ''.join(sorted(s, key=COSTS.get, reverse=True))))
+
+def shortest_paths(keymap: KeyMap, start_key: Key) -> dict[Key, set[Instructions]]:
     """Given a KeyMap and starting key, return the shortest paths to all other keys. Dijkstras."""
     frontier = [(start_key, "")]
     ikeymap = invert(keymap)
     seen = set()
-    shortest_paths = {}
+    shortest_paths = defaultdict(set)
     while frontier:
         key, prev = frontier.pop(0) # use breadth-first search
         loc = keymap[key]
@@ -81,27 +88,92 @@ def shortest_paths(keymap: KeyMap, start_key: Key) -> dict[Key, Instructions]:
             if new_key and (new_key not in seen):
                 frontier.append((new_key, prev + move))
         seen.add(key)
-        if key not in shortest_paths:
-            shortest_paths[key] = prev
+        # early optimization, only consider monotonic paths.
+        if is_monotonic(prev): 
+            shortest_paths[key].add(prev)
 
     return shortest_paths
 
-
-def best_paths(keymap: KeyMap) -> dict[tuple[Key, Key], Instructions]:
+def best_paths(keymap: KeyMap) -> dict[tuple[Key, Key], set[Instructions]]:
     """Given a keymap, returns the shortest paths between all pairs of keys."""
-    paths = {}
+    paths = defaultdict(set)
     for start_key, start_loc in keymap.items():
         for end_key, instructions in shortest_paths(keymap, start_key).items():
-            paths[(start_key, end_key)] = instructions
+            paths[(start_key, end_key)] |= instructions
     return paths
 
 door_paths = best_paths(door_keymap)
 robot_paths = best_paths(robot_keymap) 
-#!! Fix the issue with double presses
 
 ## Part 1
 
-COSTS = {"<": 4, "v": 3, "^": 2, ">": 1}
+def expand_instructions(paths: dict[tuple[Key, Key], set[Instructions]], inp: Code | Instructions) -> set[Instructions]:
+    loc = 'A'
+    outputs = {''}
+    for c in inp:
+        outputs = { prev+new+'A' for prev in outputs for new in paths[(loc, c)] }
+        loc = c
+    return outputs
+
+def prune(instructions: set[Instructions]) -> set[Instructions]:
+    """Prune instruction sets longer than the minimum one."""
+    shortest_length = min(map(len, instructions))
+    return {x for x in instructions if len(x) == shortest_length}
+
+
+def door_path(code: Code) -> Instructions:
+    return prune(expand_instructions(door_paths, code))
+
+def robot_path(code: Code) -> Instructions:
+    return prune(expand_instructions(robot_paths, code))
+
+def first(instructions: set[Instructions]) -> Instructions:
+    return next(iter(instructions))
+
+assert len(first(door_path('029A'))) == len("<A^A^^>AvvvA"), "Failed to find shortest path on door code 029A!"
+assert door_path('029A') < {'<A^A>^^AvvvA', '<A^A^>^AvvvA', '<A^A^^>AvvvA'}
+
+def comp(*fns):
+    def comp_fn(x):
+        for fn in reversed(fns):
+            x = fn(x)
+        return x
+    return comp_fn
+
+def shortest_sequence(code: Code) -> int:
+    door_robot = door_path(code)
+    second_robot_path = prune(set.union(*map(robot_path, door_robot)))
+    # your_code = set.union(*map(robot_path, second_robot_path))
+    return min(map(comp(len, first, robot_path), second_robot_path))
+
+sequence_tests = """029A: <vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A
+980A: <v<A>>^AAAvA^A<vA<AA>>^AvAA<^A>A<v<A>A>^AAAvA<^A>A<vA>^A<A>A
+179A: <v<A>>^A<vA<A>>^AAvAA<^A>A<v<A>>^AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
+456A: <v<A>>^AA<vA<A>>^AAvAA<^A>A<vA>^A<A>A<vA>^A<A>A<v<A>A>^AAvA<^A>A
+379A: <v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A"""
+
+for line in sequence_tests.splitlines():
+    code, found = line.split(': ')
+    best = shortest_sequence(code)
+    exp = len(found)
+    assert best == exp, f"Failed to find a short sequence on code {code}, wanted {exp}, got {best}!"
+
+def numeric_part(code: Code) -> int:
+    return int(code[:-1])
+
+def complexity(code: Code) -> int:
+    return numeric_part(code) * shortest_sequence(code)
+
+def part1(codes: list[Code]) -> int:
+    return sum(complexity(code) for code in codes)
+
+
+assert part1(test_data) == 126384, f"Failed part 1 test! Wanted 126384, got {part1(test_data)}"
+ans1 = part1(data)
+print(f"Answer 1: {ans1}")
+
+1/0
+### BADDD
 
 def expand_instructions(paths: dict[tuple[Key, Key], Instructions], inp: Code | Instructions) -> Instructions:
     output = ""
@@ -113,6 +185,7 @@ def expand_instructions(paths: dict[tuple[Key, Key], Instructions], inp: Code | 
     return output
 
 def door_path(code: Code) -> Instructions:
+    return expand_instructions(door_paths, code)
     output = ""
     loc = 'A'
     for c in code:
@@ -123,10 +196,9 @@ def door_path(code: Code) -> Instructions:
         loc = c
     return output
 
-assert len(door_path('029A')) == len("<A^A^^>AvvvA"), "Failed to find shortest path on door code 029A!"
-assert door_path('029A') in {'<A^A>^^AvvvA', '<A^A^>^AvvvA', '<A^A^^>AvvvA'}
 
 def robot_path(instructions: Instructions) -> Instructions:
+    return expand_instructions(robot_paths, instructions)
     output = ""
     loc = 'A'
     for c in instructions:
