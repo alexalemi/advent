@@ -205,19 +205,28 @@ assert (
 ans1 = part1(data)
 print(f"Answer 1: {ans1}")
 
+## Part 2 Again
+
+## Let's start at a high level, what sort of thing are we going to be able to do.
+
+1 / 0
+
 ### Part 2
 print("ENTERING PART 2")
 
-door_paths = {pair: first(paths) for pair, paths in all_door_paths.items()}
-robot_paths = {pair: first(paths) for pair, paths in all_robot_paths.items()}
-# {('^', '^'): '', ('^', 'A'): '>', ('^', 'v'): 'v',
-#  ('^', '>'): 'v>', ('^', '<'): 'v<', ('A', 'A'): '',
-#  ('A', '>'): 'v', ('A', '^'): '<', ('A', 'v'): '<v',
-#  ('A', '<'): 'v<<', ('<', '<'): '', ('<', 'v'): '>',
-#  ('<', '^'): '>^', ('<', '>'): '>>', ('<', 'A'): '>>^',
-#  ('v', 'v'): '', ('v', '^'): '^', ('v', '>'): '>', ('v', '<'): '<',
-#  ('v', 'A'): '^>', ('>', '>'): '', ('>', 'A'): '^', ('>', 'v'): '<',
-#  ('>', '^'): '<^', ('>', '<'): '<<'}
+# We need to expand our notion of which path to follow.  What we are going to do is try to figure out
+# which path we should follow, but now given which location we are currently on.
+
+# For the door paths, I don't think we need to do the optimization
+COSTS = {"<": 4, "v": 3, "^": 2, ">": 1, "": 0}
+
+
+def keyfunc(path: str) -> tuple[int, ...]:
+    return tuple(COSTS[x] for x in path)
+
+
+door_paths = {pair: min(paths, key=keyfunc) for pair, paths in all_door_paths.items()}
+robot_paths = {pair: min(paths, key=keyfunc) for pair, paths in all_robot_paths.items()}
 
 
 def expand_instructions(
@@ -291,12 +300,37 @@ for line in sequence_tests.splitlines():
     ), f"Failed to find a short sequence on code {code}, wanted {exp}, got {best}!"
 
 
+## Test out the 379A case
+
+shortest_sequence("379A")
+# mine2:  'v<<A>>^AvA^A <vA<AA>>^AAvA<^A>AAvA^A     <vA>^AA<A>Av<<A>A>^AAAvA<^A>A'
+# mine:   'v<<A>>^AvA^A v<<A>>^AA<vA<A>>^AAvAA<^A>A <vA>^AA<A>A v<<A>A>^AAAvA<^A>A'
+# theirs: '<v<A>>^AvA^A <vA<AA>>^AAvA<^A>AAvA^A     <vA>^AA<A>A <v<A>A>^AAAvA<^A>A'
+
+execute_robotcode(
+    "v<<A>>^AvA^Av<<A>>^AA<vA<A>>^AAvAA<^A>A<vA>^AA<A>Av<<A>A>^AAAvA<^A>A"
+)
+execute_robotcode("<v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A")
+# mine:   '<A>A <AAv<AA>>^A vAA^A <vAAA>^A'
+# theirs: '<A>A v<<AA>^AA>A vAA^A <vAAA>^A'
+
+execute_robotcode("<A>A<AAv<AA>>^AvAA^A<vAAA>^A")
+execute_robotcode("<A>Av<<AA>^AA>AvAA^A<vAAA>^A")
+# mine:   '^A ^^<<A >>A vvvA'
+# theirs: '^A <<^^A >>A vvvA'
+
+execute_doorcode("^A^^<<A>>AvvvA")
+execute_doorcode("^A<<^^A>>AvvvA")
+# mine:   '379A'
+# theirs: '379A'
+
+
 def numeric_part(code: Code) -> int:
     return int(code[:-1])
 
 
 def complexity(code: Code) -> int:
-    return numeric_part(code) * shortest_sequence(code)
+    return numeric_part(code) * len(shortest_sequence(code))
 
 
 def part1(codes: list[Code]) -> int:

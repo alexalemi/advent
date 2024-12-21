@@ -1,8 +1,9 @@
 # Advent of Code - Day 21
 
 from collections import defaultdict
-from functools import partial
+from functools import partial, cache
 from typing import Iterator
+import math
 
 type Code = str
 type Instructions = str
@@ -205,111 +206,75 @@ assert (
 ans1 = part1(data)
 print(f"Answer 1: {ans1}")
 
+## Part 2 Again
+
+## Let's start at a high level, what sort of thing are we going to be able to do.
+
 ### Part 2
 print("ENTERING PART 2")
 
-door_paths = {pair: first(paths) for pair, paths in all_door_paths.items()}
-robot_paths = {pair: first(paths) for pair, paths in all_robot_paths.items()}
-# {('^', '^'): '', ('^', 'A'): '>', ('^', 'v'): 'v',
-#  ('^', '>'): 'v>', ('^', '<'): 'v<', ('A', 'A'): '',
-#  ('A', '>'): 'v', ('A', '^'): '<', ('A', 'v'): '<v',
-#  ('A', '<'): 'v<<', ('<', '<'): '', ('<', 'v'): '>',
-#  ('<', '^'): '>^', ('<', '>'): '>>', ('<', 'A'): '>>^',
-#  ('v', 'v'): '', ('v', '^'): '^', ('v', '>'): '>', ('v', '<'): '<',
-#  ('v', 'A'): '^>', ('>', '>'): '', ('>', 'A'): '^', ('>', 'v'): '<',
-#  ('>', '^'): '<^', ('>', '<'): '<<'}
+# We aren't going to be able to track much, so let's focus on just the button presses.
 
 
-def expand_instructions(
-    paths: dict[tuple[Key, Key], Instructions], inp: Code | Instructions
-) -> Instructions:
-    output = ""
+@cache
+def optimal_moves(start: Key, end: Key, level: int) -> int:
+    """Gives the optimal number of button presses to get the robot to move from start to end."""
+    if level == 0:
+        return 1
+    else:
+        return min(
+            score_robot_path(path + "A", level=level - 1)
+            for path in all_robot_paths[(start, end)]
+        )
+
+
+def score_robot_path(instructions: Instructions, level: int) -> int:
     loc = "A"
-    for c in inp:
-        output += paths[(loc, c)]
-        output += "A"
-        loc = c
-    return output
+    total = 0
+    for button in instructions:
+        total += optimal_moves(loc, button, level)
+        loc = button
+    return total
 
 
-def door_path(code: Code) -> Instructions:
-    return expand_instructions(door_paths, code)
+def shortest_sequence(code: Code, levels: int = 2) -> int:
+    return min(
+        score_robot_path(instructions, level=levels) for instructions in door_path(code)
+    )
 
 
-def robot_path(instructions: Instructions) -> Instructions:
-    return expand_instructions(robot_paths, instructions)
+assert shortest_sequence("029A", 0) == 12, "Failed 029A 0"
+assert shortest_sequence("029A", 1) == 28, "Failed 029A 1"
+assert shortest_sequence("029A", 2) == 68, "Failed 029A 2"
 
-
-assert len(robot_path(door_path("029A"))) == len(
-    "v<<A>>^A<A>AvA<^AA>A<vAAA>^A"
-), "Failed to find a short sequence for telling the door robot!"
-
-assert len(robot_path(robot_path(door_path("029A")))) == len(
-    "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A"
-), "Failed to find a short sequence for the second order robot!"
-
-
-def shortest_sequence(code: Code, levels: int = 2) -> Instructions:
-    instructions = door_path(code)
-    for _ in range(levels):
-        instructions = robot_path(instructions)
-    return instructions
-
-
-def execute_code(keymap: KeyMap, instructions: Instructions) -> Instructions:
-    ikeymap = invert(keymap)
-    key = "A"
-    loc = keymap[key]
-    output = ""
-    for i in instructions:
-        if i == "A":
-            output += key
-        else:
-            loc = directions[i](loc)
-            key = ikeymap[loc]
-    return output
-
-
-execute_doorcode = partial(execute_code, door_keymap)
-execute_robotcode = partial(execute_code, robot_keymap)
-
-
-assert (
-    execute_doorcode(door_path("379A")) == "379A"
-), "Execute doorcode failed to roundtrip."
-assert execute_robotcode(robot_path(door_path("029A"))) == door_path(
-    "029A"
-), "Execute robotcode failed to roundtrip."
-
-
+# Test cases
 for line in sequence_tests.splitlines():
     code, found = line.split(": ")
-    best = len(shortest_sequence(code))
+    best = shortest_sequence(code)
     exp = len(found)
     assert (
         best == exp
-    ), f"Failed to find a short sequence on code {code}, wanted {exp}, got {best}!"
+    ), f"Failed to find a short sequence on new code {code}, wanted {exp}, got {best}!"
 
 
 def numeric_part(code: Code) -> int:
     return int(code[:-1])
 
 
-def complexity(code: Code) -> int:
-    return numeric_part(code) * shortest_sequence(code)
+def complexity(code: Code, levels: int = 2) -> int:
+    return numeric_part(code) * shortest_sequence(code, levels=levels)
 
 
-def part1(codes: list[Code]) -> int:
-    return sum(complexity(code) for code in codes)
+def part2(codes: list[Code], levels=25) -> int:
+    return sum(complexity(code, levels=levels) for code in codes)
 
 
 assert (
-    part1(test_data) == 126384
+    part2(test_data, 2) == 126384
 ), f"Failed part 1 test! Wanted 126384, got {part1(test_data)}"
-ans1 = part1(data)
-assert ans1 == 177814, f"Failed part 1, got {ans1=} != 177814"
+assert part2(data, 2) == 177814, f"Failed part 1, redo!"
 
-## Part 2
+ans2 = part2(data)
 
 
 ## Main
