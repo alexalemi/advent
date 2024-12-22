@@ -14,10 +14,10 @@ import numpy as np
 
 # part two
 
-lines = open('../input/02.txt').readlines()
+lines = open("../input/02.txt").readlines()
 ords = np.array([list(map(ord, line)) for line in lines])
 sol, _ = np.where(np.sum(ords[:, None, :] != ords[None, :, :], axis=-1) == 1)
 
 a, b = sol
 
-print(''.join([x for x, y in zip(lines[a], lines[b]) if x == y]))
+print("".join([x for x, y in zip(lines[a], lines[b]) if x == y]))

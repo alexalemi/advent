@@ -5,7 +5,7 @@ data = data19(25)
 
 
 def render(out):
-  print(''.join(map(chr, filter(lambda x: x < 128, out))))
+    print("".join(map(chr, filter(lambda x: x < 128, out))))
 
 
 # In order to trigger the floor, you want the
@@ -17,13 +17,12 @@ def render(out):
 # Answer for part 1 is 20483
 
 if __name__ == "__main__":
+    prog = intcode.getcodes(data)
+    comp = intcode.Computer(prog)
 
-  prog = intcode.getcodes(data)
-  comp = intcode.Computer(prog)
+    inp = ""
 
-  inp = ""
-
-  while True:
-    out = comp.run(*list(map(ord, inp)))
-    render(out)
-    inp = input() + "\n"
+    while True:
+        out = comp.run(*list(map(ord, inp)))
+        render(out)
+        inp = input() + "\n"

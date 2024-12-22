@@ -130,8 +130,10 @@ GOOGLE = "275172"
 # B token
 DISCORD = "1575826"
 
-BOARDS = [(FRIENDS, DEFAULT_TOKEN), 
-          (SAL, DEFAULT_TOKEN),]
+BOARDS = [
+    (FRIENDS, DEFAULT_TOKEN),
+    (SAL, DEFAULT_TOKEN),
+]
 
 # BOARDS = [(SAL, DEFAULT_TOKEN)]
 
@@ -162,7 +164,6 @@ def request_leaderboard(year, num, token=DEFAULT_TOKEN):
         else:
             logging.error(f"Request failed with code: {status_code}??")
             sys.exit(1)
-
 
 
 def get_leaderboards(boards=BOARDS, force=False):
@@ -291,5 +292,5 @@ if __name__ == "__main__":
         print("\n\nRECENT EVENTS\n===========================")
         for x in events[:15]:
             print(
-                    f"{x.name:10} solved {x.year}-{x.day:02d}-{x.star} {(TODAY-x.time).total_seconds()/(60*60):05.2f} hours ago at {x.time}"
+                f"{x.name:10} solved {x.year}-{x.day:02d}-{x.star} {(TODAY-x.time).total_seconds()/(60*60):05.2f} hours ago at {x.time}"
             )

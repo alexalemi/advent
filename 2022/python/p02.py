@@ -1,15 +1,13 @@
+beats = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
 
-beats = {"rock": "scissors",
-         "paper": "rock",
-         "scissors": "paper"}
-
-lookup = {"A": "rock",
-          "B": "paper",
-          "C": "scissors",
-          "X": "rock",
-          "Y": "paper",
-          "Z": "scissors"
-          }
+lookup = {
+    "A": "rock",
+    "B": "paper",
+    "C": "scissors",
+    "X": "rock",
+    "Y": "paper",
+    "Z": "scissors",
+}
 
 shape = {"rock": 1, "paper": 2, "scissors": 3}
 
@@ -37,7 +35,8 @@ with open("../input/02.txt") as f:
 part1 = sum(score(map(lookup.get, game)) for game in data)
 print(f"Answer1: {part1}")
 
-loses_to = { v:k for k,v in beats.items() }
+loses_to = {v: k for k, v in beats.items()}
+
 
 def part2_score(game):
     first, requirement = game

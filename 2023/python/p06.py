@@ -49,7 +49,9 @@ assert ans1 == 74698
 def combine_nums(nums: list[int]) -> int:
     return int("".join(map(str, nums)))
 
+
 tuple(map(int, ["1", "2"]))
+
 
 def part2(data: list[tuple[int, int]]) -> int:
     new_data = [tuple(map(combine_nums, list(zip(*data))))]

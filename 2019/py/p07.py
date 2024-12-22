@@ -27,16 +27,16 @@ tests = [
 
 
 def answer1(inp):
-  prog, inps = inp
-  prog = intcode.getcodes(prog)
-  inps = intcode.getcodes(inps)
-  out = 0
-  for i, inp in enumerate(inps):
-    # print(i, inp, out)
-    outs = intcode.run(prog[:], [inp, out])
-    # print("outs = ", outs)
-    out = outs[0]
-  return out
+    prog, inps = inp
+    prog = intcode.getcodes(prog)
+    inps = intcode.getcodes(inps)
+    out = 0
+    for i, inp in enumerate(inps):
+        # print(i, inp, out)
+        outs = intcode.run(prog[:], [inp, out])
+        # print("outs = ", outs)
+        out = outs[0]
+    return out
 
 
 tests2 = [
@@ -58,46 +58,50 @@ tests2 = [
 
 
 def seeded_gen(seeds, g):
-  for s in seeds:
-    yield s
-  yield from g
+    for s in seeds:
+        yield s
+    yield from g
 
 
 def answer2(inp):
-  prog, inps = inp
-  prog = intcode.getcodes(prog)
-  inps = intcode.getcodes(inps)
+    prog, inps = inp
+    prog = intcode.getcodes(prog)
+    inps = intcode.getcodes(inps)
 
-  computers = [intcode.Computer(prog[:], [i]) for i in inps]
-  current = 0
-  out = [0]
-  while not all(c.finished for c in computers):
-    out = computers[current].run(*out)
-    current = (current + 1) % 5
-  return computers[-1].outputs[-1]
+    computers = [intcode.Computer(prog[:], [i]) for i in inps]
+    current = 0
+    out = [0]
+    while not all(c.finished for c in computers):
+        out = computers[current].run(*out)
+        current = (current + 1) % 5
+    return computers[-1].outputs[-1]
 
 
 if __name__ == "__main__":
-  for inp, ans in tests:
-    myans = answer1(inp)
-    assert myans == ans, f"Failed on {inp} == {ans}, got {myans}"
+    for inp, ans in tests:
+        myans = answer1(inp)
+        assert myans == ans, f"Failed on {inp} == {ans}, got {myans}"
 
-  print(
-      "Answer1:",
-      max([
-          answer1((data, ",".join(map(str, x))))
-          for x in itertools.permutations(range(5))
-      ]),
-  )
+    print(
+        "Answer1:",
+        max(
+            [
+                answer1((data, ",".join(map(str, x))))
+                for x in itertools.permutations(range(5))
+            ]
+        ),
+    )
 
-  for inp, ans in tests2:
-    myans = answer2(inp)
-    assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
+    for inp, ans in tests2:
+        myans = answer2(inp)
+        assert myans == ans, f"Failed on {inp} == {ans}, got {myans}!"
 
-  print(
-      "Answer2:",
-      max([
-          answer2((data, ",".join(map(str, x))))
-          for x in itertools.permutations([5, 6, 7, 8, 9])
-      ]),
-  )
+    print(
+        "Answer2:",
+        max(
+            [
+                answer2((data, ",".join(map(str, x))))
+                for x in itertools.permutations([5, 6, 7, 8, 9])
+            ]
+        ),
+    )

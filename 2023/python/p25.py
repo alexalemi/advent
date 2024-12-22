@@ -20,6 +20,7 @@ lsr: lhk
 rzs: qnr cmg lsr rsh
 frs: qnr lhk lsr"""
 
+
 def process(s: str) -> dict[str, set[str]]:
     graph = {}
     for line in s.splitlines():
@@ -28,6 +29,7 @@ def process(s: str) -> dict[str, set[str]]:
             graph.setdefault(node, set()).add(child)
             graph.setdefault(child, set()).add(node)
     return graph
+
 
 test_data = process(test_string)
 data = process(data_string)
@@ -38,11 +40,12 @@ graph = nx.Graph(data)
 # and then found the three edges I had to cut.
 
 new_data = data.copy()
-to_remove = [('dgc', 'fqn'), ('vps', 'htp'), ('rpd', 'ttj')]
+to_remove = [("dgc", "fqn"), ("vps", "htp"), ("rpd", "ttj")]
 
-for (fm, to) in to_remove:
-   new_data[fm].remove(to)
-   new_data[to].remove(fm)
+for fm, to in to_remove:
+    new_data[fm].remove(to)
+    new_data[to].remove(fm)
+
 
 def find_clusters(graph):
     g = graph.copy()
@@ -61,12 +64,12 @@ def find_clusters(graph):
             del g[x]
     return sizes
 
+
 ans1 = math.prod(find_clusters(new_data))
 assert ans1 == 600225
 
-# Part 2 was the same as always, you just push the button if you 
+# Part 2 was the same as always, you just push the button if you
 # have completed all of the other parts for the year.
 
 if __name__ == "__main__":
     print("Answer1:", ans1)
-
