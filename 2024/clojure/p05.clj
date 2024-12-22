@@ -97,6 +97,6 @@
 (comment
   (test/run-tests))
 
-(defn -main [& args]
+(defn -main [& _args]
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))
