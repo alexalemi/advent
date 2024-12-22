@@ -6,15 +6,15 @@
 
 (def data-string (slurp "../input/06.txt"))
 (def test-data-string "....#.....
-                      .........#
-                      ..........
-                      ..#.......
-                      .......#..
-                      ..........
-                      .#..^.....
-                      ........#.
-                      #.........
-                      ......#...")
+.........#
+..........
+..#.......
+.......#..
+..........
+.#..^.....
+........#.
+#.........
+......#...")
 
 (defn ->board [s]
   (into {}
@@ -70,16 +70,22 @@
         ; otherwise mark as terminated
         :else (assoc state :terminated true)))))
 
+(defn simulate [data]
+  (take-while 
+    (complement :terminated)
+    (iterate (partial step data) (new-state data))))
+
 (defn part-1
   "Figure out how many locations are visited."
   [data]
-  (count
-    (into #{}
-          (comp
-            (take-while (complement :terminated))
-            (map :loc))
-          (iterate (partial step data) (new-state data)))))
-
+  (transduce
+    (comp
+      (map :loc)
+      (distinct)
+      (map (constantly 1)))
+    +
+    0
+    (simulate data)))
 
 (def ans1 (part-1 data))
 
@@ -89,11 +95,6 @@
 
 ;; ## Part 2
 
-
-(defn simulate [data]
-  (take-while 
-    (complement :terminated)
-    (iterate (partial step data) (new-state data))))
 
 (defn duplicates? [states]
   (= :loop (reduce (fn [acc x] 
@@ -106,22 +107,22 @@
 (defn part-2
   "Find all of the locations that create a time loop."
   [data]
-  (count (filter 
-           (comp 
-             ;; look for duplicates
-             duplicates? 
-             ;; Run the simulation
-             simulate 
-             ;; Add that location to our list of walls
-             (partial update-in data [:walls] conj))
-           ;; All of the paths along our initial trajectory
-           (into #{} (map :loc) (simulate data)))))
+  (transduce
+    (comp
+      (map :loc)
+      (distinct)
+      (map (partial update-in data [:walls] conj))
+      (map simulate)
+      (filter duplicates?)
+      (map (constantly 1)))
+    +
+    (simulate data)))
 
-(def ans2 (part-2 data))
+(defonce ans2 (part-2 data))
 
 (test/deftest test-part-2
   (test/is (= 6 (part-2 test-data)))
-  (test/is (= 1812 ans1)))
+  (test/is (= 1812 ans2)))
 
 
 ;; #Main
