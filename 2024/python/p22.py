@@ -1,5 +1,6 @@
 # Advent of Code - Day 22
 
+import tqdm
 import itertools
 import toolz.curried as tz
 import toolz
@@ -90,7 +91,7 @@ def merge(dic: dict[Changes, int], other: dict[Changes, int]):
 
 def part2(nums: list[int]) -> int:
     payouts: dict[tuple[int, int, int, int], int] = {}
-    for num in nums:
+    for num in tqdm.tqdm(nums):
         merge(payouts, generate_payouts(num))
     return max(payouts.values())
 
