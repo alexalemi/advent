@@ -124,6 +124,7 @@ def largest_connected_component(data: list[Links]) -> frozenset[Node]:
     graph = build_graph(data)
 
     def bron_kerbosh(r, p, x):
+        """From https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm"""
         if not p and not x:
             yield r
             return
