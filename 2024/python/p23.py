@@ -126,9 +126,10 @@ def largest_connected_component(data: list[Links]) -> frozenset[Node]:
     def bron_kerbosh(r, p, x):
         if not p and not x:
             yield r
-        while p:
-            v = p.pop()
+            return
+        for v in p - graph[next(iter(p | x))]:
             yield from bron_kerbosh(r | {v}, p & graph[v], x & graph[v])
+            p -= {v}
             x |= {v}
 
     return max(bron_kerbosh(set(), set(graph), set()), key=len)
