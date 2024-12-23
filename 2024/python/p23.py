@@ -109,7 +109,7 @@ def expand_component(
         yield (component | {possible})
 
 
-def largest_connected_component(data: list[Links]) -> frozenset[Node]:
+def naive_largest_connected_component(data: list[Links]) -> frozenset[Node]:
     graph = build_graph(data)
     components = set(frozenset(link) for link in data)
     while len(components) > 1:
@@ -118,6 +118,20 @@ def largest_connected_component(data: list[Links]) -> frozenset[Node]:
             set.union, (set(expand_component(graph, x)) for x in components)
         )
     return next(iter(components))
+
+
+def largest_connected_component(data: list[Links]) -> frozenset[Node]:
+    graph = build_graph(data)
+
+    def bron_kerbosh(r, p, x):
+        if not p and not x:
+            yield r
+        for v in p.copy():
+            yield from bron_kerbosh(r | {v}, p & graph[v], x & graph[v])
+            p -= {v}
+            x |= {v}
+
+    return max(bron_kerbosh(set(), set(graph), set()), key=len)
 
 
 def part2(data: list[Links]) -> str:
