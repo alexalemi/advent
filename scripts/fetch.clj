@@ -130,7 +130,7 @@
         stars (fn [who] 
                 (let [x (data who)]
                   (apply str 
-                   (for [i (range 1 25)]
+                   (for [i (range 1 26)]
                     (cond 
                      (get-in x [(keyword (str i)) :2]) STAR
                      (get-in x [(keyword (str i)) :1]) HALF-STAR
