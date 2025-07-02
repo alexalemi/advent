@@ -1,31 +1,30 @@
-[tool.poetry]
+[project]
 name = "advent"
 version = "0.1.0"
 description = "Advent of Code Solutions"
-authors = ["Alex Alemi <alexalemi@gmail.com>"]
-license = "MIT"
+authors = [{ name = "Alex Alemi", email = "alexalemi@gmail.com" }]
+requires-python = "~=3.13"
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.13"
-numpy = "^2.1.2"
-regex = "^2024.9.11"
-parse = "^1.20.2"
-tqdm = "^4.66.5"
-networkx = "^3.3"
-pytz = "^2024.2"
-ipython = "^8.28.0"
-frozendict = "^2.4.5"
-toolz = "^1.0.0"
-matplotlib = "^3.9.2"
-jax = {extras = ["cpu"], version = "^0.4.34"}
-cytoolz = "^1.0.0"
-black = "^24.10.0"
-ruff = "^0.8.2"
-pyright = "^1.1.390"
-mypy = "^1.13.0"
-
+license = "MIT"
+dependencies = [
+    "numpy>=2.1.2,<3",
+    "regex>=2024.9.11,<2025",
+    "parse>=1.20.2,<2",
+    "tqdm>=4.66.5,<5",
+    "networkx~=3.3",
+    "pytz~=2024.2",
+    "ipython>=8.28.0,<9",
+    "frozendict>=2.4.5,<3",
+    "toolz>=1.0.0,<2",
+    "matplotlib>=3.9.2,<4",
+    "jax[cpu]>=0.4.34,<0.5",
+    "cytoolz>=1.0.0,<2",
+    "black>=24.10.0,<25",
+    "ruff>=0.8.2,<0.9",
+    "pyright>=1.1.390,<2",
+    "mypy>=1.13.0,<2",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
