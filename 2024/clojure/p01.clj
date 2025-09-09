@@ -1,4 +1,4 @@
-;; # 🎄 Advent of Code - 2024 - Day 1
+;; # Advent of Code - 2024 - Day 1
 (ns p01
   [:require [clojure.test :as test]
             [clojure.string :as str]])

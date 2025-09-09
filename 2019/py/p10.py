@@ -215,9 +215,9 @@ if __name__ == "__main__":
 
     testplan = genplan(tests[-1][0], (11, 13))
     for inp, ans in tests2:
-        assert (
-            tuple(reversed(testplan[inp])) == ans
-        ), f"Failed on {inp} == {ans}, got {testplan[inp]}!"
+        assert tuple(reversed(testplan[inp])) == ans, (
+            f"Failed on {inp} == {ans}, got {testplan[inp]}!"
+        )
 
     ans2 = genplan(data, (23, 20))
     print("Answer2:", ans2[199][1] * 100 + ans2[199][0])

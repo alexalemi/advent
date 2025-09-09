@@ -110,9 +110,9 @@ def update(state: State) -> State:
         # handle the carts in order (x,y)
         old_position = pos
         new_position = add(old_position, MOTIONS[cart])
-        assert (
-            new_position in state.board
-        ), f"New position missing from board @ {state.time}"
+        assert new_position in state.board, (
+            f"New position missing from board @ {state.time}"
+        )
 
         if new_position in new_carts:
             # Collision

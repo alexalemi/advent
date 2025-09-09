@@ -30,7 +30,7 @@ class PGA2D:
         self = cls()
         if len(array) != len(self):
             raise TypeError(
-                "length of array must be identical to the dimension " "of the algebra."
+                "length of array must be identical to the dimension of the algebra."
             )
         self.mvec = array
         return self

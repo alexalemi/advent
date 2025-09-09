@@ -259,9 +259,9 @@ if __name__ == "__main__":
         for j, prog in enumerate(progs):
             codes = getcodes(prog)
             for inp in inps:
-                assert (
-                    run(codes[:], [inp]) == [func(inp)]
-                ), f"Error on element {i}:{j} with input {inp}, got {run(codes[:], [inp])}, expected {func(inp)}"
+                assert run(codes[:], [inp]) == [func(inp)], (
+                    f"Error on element {i}:{j} with input {inp}, got {run(codes[:], [inp])}, expected {func(inp)}"
+                )
 
     codes = getcodes(data)
     outs2 = run(codes[:], [5])

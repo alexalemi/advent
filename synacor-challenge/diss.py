@@ -35,7 +35,7 @@ def format_value(val):
     if val < HIGH:
         return f"{val:05d}"
     else:
-        return f"reg{val-HIGH}"
+        return f"reg{val - HIGH}"
 
 
 with open("challenge.txt", "w") as outfile:

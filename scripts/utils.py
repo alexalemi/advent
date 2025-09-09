@@ -186,7 +186,7 @@ def get_leaderboards(boards=BOARDS, force=False):
                     data = request_leaderboard(year, num)
     else:
         logging.info(
-            f"Not enough time as elapsed to justify a new call. {(900 - (TODAY - modtime).total_seconds())/60:0.1f} minutes left."
+            f"Not enough time as elapsed to justify a new call. {(900 - (TODAY - modtime).total_seconds()) / 60:0.1f} minutes left."
         )
     with open(LEADERBOARD) as f:
         data = [json.loads(line) for line in f if line]
@@ -292,5 +292,5 @@ if __name__ == "__main__":
         print("\n\nRECENT EVENTS\n===========================")
         for x in events[:15]:
             print(
-                f"{x.name:10} solved {x.year}-{x.day:02d}-{x.star} {(TODAY-x.time).total_seconds()/(60*60):05.2f} hours ago at {x.time}"
+                f"{x.name:10} solved {x.year}-{x.day:02d}-{x.star} {(TODAY - x.time).total_seconds() / (60 * 60):05.2f} hours ago at {x.time}"
             )

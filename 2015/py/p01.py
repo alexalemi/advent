@@ -44,8 +44,8 @@ if __name__ == "__main__":
     print("Answer1:", floor(data))
 
     for inp, ans in tests2:
-        assert (
-            first_basement(inp) == ans
-        ), f"Failed on {inp} == {ans}, got {first_basement(inp)}"
+        assert first_basement(inp) == ans, (
+            f"Failed on {inp} == {ans}, got {first_basement(inp)}"
+        )
 
     print("Answer2:", first_basement(data))

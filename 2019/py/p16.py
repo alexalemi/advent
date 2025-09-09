@@ -87,7 +87,7 @@ def kfft3(nums: List[int], i: int, mul: int = 1, off: int = 1) -> int:
         return pattern[(off // (i + 1)) % 4] * nums[0]
     a = kfft3(nums[::2], i, mul * 2, off)
     b = kfft3(nums[1::2], i, mul * 2, off + mul)
-    print(f"kfft3({nums[0]}:{len(nums)}, {i}, {mul}, {off}) = {a+b}")
+    print(f"kfft3({nums[0]}:{len(nums)}, {i}, {mul}, {off}) = {a + b}")
     return a + b
 
 

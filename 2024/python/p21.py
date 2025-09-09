@@ -185,9 +185,9 @@ for line in sequence_tests.splitlines():
     code, found = line.split(": ")
     best = shortest_sequence(code)
     exp = len(found)
-    assert (
-        best == exp
-    ), f"Failed to find a short sequence on new code {code}, wanted {exp}, got {best}!"
+    assert best == exp, (
+        f"Failed to find a short sequence on new code {code}, wanted {exp}, got {best}!"
+    )
 
 
 def numeric_part(code: Code) -> int:
@@ -210,9 +210,9 @@ def part2(codes: list[Code]) -> int:
     return total_complexity(codes, levels=25)
 
 
-assert (
-    part1(test_data) == 126384
-), f"Failed part 1 test! Wanted 126384, got {part1(test_data)}"
+assert part1(test_data) == 126384, (
+    f"Failed part 1 test! Wanted 126384, got {part1(test_data)}"
+)
 ans1 = part1(data)
 assert ans1 == 177814, "Failed part 1!"
 

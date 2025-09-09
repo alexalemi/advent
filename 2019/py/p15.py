@@ -101,9 +101,9 @@ class World:
                 self.walls.add(next)
                 if next != new:
                     render(self, path)
-                    assert (
-                        next == new
-                    ), f"Hit wall too early. {self.loc} -> {next} -> {new}, {self.walls}, {path}"
+                    assert next == new, (
+                        f"Hit wall too early. {self.loc} -> {next} -> {new}, {self.walls}, {path}"
+                    )
             elif status == 1:
                 if next not in self.distance:
                     self.distance[next] = self.distance[self.loc] + 1
