@@ -52,6 +52,43 @@ assert cluster_size(test_data) == 6, "Failed the test case"
 ans1 = cluster_size(data)
 print(f"Answer1: {ans1}")
 
+
+## Union Find
+
+
+class UnionFind:
+    def __init__(self, graph: Graph):
+        self.parent = {node: node for node in graph}
+        self.size = {node: 1 for node in graph}
+        for node, children in graph.items():
+            for child in children:
+                self.merge(node, child)
+
+    def find(self, x: int) -> int:
+        """Finds the root for a node."""
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+
+    def merge(self, x: int, y: int):
+        x = self.find(x)
+        y = self.find(y)
+        if x == y:
+            return
+
+        if self.size[x] < self.size[y]:
+            (x, y) = (y, x)
+
+        self.parent[y] = x
+        self.size[x] += self.size[y]
+
+    def answers(self):
+        return self.size[self.find(0)], len(set(map(self.find, self.parent)))
+
+
+UnionFind(data).answers()
+
+
 ## Part 2
 
 
@@ -81,3 +118,11 @@ assert num_clusters(test_data) == 2, "Failed test for part 2"
 
 ans2 = num_clusters(data)
 print(f"Answer2: {ans2}")
+
+
+def old_way(data):
+    return cluster_size(data), num_clusters(data)
+
+
+def new_way(data):
+    return UnionFind(data).answers()
