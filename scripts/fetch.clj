@@ -28,6 +28,7 @@
    "rwharton" "Corky"
    "Colin Clement" "Colin"
    "back2bakula" "Corky"})
+   
 
 (defn now [] (java.time.ZonedDateTime/now DZ))
 
@@ -112,7 +113,7 @@
 (defn format-event [[ts who day part]]
   (let [day (read-string (name day))
         part (read-string (name part))]
-    (format "%9s got star %02d-%02d @ %s : %s" who day part (format-time ts) (format-duration ts (.toEpochSecond (now))))))
+    (format "%15s got star %02d-%02d @ %s : %s" who day part (format-time ts) (format-duration ts (.toEpochSecond (now))))))
 
 (defn show-leaderboard
   "Print out the combined leaderboard" 
@@ -123,7 +124,7 @@
                   (vals)
                   (map :members)
                   (into {})
-                  (map (fn [[a b]] {(RENAME (b :name)) 
+                  (map (fn [[a b]] {(get RENAME (b :name) (b :name)) 
                                     (b :completion_day_level)})) 
                   (apply merge-with into))
         data (into {} (filter (fn [[a b]] (> (count b) 0)) data))
@@ -135,7 +136,7 @@
                      (get-in x [(keyword (str i)) :2]) STAR
                      (get-in x [(keyword (str i)) :1]) HALF-STAR
                      :else " ")))))
-        line (fn [who] (format "%9s: %s" who (stars who)))
+        line (fn [who] (format "%15s: %s" who (stars who)))
         extract-events (fn [[who puzzles]]
                          (mapcat (fn [[puzzle-num parts]]
                                    (mapcat (fn [[part {:keys [get_star_ts]}]]
@@ -144,8 +145,8 @@
                                  puzzles))
         recent-events (take 15 (sort-by first > (mapcat extract-events data)))]
       (println "\n***LEADERBOARD***")
-      (println "                    1111111111222222")
-      (println "           1234567890123456789012345")
+      (println "                          1111111111222222")
+      (println "                 1234567890123456789012345")
       (println  (str/join "\n" (map line (keys 
                                            (sort-by (fn [[a b]] (- (reduce + 0 (map count b)))) 
                                                     data)))))
