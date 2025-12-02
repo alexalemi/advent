@@ -81,3 +81,5 @@
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))
 
+
+(-main)
