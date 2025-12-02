@@ -1,6 +1,6 @@
 import operator
-from typing import Callable
 from functools import partial
+from typing import Callable
 
 with open("../input/01.txt") as f:
     data_string = f.read()
