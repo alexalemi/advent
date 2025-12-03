@@ -16,11 +16,11 @@ function process(inp: string): number[][] {
 const data = process(dataString);
 const testData = process(testString);
 
-function maxi(arr: number[]): [number, number] {
+function maxi(arr: number[]): [number, number] | undefined {
   let loc = 0;
   let val = undefined;
   for (let i = 0; i < arr.length; i++) {
-    if ((val === undefined) | (arr[i] > val)) {
+    if ((val === undefined) || (arr[i] > val)) {
       loc = i;
       val = arr[i];
     }
@@ -28,7 +28,9 @@ function maxi(arr: number[]): [number, number] {
   return [val, loc];
 }
 
+
 function maxNum(arr: number[], n: number = 2): number {
+	/* Greedily create the largest n digit number you can from an array, keeping digits in order */
   let ans = 0;
   let head = 0;
   for (let i = 0; i < n; i++) {
@@ -66,3 +68,4 @@ expect(part2(testData)).toEqual(
 
 const ans2 = part2(data);
 console.log(`Answer 2: ${ans2}`);
+
