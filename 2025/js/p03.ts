@@ -16,21 +16,15 @@ function process(inp: string): number[][] {
 const data = process(dataString);
 const testData = process(testString);
 
-function maxi(arr: number[]): [number, number] | undefined {
-  let loc = 0;
-  let val = undefined;
-  for (let i = 0; i < arr.length; i++) {
-    if ((val === undefined) || (arr[i] > val)) {
-      loc = i;
-      val = arr[i];
-    }
-  }
-  return [val, loc];
+function maxi(arr: number[]): [number, number] {
+  return arr.reduce((best, val, i) => (val > best[0] ? [val, i] : best), [
+    -Infinity,
+    0,
+  ]);
 }
 
-
 function maxNum(arr: number[], n: number = 2): number {
-	/* Greedily create the largest n digit number you can from an array, keeping digits in order */
+  /* Greedily create the largest n digit number you can from an array, keeping digits in order */
   let ans = 0;
   let head = 0;
   for (let i = 0; i < n; i++) {
@@ -42,8 +36,10 @@ function maxNum(arr: number[], n: number = 2): number {
   return ans;
 }
 
+const sum = (arr: number[]) => arr.reduce((acc, val) => acc + val, 0);
+
 function part1(data: number[][]): number {
-  return data.map((x) => maxNum(x, 2)).reduce((acc, val) => acc + val, 0);
+  return sum(data.map((x) => maxNum(x, 2)));
 }
 
 expect(testData.map((x) => maxNum(x, 2))).toEqual([98, 89, 78, 92]);
@@ -53,7 +49,7 @@ const ans1 = part1(data);
 console.log(`Answer 1: ${ans1}`);
 
 function part2(data: number[][]): number {
-  return data.map((x) => maxNum(x, 12)).reduce((acc, val) => acc + val, 0);
+  return sum(data.map((x) => maxNum(x, 12)));
 }
 
 expect(testData.map((x) => maxNum(x, 12))).toEqual([
@@ -68,4 +64,3 @@ expect(part2(testData)).toEqual(
 
 const ans2 = part2(data);
 console.log(`Answer 2: ${ans2}`);
-
