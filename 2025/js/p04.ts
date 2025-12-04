@@ -48,14 +48,22 @@ function* neighbors([row, col]: Position): Generator<string> {
 const data = process(dataString);
 const testData = process(testString);
 
+function countNeighbors(pos: Position, rolls: Rolls): number {
+  let count = 0;
+  for (const nkey of neighbors(pos)) {
+    if (rolls.has(nkey)) {
+      count++;
+    }
+    // Break early if we hit 4.
+    if (count >= 4) break;
+  }
+  return count;
+}
+
 function reachable(data: Rolls): Rolls {
   const canReach: Rolls = new Map();
   for (const [key, pos] of data) {
-    let neighborCount = 0;
-    for (const nkey of neighbors(pos)) {
-      if (data.has(nkey)) neighborCount++;
-    }
-    if (neighborCount < 4) {
+    if (countNeighbors(pos, data) < 4) {
       canReach.set(key, pos);
     }
   }
