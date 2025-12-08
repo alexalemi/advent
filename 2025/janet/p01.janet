@@ -1,5 +1,7 @@
 # Advent of Code - 2025 - Day 1
 
+(use judge)
+
 # ## Load data
 
 (def data-string (slurp "../input/01.txt"))
@@ -57,7 +59,7 @@ L82`)
        (filter |(zero? $))
        length))
 
-(assert (= (part-1 test-data) 3))
+(test (part-1 test-data) 3)
 
 (def ans-1 (part-1 data))
 
@@ -65,19 +67,19 @@ L82`)
 # ## Part 2
 # Now we want to know how many times we pass through zero.
 
-(defn extend-states [states instruction]
-  (let [[dir amount] instruction
-        current (last states)
-        op (case dir :L - :R +)]
-    (array/concat states
-                  (seq [i :range [1 (+ amount 1)]]
-                    (mod (op current i) SIZE)))))
-
+(defn step-zeros [[state zeros] instruction]
+  (def step (fn [x] (step x instruction)))
+  (def [dir amount] instruction)
+  (defn consume [state zeros remaining]
+    (if (zero? remaining) [state zeros]
+      (let [new (step state)]
+        (consume new (if (zero? new) (inc zeros) zeros) (dec remaining)))))
+  (consume state zeros amount))
 
 (defn part-2 [data]
-  (length (filter |(zero? $) (reduce extend-states @[INIT] data))))
+  (get (reduce step-zeros [INIT 0] data) 1))
 
-(assert (= (part-2 test-data) 6))
+(test (part-2 test-data) 6)
 
 (def ans-2 (part-2 data))
 
