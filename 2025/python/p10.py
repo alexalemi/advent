@@ -73,12 +73,13 @@ def fewest_presses(machine: Machine) -> int:
 
 
 def part1(data: list[Machine]) -> int:
-    return sum(fewest_presses(machine) for machine in data)
+    with ProcessPoolExecutor() as executor:
+        return sum(tqdm(executor.map(fewest_presses, data), total=len(data)))
 
 
-# assert part1(test_data) == 7, "Failed part 1 test"
-# ans1 = part1(data)
-# print(f"Answer 1: {ans1}")
+assert part1(test_data) == 7, "Failed part 1 test"
+ans1 = part1(data)
+print(f"Answer 1: {ans1}")
 
 
 def press(joltage: Joltage, button: Button, n: int = 1) -> Joltage:
@@ -145,11 +146,31 @@ def joltage_presses(machine: Machine) -> int:
                 heappush(frontier, (priority, neigh))
 
 
+def solve_linprob(machine: Machine) -> int:
+    import numpy as np
+    import scipy.optimize as spopt
+
+    n = len(machine.joltages)
+    m = len(machine.buttons)
+
+    mat = np.zeros((n, m), dtype="int")
+    for i, button in enumerate(machine.buttons):
+        for light in button:
+            mat[light, i] = 1
+
+    c = np.ones(m)
+    b = np.array(machine.joltages)
+    res = spopt.linprog(c, A_eq=mat, b_eq=b, integrality=1)
+    assert res.success
+    return int(round(res.fun))
+
+
 def part2(data: list[Machine]) -> int:
     with ProcessPoolExecutor() as executor:
-        return sum(tqdm(executor.map(joltage_presses, data), total=len(data)))
+        return sum(tqdm(executor.map(solve_linprob, data), total=len(data)))
 
 
 assert part2(test_data) == 33, "Failed part 2 test"
 ans2 = part2(data)
 print(f"Answer 2: {ans2}")
+assert ans2 == 18559
