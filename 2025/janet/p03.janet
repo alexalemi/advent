@@ -44,13 +44,15 @@
 (defn part-1 [data]
   (sum (map (partial max-num 2) data)))
 
-(assert (part-1 test-data) (+ 98 89 78 92))
+(test (part-1 test-data) 357)
+(test (part-1 data) 17445)
 
 
 (defn part-2 [data]
   (sum (map (partial max-num 12) data)))
 
-(assert (part-2 test-data) (+ 987654321111 811111111119 434234234278 888911112111))
+(test (part-2 test-data) 3121910778619)
+(test (part-2 data) 173229689350551)
 
 (defn main [&]
 
