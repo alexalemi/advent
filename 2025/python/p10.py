@@ -3,7 +3,7 @@ from typing import NamedTuple, Generator
 from collections import deque, defaultdict
 from itertools import combinations_with_replacement
 from functools import reduce
-from heapq import heappop, heappush
+from heapq import heappop, heappush, heapify
 from concurrent.futures import ProcessPoolExecutor
 
 with open("../input/10.txt") as f:
@@ -123,6 +123,9 @@ def heuristic(joltage: Joltage) -> int:
     return max(joltage)
 
 
+TOO_LARGE = 100_000_000
+SMALLER = 1_000_000
+
 def joltage_presses(machine: Machine) -> int:
     """Determine the minimum number of presses needed to reach target."""
 
@@ -134,6 +137,9 @@ def joltage_presses(machine: Machine) -> int:
     presses = {joltage: 0}
 
     while frontier:
+        if len(frontier) > TOO_LARGE:
+            print("compressing...")
+            frontier = heapify(sorted(frontier)[:SMALLER])
         _, joltage = heappop(frontier)
         if not any(joltage):
             return presses[joltage]
@@ -167,7 +173,7 @@ def solve_linprob(machine: Machine) -> int:
 
 def part2(data: list[Machine]) -> int:
     with ProcessPoolExecutor() as executor:
-        return sum(tqdm(executor.map(solve_linprob, data), total=len(data)))
+        return sum(tqdm(executor.map(joltage_presses, data), total=len(data)))
 
 
 assert part2(test_data) == 33, "Failed part 2 test"
