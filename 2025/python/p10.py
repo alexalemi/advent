@@ -126,6 +126,7 @@ def heuristic(joltage: Joltage) -> int:
 TOO_LARGE = 100_000_000
 SMALLER = 1_000_000
 
+
 def joltage_presses(machine: Machine) -> int:
     """Determine the minimum number of presses needed to reach target."""
 
