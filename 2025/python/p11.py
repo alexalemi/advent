@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 test_string = """aaa: you hhh
 you: bbb ccc
 bbb: ddd eee

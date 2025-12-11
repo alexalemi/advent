@@ -3,7 +3,7 @@ name = "advent"
 version = "0.1.0"
 description = "Advent of Code Solutions"
 authors = [{ name = "Alex Alemi", email = "alexalemi@gmail.com" }]
-requires-python = "~=3.13"
+requires-python = ">=3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [
@@ -17,11 +17,11 @@ dependencies = [
     "frozendict>=2.4.5,<3",
     "toolz>=1.0.0,<2",
     "matplotlib>=3.9.2,<4",
-    "jax[cpu]>=0.4.34,<0.5",
     "cytoolz>=1.0.0,<2",
     "black>=24.10.0,<25",
     "ruff>=0.8.2,<0.9",
     "pyright>=1.1.390,<2",
     "mypy>=1.13.0,<2",
+    "scipy>=1.16.3",
 ]
 
