@@ -90,14 +90,9 @@ def part2(data: dict[str, set[set]]) -> int:
     dac_out = count_paths(parents, "dac", "out")
     fft_out = count_paths(parents, "fft", "out")
 
-    if fft_dac and dac_fft:
-        fft_out_pure = (fft_out - fft_dac * dac_out) / (fft_dac * dac_fft)
-        dac_out_pure = (dac_out - dac_fft * fft_out) / (fft_dac * dac_fft)
-    else:
-        fft_out_pure = fft_out
-        dac_out_pure = dac_out
+    assert fft_dac * dac_fft == 0, "No cycles!"
 
-    return svr_fft * fft_dac * dac_out_pure + srv_dac * dac_fft * fft_out_pure
+    return svr_fft * fft_dac * dac_out + srv_dac * dac_fft * fft_out
 
 
 assert part2(test_data2) == 2, "Failed part 2 test"
