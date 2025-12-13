@@ -2,16 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <omp.h>
 
 #define MAX_SHAPES 20
 #define MAX_CELLS 50
 #define MAX_SHAPE_CELLS 8  // Actual shapes have 5-7 cells
 #define MAX_ORIENTATIONS 8
 #define MAX_REGIONS 1000
-#define MAX_PLACEMENTS 5000
-#define MAX_WIDTH 50
-#define MAX_HEIGHT 50
+#define MAX_PLACEMENTS 10000
+#define MAX_WIDTH 100
+#define MAX_HEIGHT 100
 #define MAX_ITERATIONS 3000000
 
 typedef struct {
@@ -236,53 +235,49 @@ void parse_input(const char *filename) {
     fclose(f);
 }
 
-// Per-thread state structure
-typedef struct {
-    int grid[MAX_HEIGHT][MAX_WIDTH];
-    int remaining[MAX_SHAPES];
-    int total_remaining;
-    int slack_remaining;
-    int iterations;
-    Placement all_placements[MAX_SHAPES][MAX_PLACEMENTS];
-    int placement_counts[MAX_SHAPES];
-    int first_empty_hint;
-    int covering[MAX_HEIGHT][MAX_WIDTH][MAX_SHAPES][100];
-    int covering_counts[MAX_HEIGHT][MAX_WIDTH][MAX_SHAPES];
-} ThreadState;
+static int grid[MAX_HEIGHT][MAX_WIDTH];
+static int remaining[MAX_SHAPES];
+static int total_remaining;
+static int slack_remaining;
+static int iterations;
+static Placement all_placements[MAX_SHAPES][MAX_PLACEMENTS];
+static int placement_counts[MAX_SHAPES];
+static int first_empty_hint;  // Linear index hint for first empty cell
 
-#define MAX_THREADS 16
-#define MAX_COVERING 100
-static ThreadState thread_states[MAX_THREADS];
+// Index: for each cell, which placements cover it
+#define MAX_COVERING 500
+static int covering[MAX_HEIGHT][MAX_WIDTH][MAX_SHAPES][MAX_COVERING];
+static int covering_counts[MAX_HEIGHT][MAX_WIDTH][MAX_SHAPES];
 
-bool can_place(ThreadState *ts, Placement *p) {
+bool can_place(Placement *p) {
     for (int i = 0; i < p->cell_count; i++) {
-        if (ts->grid[p->row + p->cells[i].r][p->col + p->cells[i].c] != 0) return false;
+        if (grid[p->row + p->cells[i].r][p->col + p->cells[i].c] != 0) return false;
     }
     return true;
 }
 
-void place(ThreadState *ts, Placement *p) {
+void place(Placement *p) {
     for (int i = 0; i < p->cell_count; i++) {
-        ts->grid[p->row + p->cells[i].r][p->col + p->cells[i].c] = 1;
+        grid[p->row + p->cells[i].r][p->col + p->cells[i].c] = 1;
     }
 }
 
-void unplace(ThreadState *ts, Placement *p) {
+void unplace(Placement *p) {
     for (int i = 0; i < p->cell_count; i++) {
-        ts->grid[p->row + p->cells[i].r][p->col + p->cells[i].c] = 0;
+        grid[p->row + p->cells[i].r][p->col + p->cells[i].c] = 0;
     }
 }
 
-bool find_first_empty(ThreadState *ts, int width, int height, int *out_r, int *out_c) {
-    int start_r = ts->first_empty_hint / width;
-    int start_c = ts->first_empty_hint % width;
+bool find_first_empty(int width, int height, int *out_r, int *out_c) {
+    int start_r = first_empty_hint / width;
+    int start_c = first_empty_hint % width;
 
     for (int r = start_r; r < height; r++) {
         for (int c = (r == start_r ? start_c : 0); c < width; c++) {
-            if (ts->grid[r][c] == 0) {
+            if (grid[r][c] == 0) {
                 *out_r = r;
                 *out_c = c;
-                ts->first_empty_hint = r * width + c;
+                first_empty_hint = r * width + c;
                 return true;
             }
         }
@@ -290,74 +285,80 @@ bool find_first_empty(ThreadState *ts, int width, int height, int *out_r, int *o
     return false;
 }
 
-int backtrack(ThreadState *ts, int width, int height, int *shapes_needed, int shapes_needed_count) {
-    ts->iterations++;
-    if (ts->iterations > MAX_ITERATIONS) return -1;
+int backtrack(int width, int height, int *shapes_needed, int shapes_needed_count) {
+    iterations++;
+    if (iterations > MAX_ITERATIONS) return -1;
 
-    if (ts->total_remaining == 0) return 1;
+    if (total_remaining == 0) return 1;
 
     int target_r, target_c;
-    if (!find_first_empty(ts, width, height, &target_r, &target_c)) {
-        return (ts->total_remaining == 0) ? 1 : 0;
+    if (!find_first_empty(width, height, &target_r, &target_c)) {
+        return (total_remaining == 0) ? 1 : 0;
     }
 
-    int saved_hint = ts->first_empty_hint;
+    int saved_hint = first_empty_hint;
 
     // Use precomputed index of placements covering this cell
     for (int si = 0; si < shapes_needed_count; si++) {
         int shape_idx = shapes_needed[si];
-        if (ts->remaining[shape_idx] == 0) continue;
+        if (remaining[shape_idx] == 0) continue;
 
-        int num_covering = ts->covering_counts[target_r][target_c][shape_idx];
+        int num_covering = covering_counts[target_r][target_c][shape_idx];
         for (int ci = 0; ci < num_covering; ci++) {
-            int pi = ts->covering[target_r][target_c][shape_idx][ci];
-            Placement *p = &ts->all_placements[shape_idx][pi];
+            int pi = covering[target_r][target_c][shape_idx][ci];
+            Placement *p = &all_placements[shape_idx][pi];
 
-            if (can_place(ts, p)) {
-                place(ts, p);
-                ts->remaining[shape_idx]--;
-                ts->total_remaining--;
+            if (can_place(p)) {
+                place(p);
+                remaining[shape_idx]--;
+                total_remaining--;
 
-                int result = backtrack(ts, width, height, shapes_needed, shapes_needed_count);
+                int result = backtrack(width, height, shapes_needed, shapes_needed_count);
                 if (result == 1) return 1;
                 if (result == -1) {
-                    ts->remaining[shape_idx]++;
-                    ts->total_remaining++;
-                    unplace(ts, p);
-                    ts->first_empty_hint = saved_hint;
+                    remaining[shape_idx]++;
+                    total_remaining++;
+                    unplace(p);
+                    first_empty_hint = saved_hint;
                     return -1;
                 }
 
-                ts->remaining[shape_idx]++;
-                ts->total_remaining++;
-                unplace(ts, p);
-                ts->first_empty_hint = saved_hint;
+                remaining[shape_idx]++;
+                total_remaining++;
+                unplace(p);
+                first_empty_hint = saved_hint;
             }
         }
     }
 
-    if (ts->slack_remaining > 0) {
-        ts->grid[target_r][target_c] = 2;  // Mark as slack
-        ts->slack_remaining--;
+    if (slack_remaining > 0) {
+        grid[target_r][target_c] = 2;  // Mark as slack
+        slack_remaining--;
 
-        int result = backtrack(ts, width, height, shapes_needed, shapes_needed_count);
+        int result = backtrack(width, height, shapes_needed, shapes_needed_count);
         if (result == 1) return 1;
         if (result == -1) {
-            ts->slack_remaining++;
-            ts->grid[target_r][target_c] = 0;
-            ts->first_empty_hint = saved_hint;
+            slack_remaining++;
+            grid[target_r][target_c] = 0;
+            first_empty_hint = saved_hint;
             return -1;
         }
 
-        ts->slack_remaining++;
-        ts->grid[target_r][target_c] = 0;
-        ts->first_empty_hint = saved_hint;
+        slack_remaining++;
+        grid[target_r][target_c] = 0;
+        first_empty_hint = saved_hint;
     }
 
     return 0;
 }
 
-int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int shape_count_len) {
+int compare_by_placements(const void *a, const void *b) {
+    int ia = *(const int *)a;
+    int ib = *(const int *)b;
+    return placement_counts[ia] - placement_counts[ib];
+}
+
+int solve_region(int width, int height, int *shape_counts, int shape_count_len) {
     int shapes_needed[MAX_SHAPES];
     int shapes_needed_count = 0;
 
@@ -384,7 +385,7 @@ int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int 
     for (int r = 0; r < height; r++) {
         for (int c = 0; c < width; c++) {
             for (int si = 0; si < shapes_needed_count; si++) {
-                ts->covering_counts[r][c][shapes_needed[si]] = 0;
+                covering_counts[r][c][shapes_needed[si]] = 0;
             }
         }
     }
@@ -392,7 +393,7 @@ int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int 
     // Build placements and covering index
     for (int i = 0; i < shapes_needed_count; i++) {
         int shape_idx = shapes_needed[i];
-        ts->placement_counts[shape_idx] = 0;
+        placement_counts[shape_idx] = 0;
 
         ShapeOrientations *so = &all_orientations[shape_idx];
         for (int oi = 0; oi < so->count; oi++) {
@@ -405,9 +406,9 @@ int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int 
 
             for (int row = 0; row < height - max_r; row++) {
                 for (int col = 0; col < width - max_c; col++) {
-                    if (ts->placement_counts[shape_idx] >= MAX_PLACEMENTS) break;
-                    int pi = ts->placement_counts[shape_idx]++;
-                    Placement *p = &ts->all_placements[shape_idx][pi];
+                    if (placement_counts[shape_idx] >= MAX_PLACEMENTS) break;
+                    int pi = placement_counts[shape_idx]++;
+                    Placement *p = &all_placements[shape_idx][pi];
                     p->cell_count = orient->count;
                     memcpy(p->cells, orient->cells, orient->count * sizeof(Coord));
                     p->row = row;
@@ -417,9 +418,9 @@ int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int 
                     for (int ci = 0; ci < orient->count; ci++) {
                         int cr = row + orient->cells[ci].r;
                         int cc = col + orient->cells[ci].c;
-                        int idx = ts->covering_counts[cr][cc][shape_idx]++;
+                        int idx = covering_counts[cr][cc][shape_idx]++;
                         if (idx < MAX_COVERING) {
-                            ts->covering[cr][cc][shape_idx][idx] = pi;
+                            covering[cr][cc][shape_idx][idx] = pi;
                         }
                     }
                 }
@@ -428,28 +429,19 @@ int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int 
     }
 
     // Sort shapes by placement count (fewer placements first = fail-first)
-    // Note: using thread-local placement_counts for comparison
-    for (int i = 0; i < shapes_needed_count - 1; i++) {
-        for (int j = i + 1; j < shapes_needed_count; j++) {
-            if (ts->placement_counts[shapes_needed[j]] < ts->placement_counts[shapes_needed[i]]) {
-                int tmp = shapes_needed[i];
-                shapes_needed[i] = shapes_needed[j];
-                shapes_needed[j] = tmp;
-            }
-        }
-    }
+    qsort(shapes_needed, shapes_needed_count, sizeof(int), compare_by_placements);
 
-    memset(ts->grid, 0, sizeof(ts->grid));
-    ts->total_remaining = 0;
+    memset(grid, 0, sizeof(grid));
+    total_remaining = 0;
     for (int i = 0; i < shapes_needed_count; i++) {
-        ts->remaining[shapes_needed[i]] = shape_counts[shapes_needed[i]];
-        ts->total_remaining += shape_counts[shapes_needed[i]];
+        remaining[shapes_needed[i]] = shape_counts[shapes_needed[i]];
+        total_remaining += shape_counts[shapes_needed[i]];
     }
-    ts->slack_remaining = slack;
-    ts->iterations = 0;
-    ts->first_empty_hint = 0;
+    slack_remaining = slack;
+    iterations = 0;
+    first_empty_hint = 0;
 
-    return backtrack(ts, width, height, shapes_needed, shapes_needed_count);
+    return backtrack(width, height, shapes_needed, shapes_needed_count);
 }
 
 int main(void) {
@@ -467,17 +459,20 @@ int main(void) {
     int count = 0;
     int unknown = 0;
 
-    #pragma omp parallel for reduction(+:count,unknown) schedule(dynamic)
     for (int i = 0; i < num_regions; i++) {
-        int tid = omp_get_thread_num();
-        ThreadState *ts = &thread_states[tid];
         Region *reg = &regions[i];
-        int result = solve_region(ts, reg->width, reg->height,
+        int result = solve_region(reg->width, reg->height,
                                   reg->shape_counts, reg->shape_count);
         if (result == 1) {
             count++;
         } else if (result == -1) {
             unknown++;
+        }
+
+        if ((i + 1) % 50 == 0) {
+            printf("Processed %d/%d: %d yes, %d unknown, %d no\n",
+                   i + 1, num_regions, count, unknown, i + 1 - count - unknown);
+            fflush(stdout);
         }
     }
 
