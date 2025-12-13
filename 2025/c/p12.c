@@ -332,7 +332,7 @@ int backtrack(int width, int height, int *shapes_needed, int shapes_needed_count
     }
 
     if (slack_remaining > 0) {
-        grid[target_r][target_c] = 2;
+        grid[target_r][target_c] = 2;  // Mark as slack
         slack_remaining--;
 
         int result = backtrack(width, height, shapes_needed, shapes_needed_count);
