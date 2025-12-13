@@ -5,6 +5,7 @@
 
 #define MAX_SHAPES 20
 #define MAX_CELLS 50
+#define MAX_SHAPE_CELLS 8  // Actual shapes have 5-7 cells
 #define MAX_ORIENTATIONS 8
 #define MAX_REGIONS 1000
 #define MAX_PLACEMENTS 10000
@@ -27,7 +28,7 @@ typedef struct {
 } ShapeOrientations;
 
 typedef struct {
-    Coord cells[MAX_CELLS];
+    Coord cells[MAX_SHAPE_CELLS];
     int cell_count;
     int row, col;
 } Placement;
@@ -241,6 +242,7 @@ static int slack_remaining;
 static int iterations;
 static Placement all_placements[MAX_SHAPES][MAX_PLACEMENTS];
 static int placement_counts[MAX_SHAPES];
+static int first_empty_hint;  // Linear index hint for first empty cell
 
 // Index: for each cell, which placements cover it
 #define MAX_COVERING 500
@@ -267,11 +269,15 @@ void unplace(Placement *p) {
 }
 
 bool find_first_empty(int width, int height, int *out_r, int *out_c) {
-    for (int r = 0; r < height; r++) {
-        for (int c = 0; c < width; c++) {
+    int start_r = first_empty_hint / width;
+    int start_c = first_empty_hint % width;
+
+    for (int r = start_r; r < height; r++) {
+        for (int c = (r == start_r ? start_c : 0); c < width; c++) {
             if (grid[r][c] == 0) {
                 *out_r = r;
                 *out_c = c;
+                first_empty_hint = r * width + c;
                 return true;
             }
         }
@@ -289,6 +295,8 @@ int backtrack(int width, int height, int *shapes_needed, int shapes_needed_count
     if (!find_first_empty(width, height, &target_r, &target_c)) {
         return (total_remaining == 0) ? 1 : 0;
     }
+
+    int saved_hint = first_empty_hint;
 
     // Use precomputed index of placements covering this cell
     for (int si = 0; si < shapes_needed_count; si++) {
@@ -311,12 +319,14 @@ int backtrack(int width, int height, int *shapes_needed, int shapes_needed_count
                     remaining[shape_idx]++;
                     total_remaining++;
                     unplace(p);
+                    first_empty_hint = saved_hint;
                     return -1;
                 }
 
                 remaining[shape_idx]++;
                 total_remaining++;
                 unplace(p);
+                first_empty_hint = saved_hint;
             }
         }
     }
@@ -330,14 +340,22 @@ int backtrack(int width, int height, int *shapes_needed, int shapes_needed_count
         if (result == -1) {
             slack_remaining++;
             grid[target_r][target_c] = 0;
+            first_empty_hint = saved_hint;
             return -1;
         }
 
         slack_remaining++;
         grid[target_r][target_c] = 0;
+        first_empty_hint = saved_hint;
     }
 
     return 0;
+}
+
+int compare_by_placements(const void *a, const void *b) {
+    int ia = *(const int *)a;
+    int ib = *(const int *)b;
+    return placement_counts[ia] - placement_counts[ib];
 }
 
 int solve_region(int width, int height, int *shape_counts, int shape_count_len) {
@@ -410,6 +428,9 @@ int solve_region(int width, int height, int *shape_counts, int shape_count_len) 
         }
     }
 
+    // Sort shapes by placement count (fewer placements first = fail-first)
+    qsort(shapes_needed, shapes_needed_count, sizeof(int), compare_by_placements);
+
     memset(grid, 0, sizeof(grid));
     total_remaining = 0;
     for (int i = 0; i < shapes_needed_count; i++) {
@@ -418,6 +439,7 @@ int solve_region(int width, int height, int *shape_counts, int shape_count_len) 
     }
     slack_remaining = slack;
     iterations = 0;
+    first_empty_hint = 0;
 
     return backtrack(width, height, shapes_needed, shapes_needed_count);
 }
