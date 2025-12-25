@@ -2,7 +2,6 @@
 """Day 12: Christmas Tree Farm - Handles slack (empty cells)"""
 
 import sys
-import heapq
 sys.setrecursionlimit(100000)
 
 
@@ -91,109 +90,95 @@ def solve_region(width, height, shape_counts, all_orientations):
 
     slack = region_area - total_cells  # Number of cells that must remain empty
 
-    # Precompute all valid placements AND index by cell
-    # Also precompute bitmasks for faster can_place checks
-    placements_by_cell = {(r, c): [] for r in range(height) for c in range(width)}
-
-    def coords_to_mask(orientation, row, col):
-        mask = 0
-        for dr, dc in orientation:
-            bit = (row + dr) * width + (col + dc)
-            mask |= (1 << bit)
-        return mask
-
+    # Precompute all valid placements
+    placements = {}
     for shape_idx, _ in shapes_needed:
+        placements[shape_idx] = []
         for orientation in all_orientations[shape_idx]:
             max_r = max(r for r, c in orientation)
             max_c = max(c for r, c in orientation)
             for row in range(height - max_r):
                 for col in range(width - max_c):
-                    mask = coords_to_mask(orientation, row, col)
-                    cells = tuple((row + dr, col + dc) for dr, dc in orientation)
-                    # Index this placement by each cell it covers
-                    for dr, dc in orientation:
-                        cell = (row + dr, col + dc)
-                        placements_by_cell[cell].append((shape_idx, mask, cells))
+                    placements[shape_idx].append((orientation, row, col))
 
-    # Bitmask grid for fast collision checking
-    grid_mask = 0
-    empty_cells = set((r, c) for r in range(height) for c in range(width))
-    empty_heap = [(r, c) for r in range(height) for c in range(width)]
-    heapq.heapify(empty_heap)
+    # Grid: 0=empty, 1=filled by shape, 2=marked as slack
+    grid = [[0] * width for _ in range(height)]
     remaining = {idx: count for idx, count in shapes_needed}
     slack_remaining = slack
-    needed_cells = sum(shape_sizes[idx] * count for idx, count in shapes_needed)
 
     iterations = 0
     max_iterations = 3000000
 
+    def can_place(cells, ar, ac):
+        for dr, dc in cells:
+            if grid[ar + dr][ac + dc] != 0:
+                return False
+        return True
+
+    def place(cells, ar, ac):
+        for dr, dc in cells:
+            grid[ar + dr][ac + dc] = 1
+
+    def unplace(cells, ar, ac):
+        for dr, dc in cells:
+            grid[ar + dr][ac + dc] = 0
+
     def find_first_empty():
-        # Lazy deletion: pop from heap until we find a cell that's actually empty
-        while empty_heap and empty_heap[0] not in empty_cells:
-            heapq.heappop(empty_heap)
-        return empty_heap[0] if empty_heap else None
+        for r in range(height):
+            for c in range(width):
+                if grid[r][c] == 0:
+                    return (r, c)
+        return None
 
     def backtrack():
-        nonlocal iterations, slack_remaining, grid_mask, needed_cells
+        nonlocal iterations, slack_remaining
         iterations += 1
         if iterations > max_iterations:
             return None
 
-        if needed_cells == 0:
+        if all(c == 0 for c in remaining.values()):
             return True
 
         empty = find_first_empty()
         if empty is None:
-            return needed_cells == 0
+            return all(c == 0 for c in remaining.values())
 
         target_r, target_c = empty
 
-        # Fail-fast: check if remaining shapes can fit in remaining space
-        if needed_cells > len(empty_cells):
-            return False
-
-        # Try each placement that covers the target cell (using precomputed index)
-        for shape_idx, mask, cells in placements_by_cell[(target_r, target_c)]:
+        # Try each shape type
+        for shape_idx in remaining:
             if remaining[shape_idx] == 0:
                 continue
 
-            # Bitmask collision check
-            if (mask & grid_mask) != 0:
-                continue
+            for orientation, row, col in placements[shape_idx]:
+                # Check if this placement covers the target cell
+                covers_target = False
+                for dr, dc in orientation:
+                    if row + dr == target_r and col + dc == target_c:
+                        covers_target = True
+                        break
 
-            # Place using bitmask
-            grid_mask |= mask
-            remaining[shape_idx] -= 1
-            needed_cells -= shape_sizes[shape_idx]
-            for cell in cells:
-                empty_cells.discard(cell)
+                if not covers_target:
+                    continue
 
-            result = backtrack()
-            if result is True:
-                return True
-            if result is None:
-                # Restore state
-                grid_mask ^= mask
-                remaining[shape_idx] += 1
-                needed_cells += shape_sizes[shape_idx]
-                for cell in cells:
-                    empty_cells.add(cell)
-                    heapq.heappush(empty_heap, cell)
-                return None
+                if can_place(orientation, row, col):
+                    place(orientation, row, col)
+                    remaining[shape_idx] -= 1
 
-            # Restore state
-            grid_mask ^= mask
-            remaining[shape_idx] += 1
-            needed_cells += shape_sizes[shape_idx]
-            for cell in cells:
-                empty_cells.add(cell)
-                heapq.heappush(empty_heap, cell)
+                    result = backtrack()
+                    if result is True:
+                        return True
+                    if result is None:
+                        remaining[shape_idx] += 1
+                        unplace(orientation, row, col)
+                        return None
+
+                    remaining[shape_idx] += 1
+                    unplace(orientation, row, col)
 
         # If no shape can cover this cell, try marking it as slack
         if slack_remaining > 0:
-            target_bit = target_r * width + target_c
-            grid_mask |= (1 << target_bit)
-            empty_cells.discard((target_r, target_c))
+            grid[target_r][target_c] = 2  # Mark as slack
             slack_remaining -= 1
 
             result = backtrack()
@@ -201,15 +186,11 @@ def solve_region(width, height, shape_counts, all_orientations):
                 return True
             if result is None:
                 slack_remaining += 1
-                grid_mask ^= (1 << target_bit)
-                empty_cells.add((target_r, target_c))
-                heapq.heappush(empty_heap, (target_r, target_c))
+                grid[target_r][target_c] = 0
                 return None
 
             slack_remaining += 1
-            grid_mask ^= (1 << target_bit)
-            empty_cells.add((target_r, target_c))
-            heapq.heappush(empty_heap, (target_r, target_c))
+            grid[target_r][target_c] = 0
 
         return False
 

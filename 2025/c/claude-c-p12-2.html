@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>p12.c</title>
+<link rel="stylesheet" type="text/css" href="highlight.css">
+</head>
+<body class="hl">
+<pre class="hl"><span class="hl ppc">#include &lt;stdio.h&gt;</span>
+<span class="hl ppc">#include &lt;stdlib.h&gt;</span>
+<span class="hl ppc">#include &lt;string.h&gt;</span>
+<span class="hl ppc">#include &lt;stdbool.h&gt;</span>
+<span class="hl ppc">#include &lt;stdint.h&gt;</span>
+
+<span class="hl ppc">#define MAX_SHAPES 20</span>
+<span class="hl ppc">#define MAX_CELLS 50</span>
+<span class="hl ppc">#define MAX_SHAPE_CELLS 8</span>  <span class="hl slc">// Actual shapes have 5-7 cells</span>
+<span class="hl ppc"></span><span class="hl ppc">#define MAX_ORIENTATIONS 8</span>
+<span class="hl ppc">#define MAX_REGIONS 1000</span>
+<span class="hl ppc">#define MAX_PLACEMENTS 10000</span>
+<span class="hl ppc">#define MAX_WIDTH 100</span>
+<span class="hl ppc">#define MAX_HEIGHT 100</span>
+<span class="hl ppc">#define MAX_ITERATIONS 3000000</span>
+
+<span class="hl kwd">typedef</span> <span class="hl kwb">struct</span> <span class="hl opt">{</span>
+    <span class="hl kwb">int</span> r<span class="hl opt">,</span> c<span class="hl opt">;</span>
+<span class="hl opt">}</span> Coord<span class="hl opt">;</span>
+
+<span class="hl kwd">typedef</span> <span class="hl kwb">struct</span> <span class="hl opt">{</span>
+    Coord cells<span class="hl opt">[</span>MAX_CELLS<span class="hl opt">];</span>
+    <span class="hl kwb">int</span> count<span class="hl opt">;</span>
+<span class="hl opt">}</span> Shape<span class="hl opt">;</span>
+
+<span class="hl kwd">typedef</span> <span class="hl kwb">struct</span> <span class="hl opt">{</span>
+    Shape orientations<span class="hl opt">[</span>MAX_ORIENTATIONS<span class="hl opt">];</span>
+    <span class="hl kwb">int</span> count<span class="hl opt">;</span>
+<span class="hl opt">}</span> ShapeOrientations<span class="hl opt">;</span>
+
+<span class="hl kwd">typedef</span> <span class="hl kwb">struct</span> <span class="hl opt">{</span>
+    Coord cells<span class="hl opt">[</span>MAX_SHAPE_CELLS<span class="hl opt">];</span>
+    <span class="hl kwb">int</span> cell_count<span class="hl opt">;</span>
+    <span class="hl kwb">int</span> row<span class="hl opt">,</span> col<span class="hl opt">;</span>
+    <span class="hl slc">// Bitmasks for fast collision detection</span>
+    <span class="hl kwb">int</span> min_row<span class="hl opt">,</span> max_row<span class="hl opt">;</span>  <span class="hl slc">// Row span</span>
+    <span class="hl kwb">uint64_t</span> row_masks<span class="hl opt">[</span>MAX_SHAPE_CELLS<span class="hl opt">];</span>  <span class="hl slc">// Mask for each row in span</span>
+<span class="hl opt">}</span> Placement<span class="hl opt">;</span>
+
+<span class="hl kwd">typedef</span> <span class="hl kwb">struct</span> <span class="hl opt">{</span>
+    <span class="hl kwb">int</span> width<span class="hl opt">,</span> height<span class="hl opt">;</span>
+    <span class="hl kwb">int</span> shape_counts<span class="hl opt">[</span>MAX_SHAPES<span class="hl opt">];</span>
+    <span class="hl kwb">int</span> shape_count<span class="hl opt">;</span>
+<span class="hl opt">}</span> Region<span class="hl opt">;</span>
+
+Shape shapes<span class="hl opt">[</span>MAX_SHAPES<span class="hl opt">];</span>
+<span class="hl kwb">int</span> num_shapes <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+ShapeOrientations all_orientations<span class="hl opt">[</span>MAX_SHAPES<span class="hl opt">];</span>
+Region regions<span class="hl opt">[</span>MAX_REGIONS<span class="hl opt">];</span>
+<span class="hl kwb">int</span> num_regions <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+
+<span class="hl kwb">void</span> <span class="hl kwd">normalize_shape</span><span class="hl opt">(</span>Shape <span class="hl opt">*</span>s<span class="hl opt">) {</span>
+    <span class="hl kwa">if</span> <span class="hl opt">(</span>s<span class="hl opt">-&gt;</span>count <span class="hl opt">==</span> <span class="hl num">0</span><span class="hl opt">)</span> <span class="hl kwa">return</span><span class="hl opt">;</span>
+    <span class="hl kwb">int</span> min_r <span class="hl opt">=</span> s<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span><span class="hl num">0</span><span class="hl opt">].</span>r<span class="hl opt">,</span> min_c <span class="hl opt">=</span> s<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span><span class="hl num">0</span><span class="hl opt">].</span>c<span class="hl opt">;</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">1</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> s<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(</span>s<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r <span class="hl opt">&lt;</span> min_r<span class="hl opt">)</span> min_r <span class="hl opt">=</span> s<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r<span class="hl opt">;</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(</span>s<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c <span class="hl opt">&lt;</span> min_c<span class="hl opt">)</span> min_c <span class="hl opt">=</span> s<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c<span class="hl opt">;</span>
+    <span class="hl opt">}</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> s<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        s<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r <span class="hl opt">-=</span> min_r<span class="hl opt">;</span>
+        s<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c <span class="hl opt">-=</span> min_c<span class="hl opt">;</span>
+    <span class="hl opt">}</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">void</span> <span class="hl kwd">rotate_90</span><span class="hl opt">(</span>Shape <span class="hl opt">*</span>src<span class="hl opt">,</span> Shape <span class="hl opt">*</span>dst<span class="hl opt">) {</span>
+    dst<span class="hl opt">-&gt;</span>count <span class="hl opt">=</span> src<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> src<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        dst<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r <span class="hl opt">=</span> src<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c<span class="hl opt">;</span>
+        dst<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c <span class="hl opt">= -</span>src<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r<span class="hl opt">;</span>
+    <span class="hl opt">}</span>
+    <span class="hl kwd">normalize_shape</span><span class="hl opt">(</span>dst<span class="hl opt">);</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">void</span> <span class="hl kwd">flip_horizontal</span><span class="hl opt">(</span>Shape <span class="hl opt">*</span>src<span class="hl opt">,</span> Shape <span class="hl opt">*</span>dst<span class="hl opt">) {</span>
+    dst<span class="hl opt">-&gt;</span>count <span class="hl opt">=</span> src<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> src<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        dst<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r <span class="hl opt">=</span> src<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r<span class="hl opt">;</span>
+        dst<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c <span class="hl opt">= -</span>src<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c<span class="hl opt">;</span>
+    <span class="hl opt">}</span>
+    <span class="hl kwd">normalize_shape</span><span class="hl opt">(</span>dst<span class="hl opt">);</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">int</span> <span class="hl kwd">compare_coords</span><span class="hl opt">(</span><span class="hl kwb">const void</span> <span class="hl opt">*</span>a<span class="hl opt">,</span> <span class="hl kwb">const void</span> <span class="hl opt">*</span>b<span class="hl opt">) {</span>
+    <span class="hl kwb">const</span> Coord <span class="hl opt">*</span>ca <span class="hl opt">= (</span><span class="hl kwb">const</span> Coord <span class="hl opt">*)</span>a<span class="hl opt">;</span>
+    <span class="hl kwb">const</span> Coord <span class="hl opt">*</span>cb <span class="hl opt">= (</span><span class="hl kwb">const</span> Coord <span class="hl opt">*)</span>b<span class="hl opt">;</span>
+    <span class="hl kwa">if</span> <span class="hl opt">(</span>ca<span class="hl opt">-&gt;</span>r <span class="hl opt">!=</span> cb<span class="hl opt">-&gt;</span>r<span class="hl opt">)</span> <span class="hl kwa">return</span> ca<span class="hl opt">-&gt;</span>r <span class="hl opt">-</span> cb<span class="hl opt">-&gt;</span>r<span class="hl opt">;</span>
+    <span class="hl kwa">return</span> ca<span class="hl opt">-&gt;</span>c <span class="hl opt">-</span> cb<span class="hl opt">-&gt;</span>c<span class="hl opt">;</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">void</span> <span class="hl kwd">sort_shape</span><span class="hl opt">(</span>Shape <span class="hl opt">*</span>s<span class="hl opt">) {</span>
+    <span class="hl kwd">qsort</span><span class="hl opt">(</span>s<span class="hl opt">-&gt;</span>cells<span class="hl opt">,</span> s<span class="hl opt">-&gt;</span>count<span class="hl opt">,</span> <span class="hl kwa">sizeof</span><span class="hl opt">(</span>Coord<span class="hl opt">),</span> compare_coords<span class="hl opt">);</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">bool</span> <span class="hl kwd">shapes_equal</span><span class="hl opt">(</span>Shape <span class="hl opt">*</span>a<span class="hl opt">,</span> Shape <span class="hl opt">*</span>b<span class="hl opt">) {</span>
+    <span class="hl kwa">if</span> <span class="hl opt">(</span>a<span class="hl opt">-&gt;</span>count <span class="hl opt">!=</span> b<span class="hl opt">-&gt;</span>count<span class="hl opt">)</span> <span class="hl kwa">return false</span><span class="hl opt">;</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> a<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(</span>a<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r <span class="hl opt">!=</span> b<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r <span class="hl opt">||</span> a<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c <span class="hl opt">!=</span> b<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c<span class="hl opt">) {</span>
+            <span class="hl kwa">return false</span><span class="hl opt">;</span>
+        <span class="hl opt">}</span>
+    <span class="hl opt">}</span>
+    <span class="hl kwa">return true</span><span class="hl opt">;</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">void</span> <span class="hl kwd">get_all_orientations</span><span class="hl opt">(</span><span class="hl kwb">int</span> shape_idx<span class="hl opt">) {</span>
+    ShapeOrientations <span class="hl opt">*</span>so <span class="hl opt">= &amp;</span>all_orientations<span class="hl opt">[</span>shape_idx<span class="hl opt">];</span>
+    so<span class="hl opt">-&gt;</span>count <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+
+    Shape current<span class="hl opt">;</span>
+    <span class="hl kwd">memcpy</span><span class="hl opt">(&amp;</span>current<span class="hl opt">, &amp;</span>shapes<span class="hl opt">[</span>shape_idx<span class="hl opt">],</span> <span class="hl kwa">sizeof</span><span class="hl opt">(</span>Shape<span class="hl opt">));</span>
+    <span class="hl kwd">normalize_shape</span><span class="hl opt">(&amp;</span>current<span class="hl opt">);</span>
+
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> rot <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> rot <span class="hl opt">&lt;</span> <span class="hl num">4</span><span class="hl opt">;</span> rot<span class="hl opt">++) {</span>
+        Shape normalized<span class="hl opt">,</span> flipped<span class="hl opt">;</span>
+        <span class="hl kwd">memcpy</span><span class="hl opt">(&amp;</span>normalized<span class="hl opt">, &amp;</span>current<span class="hl opt">,</span> <span class="hl kwa">sizeof</span><span class="hl opt">(</span>Shape<span class="hl opt">));</span>
+        <span class="hl kwd">sort_shape</span><span class="hl opt">(&amp;</span>normalized<span class="hl opt">);</span>
+
+        <span class="hl kwb">bool</span> exists <span class="hl opt">=</span> <span class="hl kwa">false</span><span class="hl opt">;</span>
+        <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> so<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+            <span class="hl kwa">if</span> <span class="hl opt">(</span><span class="hl kwd">shapes_equal</span><span class="hl opt">(&amp;</span>normalized<span class="hl opt">, &amp;</span>so<span class="hl opt">-&gt;</span>orientations<span class="hl opt">[</span>i<span class="hl opt">])) {</span>
+                exists <span class="hl opt">=</span> <span class="hl kwa">true</span><span class="hl opt">;</span>
+                <span class="hl kwa">break</span><span class="hl opt">;</span>
+            <span class="hl opt">}</span>
+        <span class="hl opt">}</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(!</span>exists<span class="hl opt">) {</span>
+            <span class="hl kwd">memcpy</span><span class="hl opt">(&amp;</span>so<span class="hl opt">-&gt;</span>orientations<span class="hl opt">[</span>so<span class="hl opt">-&gt;</span>count<span class="hl opt">++], &amp;</span>normalized<span class="hl opt">,</span> <span class="hl kwa">sizeof</span><span class="hl opt">(</span>Shape<span class="hl opt">));</span>
+        <span class="hl opt">}</span>
+
+        <span class="hl kwd">flip_horizontal</span><span class="hl opt">(&amp;</span>current<span class="hl opt">, &amp;</span>flipped<span class="hl opt">);</span>
+        <span class="hl kwd">sort_shape</span><span class="hl opt">(&amp;</span>flipped<span class="hl opt">);</span>
+        exists <span class="hl opt">=</span> <span class="hl kwa">false</span><span class="hl opt">;</span>
+        <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> so<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+            <span class="hl kwa">if</span> <span class="hl opt">(</span><span class="hl kwd">shapes_equal</span><span class="hl opt">(&amp;</span>flipped<span class="hl opt">, &amp;</span>so<span class="hl opt">-&gt;</span>orientations<span class="hl opt">[</span>i<span class="hl opt">])) {</span>
+                exists <span class="hl opt">=</span> <span class="hl kwa">true</span><span class="hl opt">;</span>
+                <span class="hl kwa">break</span><span class="hl opt">;</span>
+            <span class="hl opt">}</span>
+        <span class="hl opt">}</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(!</span>exists<span class="hl opt">) {</span>
+            <span class="hl kwd">memcpy</span><span class="hl opt">(&amp;</span>so<span class="hl opt">-&gt;</span>orientations<span class="hl opt">[</span>so<span class="hl opt">-&gt;</span>count<span class="hl opt">++], &amp;</span>flipped<span class="hl opt">,</span> <span class="hl kwa">sizeof</span><span class="hl opt">(</span>Shape<span class="hl opt">));</span>
+        <span class="hl opt">}</span>
+
+        Shape rotated<span class="hl opt">;</span>
+        <span class="hl kwd">rotate_90</span><span class="hl opt">(&amp;</span>current<span class="hl opt">, &amp;</span>rotated<span class="hl opt">);</span>
+        <span class="hl kwd">memcpy</span><span class="hl opt">(&amp;</span>current<span class="hl opt">, &amp;</span>rotated<span class="hl opt">,</span> <span class="hl kwa">sizeof</span><span class="hl opt">(</span>Shape<span class="hl opt">));</span>
+    <span class="hl opt">}</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">void</span> <span class="hl kwd">parse_input</span><span class="hl opt">(</span><span class="hl kwb">const char</span> <span class="hl opt">*</span>filename<span class="hl opt">) {</span>
+    <span class="hl kwb">FILE</span> <span class="hl opt">*</span>f <span class="hl opt">=</span> <span class="hl kwd">fopen</span><span class="hl opt">(</span>filename<span class="hl opt">,</span> <span class="hl sng">&quot;r&quot;</span><span class="hl opt">);</span>
+    <span class="hl kwa">if</span> <span class="hl opt">(!</span>f<span class="hl opt">) {</span>
+        <span class="hl kwd">fprintf</span><span class="hl opt">(</span>stderr<span class="hl opt">,</span> <span class="hl sng">&quot;Cannot open</span> <span class="hl ipl">%s</span><span class="hl sng"></span><span class="hl esc">\n</span><span class="hl sng">&quot;</span><span class="hl opt">,</span> filename<span class="hl opt">);</span>
+        <span class="hl kwd">exit</span><span class="hl opt">(</span><span class="hl num">1</span><span class="hl opt">);</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl kwb">char</span> line<span class="hl opt">[</span><span class="hl num">1024</span><span class="hl opt">];</span>
+    <span class="hl kwb">char</span> shape_lines<span class="hl opt">[</span><span class="hl num">20</span><span class="hl opt">][</span><span class="hl num">256</span><span class="hl opt">];</span>
+    <span class="hl kwb">int</span> shape_line_count <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+    <span class="hl kwb">int</span> current_shape_idx <span class="hl opt">= -</span><span class="hl num">1</span><span class="hl opt">;</span>
+    <span class="hl kwb">bool</span> in_shape <span class="hl opt">=</span> <span class="hl kwa">false</span><span class="hl opt">;</span>
+
+    <span class="hl kwa">while</span> <span class="hl opt">(</span><span class="hl kwd">fgets</span><span class="hl opt">(</span>line<span class="hl opt">,</span> <span class="hl kwa">sizeof</span><span class="hl opt">(</span>line<span class="hl opt">),</span> f<span class="hl opt">)) {</span>
+        <span class="hl kwb">int</span> len <span class="hl opt">=</span> <span class="hl kwd">strlen</span><span class="hl opt">(</span>line<span class="hl opt">);</span>
+        <span class="hl kwa">while</span> <span class="hl opt">(</span>len <span class="hl opt">&gt;</span> <span class="hl num">0</span> <span class="hl opt">&amp;&amp; (</span>line<span class="hl opt">[</span>len<span class="hl opt">-</span><span class="hl num">1</span><span class="hl opt">] ==</span> <span class="hl sng">&#39;</span><span class="hl esc">\n</span><span class="hl sng">&#39;</span> <span class="hl opt">||</span> line<span class="hl opt">[</span>len<span class="hl opt">-</span><span class="hl num">1</span><span class="hl opt">] ==</span> <span class="hl sng">&#39;</span><span class="hl esc">\r</span><span class="hl sng">&#39;</span><span class="hl opt">)) {</span>
+            line<span class="hl opt">[--</span>len<span class="hl opt">] =</span> <span class="hl sng">&#39;\0&#39;</span><span class="hl opt">;</span>
+        <span class="hl opt">}</span>
+
+        <span class="hl kwa">if</span> <span class="hl opt">(</span><span class="hl kwd">strchr</span><span class="hl opt">(</span>line<span class="hl opt">,</span> <span class="hl sng">&#39;x&#39;</span><span class="hl opt">) &amp;&amp;</span> <span class="hl kwd">strchr</span><span class="hl opt">(</span>line<span class="hl opt">,</span> <span class="hl sng">&#39;:&#39;</span><span class="hl opt">)) {</span>
+            <span class="hl kwa">if</span> <span class="hl opt">(</span>in_shape <span class="hl opt">&amp;&amp;</span> shape_line_count <span class="hl opt">&gt;</span> <span class="hl num">0</span><span class="hl opt">) {</span>
+                shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>count <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+                <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> r <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> r <span class="hl opt">&lt;</span> shape_line_count<span class="hl opt">;</span> r<span class="hl opt">++) {</span>
+                    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> c <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> shape_lines<span class="hl opt">[</span>r<span class="hl opt">][</span>c<span class="hl opt">];</span> c<span class="hl opt">++) {</span>
+                        <span class="hl kwa">if</span> <span class="hl opt">(</span>shape_lines<span class="hl opt">[</span>r<span class="hl opt">][</span>c<span class="hl opt">] ==</span> <span class="hl sng">&#39;#&#39;</span><span class="hl opt">) {</span>
+                            <span class="hl kwb">int</span> idx <span class="hl opt">=</span> shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>count<span class="hl opt">++;</span>
+                            shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>cells<span class="hl opt">[</span>idx<span class="hl opt">].</span>r <span class="hl opt">=</span> r<span class="hl opt">;</span>
+                            shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>cells<span class="hl opt">[</span>idx<span class="hl opt">].</span>c <span class="hl opt">=</span> c<span class="hl opt">;</span>
+                        <span class="hl opt">}</span>
+                    <span class="hl opt">}</span>
+                <span class="hl opt">}</span>
+                <span class="hl kwa">if</span> <span class="hl opt">(</span>current_shape_idx <span class="hl opt">&gt;=</span> num_shapes<span class="hl opt">)</span> num_shapes <span class="hl opt">=</span> current_shape_idx <span class="hl opt">+</span> <span class="hl num">1</span><span class="hl opt">;</span>
+            <span class="hl opt">}</span>
+            in_shape <span class="hl opt">=</span> <span class="hl kwa">false</span><span class="hl opt">;</span>
+
+            <span class="hl kwb">int</span> w<span class="hl opt">,</span> h<span class="hl opt">;</span>
+            <span class="hl kwb">char</span> <span class="hl opt">*</span>colon <span class="hl opt">=</span> <span class="hl kwd">strchr</span><span class="hl opt">(</span>line<span class="hl opt">,</span> <span class="hl sng">&#39;:&#39;</span><span class="hl opt">);</span>
+            <span class="hl opt">*</span>colon <span class="hl opt">=</span> <span class="hl sng">&#39;\0&#39;</span><span class="hl opt">;</span>
+            <span class="hl kwd">sscanf</span><span class="hl opt">(</span>line<span class="hl opt">,</span> <span class="hl sng">&quot;</span><span class="hl ipl">%d</span><span class="hl sng">x</span><span class="hl ipl">%d</span><span class="hl sng">&quot;</span><span class="hl opt">, &amp;</span>w<span class="hl opt">, &amp;</span>h<span class="hl opt">);</span>
+
+            Region <span class="hl opt">*</span>reg <span class="hl opt">= &amp;</span>regions<span class="hl opt">[</span>num_regions<span class="hl opt">];</span>
+            reg<span class="hl opt">-&gt;</span>width <span class="hl opt">=</span> w<span class="hl opt">;</span>
+            reg<span class="hl opt">-&gt;</span>height <span class="hl opt">=</span> h<span class="hl opt">;</span>
+            reg<span class="hl opt">-&gt;</span>shape_count <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+
+            <span class="hl kwb">char</span> <span class="hl opt">*</span>ptr <span class="hl opt">=</span> colon <span class="hl opt">+</span> <span class="hl num">1</span><span class="hl opt">;</span>
+            <span class="hl kwb">int</span> val<span class="hl opt">;</span>
+            <span class="hl kwa">while</span> <span class="hl opt">(</span><span class="hl kwd">sscanf</span><span class="hl opt">(</span>ptr<span class="hl opt">,</span> <span class="hl sng">&quot;</span><span class="hl ipl">%d</span><span class="hl sng">&quot;</span><span class="hl opt">, &amp;</span>val<span class="hl opt">) ==</span> <span class="hl num">1</span><span class="hl opt">) {</span>
+                reg<span class="hl opt">-&gt;</span>shape_counts<span class="hl opt">[</span>reg<span class="hl opt">-&gt;</span>shape_count<span class="hl opt">++] =</span> val<span class="hl opt">;</span>
+                <span class="hl kwa">while</span> <span class="hl opt">(*</span>ptr <span class="hl opt">==</span> <span class="hl sng">&#39; &#39;</span><span class="hl opt">)</span> ptr<span class="hl opt">++;</span>
+                <span class="hl kwa">while</span> <span class="hl opt">(*</span>ptr <span class="hl opt">&amp;&amp; *</span>ptr <span class="hl opt">!=</span> <span class="hl sng">&#39; &#39;</span><span class="hl opt">)</span> ptr<span class="hl opt">++;</span>
+            <span class="hl opt">}</span>
+            num_regions<span class="hl opt">++;</span>
+        <span class="hl opt">}</span>
+        <span class="hl kwa">else if</span> <span class="hl opt">(</span><span class="hl kwd">strchr</span><span class="hl opt">(</span>line<span class="hl opt">,</span> <span class="hl sng">&#39;:&#39;</span><span class="hl opt">) &amp;&amp; !</span><span class="hl kwd">strchr</span><span class="hl opt">(</span>line<span class="hl opt">,</span> <span class="hl sng">&#39;x&#39;</span><span class="hl opt">)) {</span>
+            <span class="hl kwa">if</span> <span class="hl opt">(</span>in_shape <span class="hl opt">&amp;&amp;</span> shape_line_count <span class="hl opt">&gt;</span> <span class="hl num">0</span><span class="hl opt">) {</span>
+                shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>count <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+                <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> r <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> r <span class="hl opt">&lt;</span> shape_line_count<span class="hl opt">;</span> r<span class="hl opt">++) {</span>
+                    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> c <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> shape_lines<span class="hl opt">[</span>r<span class="hl opt">][</span>c<span class="hl opt">];</span> c<span class="hl opt">++) {</span>
+                        <span class="hl kwa">if</span> <span class="hl opt">(</span>shape_lines<span class="hl opt">[</span>r<span class="hl opt">][</span>c<span class="hl opt">] ==</span> <span class="hl sng">&#39;#&#39;</span><span class="hl opt">) {</span>
+                            <span class="hl kwb">int</span> idx <span class="hl opt">=</span> shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>count<span class="hl opt">++;</span>
+                            shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>cells<span class="hl opt">[</span>idx<span class="hl opt">].</span>r <span class="hl opt">=</span> r<span class="hl opt">;</span>
+                            shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>cells<span class="hl opt">[</span>idx<span class="hl opt">].</span>c <span class="hl opt">=</span> c<span class="hl opt">;</span>
+                        <span class="hl opt">}</span>
+                    <span class="hl opt">}</span>
+                <span class="hl opt">}</span>
+                <span class="hl kwa">if</span> <span class="hl opt">(</span>current_shape_idx <span class="hl opt">&gt;=</span> num_shapes<span class="hl opt">)</span> num_shapes <span class="hl opt">=</span> current_shape_idx <span class="hl opt">+</span> <span class="hl num">1</span><span class="hl opt">;</span>
+            <span class="hl opt">}</span>
+
+            <span class="hl kwd">sscanf</span><span class="hl opt">(</span>line<span class="hl opt">,</span> <span class="hl sng">&quot;</span><span class="hl ipl">%d</span><span class="hl sng">:&quot;</span><span class="hl opt">, &amp;</span>current_shape_idx<span class="hl opt">);</span>
+            in_shape <span class="hl opt">=</span> <span class="hl kwa">true</span><span class="hl opt">;</span>
+            shape_line_count <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+        <span class="hl opt">}</span>
+        <span class="hl kwa">else if</span> <span class="hl opt">(</span>in_shape <span class="hl opt">&amp;&amp;</span> len <span class="hl opt">&gt;</span> <span class="hl num">0</span><span class="hl opt">) {</span>
+            <span class="hl kwd">strcpy</span><span class="hl opt">(</span>shape_lines<span class="hl opt">[</span>shape_line_count<span class="hl opt">++],</span> line<span class="hl opt">);</span>
+        <span class="hl opt">}</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl kwa">if</span> <span class="hl opt">(</span>in_shape <span class="hl opt">&amp;&amp;</span> shape_line_count <span class="hl opt">&gt;</span> <span class="hl num">0</span><span class="hl opt">) {</span>
+        shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>count <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+        <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> r <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> r <span class="hl opt">&lt;</span> shape_line_count<span class="hl opt">;</span> r<span class="hl opt">++) {</span>
+            <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> c <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> shape_lines<span class="hl opt">[</span>r<span class="hl opt">][</span>c<span class="hl opt">];</span> c<span class="hl opt">++) {</span>
+                <span class="hl kwa">if</span> <span class="hl opt">(</span>shape_lines<span class="hl opt">[</span>r<span class="hl opt">][</span>c<span class="hl opt">] ==</span> <span class="hl sng">&#39;#&#39;</span><span class="hl opt">) {</span>
+                    <span class="hl kwb">int</span> idx <span class="hl opt">=</span> shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>count<span class="hl opt">++;</span>
+                    shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>cells<span class="hl opt">[</span>idx<span class="hl opt">].</span>r <span class="hl opt">=</span> r<span class="hl opt">;</span>
+                    shapes<span class="hl opt">[</span>current_shape_idx<span class="hl opt">].</span>cells<span class="hl opt">[</span>idx<span class="hl opt">].</span>c <span class="hl opt">=</span> c<span class="hl opt">;</span>
+                <span class="hl opt">}</span>
+            <span class="hl opt">}</span>
+        <span class="hl opt">}</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(</span>current_shape_idx <span class="hl opt">&gt;=</span> num_shapes<span class="hl opt">)</span> num_shapes <span class="hl opt">=</span> current_shape_idx <span class="hl opt">+</span> <span class="hl num">1</span><span class="hl opt">;</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl kwd">fclose</span><span class="hl opt">(</span>f<span class="hl opt">);</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">static int</span> grid<span class="hl opt">[</span>MAX_HEIGHT<span class="hl opt">][</span>MAX_WIDTH<span class="hl opt">];</span>
+<span class="hl kwb">static int</span> remaining<span class="hl opt">[</span>MAX_SHAPES<span class="hl opt">];</span>
+<span class="hl kwb">static int</span> total_remaining<span class="hl opt">;</span>
+<span class="hl kwb">static int</span> slack_remaining<span class="hl opt">;</span>
+<span class="hl kwb">static int</span> iterations<span class="hl opt">;</span>
+<span class="hl kwb">static</span> Placement all_placements<span class="hl opt">[</span>MAX_SHAPES<span class="hl opt">][</span>MAX_PLACEMENTS<span class="hl opt">];</span>
+<span class="hl kwb">static int</span> placement_counts<span class="hl opt">[</span>MAX_SHAPES<span class="hl opt">];</span>
+<span class="hl kwb">static int</span> first_empty_hint<span class="hl opt">;</span>  <span class="hl slc">// Linear index hint for first empty cell</span>
+
+<span class="hl slc">// Index: for each cell, which placements cover it</span>
+<span class="hl ppc">#define MAX_COVERING 500</span>
+<span class="hl kwb">static int</span> covering<span class="hl opt">[</span>MAX_HEIGHT<span class="hl opt">][</span>MAX_WIDTH<span class="hl opt">][</span>MAX_SHAPES<span class="hl opt">][</span>MAX_COVERING<span class="hl opt">];</span>
+<span class="hl kwb">static int</span> covering_counts<span class="hl opt">[</span>MAX_HEIGHT<span class="hl opt">][</span>MAX_WIDTH<span class="hl opt">][</span>MAX_SHAPES<span class="hl opt">];</span>
+
+<span class="hl kwb">bool</span> <span class="hl kwd">can_place</span><span class="hl opt">(</span>Placement <span class="hl opt">*</span>p<span class="hl opt">) {</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> p<span class="hl opt">-&gt;</span>cell_count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(</span>grid<span class="hl opt">[</span>p<span class="hl opt">-&gt;</span>row <span class="hl opt">+</span> p<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r<span class="hl opt">][</span>p<span class="hl opt">-&gt;</span>col <span class="hl opt">+</span> p<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c<span class="hl opt">] !=</span> <span class="hl num">0</span><span class="hl opt">)</span> <span class="hl kwa">return false</span><span class="hl opt">;</span>
+    <span class="hl opt">}</span>
+    <span class="hl kwa">return true</span><span class="hl opt">;</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">void</span> <span class="hl kwd">place</span><span class="hl opt">(</span>Placement <span class="hl opt">*</span>p<span class="hl opt">) {</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> p<span class="hl opt">-&gt;</span>cell_count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        grid<span class="hl opt">[</span>p<span class="hl opt">-&gt;</span>row <span class="hl opt">+</span> p<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r<span class="hl opt">][</span>p<span class="hl opt">-&gt;</span>col <span class="hl opt">+</span> p<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c<span class="hl opt">] =</span> <span class="hl num">1</span><span class="hl opt">;</span>
+    <span class="hl opt">}</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">void</span> <span class="hl kwd">unplace</span><span class="hl opt">(</span>Placement <span class="hl opt">*</span>p<span class="hl opt">) {</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> p<span class="hl opt">-&gt;</span>cell_count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        grid<span class="hl opt">[</span>p<span class="hl opt">-&gt;</span>row <span class="hl opt">+</span> p<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>r<span class="hl opt">][</span>p<span class="hl opt">-&gt;</span>col <span class="hl opt">+</span> p<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>i<span class="hl opt">].</span>c<span class="hl opt">] =</span> <span class="hl num">0</span><span class="hl opt">;</span>
+    <span class="hl opt">}</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">bool</span> <span class="hl kwd">find_first_empty</span><span class="hl opt">(</span><span class="hl kwb">int</span> width<span class="hl opt">,</span> <span class="hl kwb">int</span> height<span class="hl opt">,</span> <span class="hl kwb">int</span> <span class="hl opt">*</span>out_r<span class="hl opt">,</span> <span class="hl kwb">int</span> <span class="hl opt">*</span>out_c<span class="hl opt">) {</span>
+    <span class="hl kwb">int</span> start_r <span class="hl opt">=</span> first_empty_hint <span class="hl opt">/</span> width<span class="hl opt">;</span>
+    <span class="hl kwb">int</span> start_c <span class="hl opt">=</span> first_empty_hint <span class="hl opt">%</span> width<span class="hl opt">;</span>
+
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> r <span class="hl opt">=</span> start_r<span class="hl opt">;</span> r <span class="hl opt">&lt;</span> height<span class="hl opt">;</span> r<span class="hl opt">++) {</span>
+        <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> c <span class="hl opt">= (</span>r <span class="hl opt">==</span> start_r <span class="hl opt">?</span> start_c <span class="hl opt">:</span> <span class="hl num">0</span><span class="hl opt">);</span> c <span class="hl opt">&lt;</span> width<span class="hl opt">;</span> c<span class="hl opt">++) {</span>
+            <span class="hl kwa">if</span> <span class="hl opt">(</span>grid<span class="hl opt">[</span>r<span class="hl opt">][</span>c<span class="hl opt">] ==</span> <span class="hl num">0</span><span class="hl opt">) {</span>
+                <span class="hl opt">*</span>out_r <span class="hl opt">=</span> r<span class="hl opt">;</span>
+                <span class="hl opt">*</span>out_c <span class="hl opt">=</span> c<span class="hl opt">;</span>
+                first_empty_hint <span class="hl opt">=</span> r <span class="hl opt">*</span> width <span class="hl opt">+</span> c<span class="hl opt">;</span>
+                <span class="hl kwa">return true</span><span class="hl opt">;</span>
+            <span class="hl opt">}</span>
+        <span class="hl opt">}</span>
+    <span class="hl opt">}</span>
+    <span class="hl kwa">return false</span><span class="hl opt">;</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">int</span> <span class="hl kwd">backtrack</span><span class="hl opt">(</span><span class="hl kwb">int</span> width<span class="hl opt">,</span> <span class="hl kwb">int</span> height<span class="hl opt">,</span> <span class="hl kwb">int</span> <span class="hl opt">*</span>shapes_needed<span class="hl opt">,</span> <span class="hl kwb">int</span> shapes_needed_count<span class="hl opt">) {</span>
+    iterations<span class="hl opt">++;</span>
+    <span class="hl kwa">if</span> <span class="hl opt">(</span>iterations <span class="hl opt">&gt;</span> MAX_ITERATIONS<span class="hl opt">)</span> <span class="hl kwa">return</span> <span class="hl opt">-</span><span class="hl num">1</span><span class="hl opt">;</span>
+
+    <span class="hl kwa">if</span> <span class="hl opt">(</span>total_remaining <span class="hl opt">==</span> <span class="hl num">0</span><span class="hl opt">)</span> <span class="hl kwa">return</span> <span class="hl num">1</span><span class="hl opt">;</span>
+
+    <span class="hl kwb">int</span> target_r<span class="hl opt">,</span> target_c<span class="hl opt">;</span>
+    <span class="hl kwa">if</span> <span class="hl opt">(!</span><span class="hl kwd">find_first_empty</span><span class="hl opt">(</span>width<span class="hl opt">,</span> height<span class="hl opt">, &amp;</span>target_r<span class="hl opt">, &amp;</span>target_c<span class="hl opt">)) {</span>
+        <span class="hl kwa">return</span> <span class="hl opt">(</span>total_remaining <span class="hl opt">==</span> <span class="hl num">0</span><span class="hl opt">) ?</span> <span class="hl num">1</span> <span class="hl opt">:</span> <span class="hl num">0</span><span class="hl opt">;</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl kwb">int</span> saved_hint <span class="hl opt">=</span> first_empty_hint<span class="hl opt">;</span>
+
+    <span class="hl slc">// Use precomputed index of placements covering this cell</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> si <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> si <span class="hl opt">&lt;</span> shapes_needed_count<span class="hl opt">;</span> si<span class="hl opt">++) {</span>
+        <span class="hl kwb">int</span> shape_idx <span class="hl opt">=</span> shapes_needed<span class="hl opt">[</span>si<span class="hl opt">];</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(</span>remaining<span class="hl opt">[</span>shape_idx<span class="hl opt">] ==</span> <span class="hl num">0</span><span class="hl opt">)</span> <span class="hl kwa">continue</span><span class="hl opt">;</span>
+
+        <span class="hl kwb">int</span> num_covering <span class="hl opt">=</span> covering_counts<span class="hl opt">[</span>target_r<span class="hl opt">][</span>target_c<span class="hl opt">][</span>shape_idx<span class="hl opt">];</span>
+        <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> ci <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> ci <span class="hl opt">&lt;</span> num_covering<span class="hl opt">;</span> ci<span class="hl opt">++) {</span>
+            <span class="hl kwb">int</span> pi <span class="hl opt">=</span> covering<span class="hl opt">[</span>target_r<span class="hl opt">][</span>target_c<span class="hl opt">][</span>shape_idx<span class="hl opt">][</span>ci<span class="hl opt">];</span>
+            Placement <span class="hl opt">*</span>p <span class="hl opt">= &amp;</span>all_placements<span class="hl opt">[</span>shape_idx<span class="hl opt">][</span>pi<span class="hl opt">];</span>
+
+            <span class="hl kwa">if</span> <span class="hl opt">(</span><span class="hl kwd">can_place</span><span class="hl opt">(</span>p<span class="hl opt">)) {</span>
+                <span class="hl kwd">place</span><span class="hl opt">(</span>p<span class="hl opt">);</span>
+                remaining<span class="hl opt">[</span>shape_idx<span class="hl opt">]--;</span>
+                total_remaining<span class="hl opt">--;</span>
+
+                <span class="hl kwb">int</span> result <span class="hl opt">=</span> <span class="hl kwd">backtrack</span><span class="hl opt">(</span>width<span class="hl opt">,</span> height<span class="hl opt">,</span> shapes_needed<span class="hl opt">,</span> shapes_needed_count<span class="hl opt">);</span>
+                <span class="hl kwa">if</span> <span class="hl opt">(</span>result <span class="hl opt">==</span> <span class="hl num">1</span><span class="hl opt">)</span> <span class="hl kwa">return</span> <span class="hl num">1</span><span class="hl opt">;</span>
+                <span class="hl kwa">if</span> <span class="hl opt">(</span>result <span class="hl opt">== -</span><span class="hl num">1</span><span class="hl opt">) {</span>
+                    remaining<span class="hl opt">[</span>shape_idx<span class="hl opt">]++;</span>
+                    total_remaining<span class="hl opt">++;</span>
+                    <span class="hl kwd">unplace</span><span class="hl opt">(</span>p<span class="hl opt">);</span>
+                    first_empty_hint <span class="hl opt">=</span> saved_hint<span class="hl opt">;</span>
+                    <span class="hl kwa">return</span> <span class="hl opt">-</span><span class="hl num">1</span><span class="hl opt">;</span>
+                <span class="hl opt">}</span>
+
+                remaining<span class="hl opt">[</span>shape_idx<span class="hl opt">]++;</span>
+                total_remaining<span class="hl opt">++;</span>
+                <span class="hl kwd">unplace</span><span class="hl opt">(</span>p<span class="hl opt">);</span>
+                first_empty_hint <span class="hl opt">=</span> saved_hint<span class="hl opt">;</span>
+            <span class="hl opt">}</span>
+        <span class="hl opt">}</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl kwa">if</span> <span class="hl opt">(</span>slack_remaining <span class="hl opt">&gt;</span> <span class="hl num">0</span><span class="hl opt">) {</span>
+        grid<span class="hl opt">[</span>target_r<span class="hl opt">][</span>target_c<span class="hl opt">] =</span> <span class="hl num">2</span><span class="hl opt">;</span>
+        slack_remaining<span class="hl opt">--;</span>
+
+        <span class="hl kwb">int</span> result <span class="hl opt">=</span> <span class="hl kwd">backtrack</span><span class="hl opt">(</span>width<span class="hl opt">,</span> height<span class="hl opt">,</span> shapes_needed<span class="hl opt">,</span> shapes_needed_count<span class="hl opt">);</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(</span>result <span class="hl opt">==</span> <span class="hl num">1</span><span class="hl opt">)</span> <span class="hl kwa">return</span> <span class="hl num">1</span><span class="hl opt">;</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(</span>result <span class="hl opt">== -</span><span class="hl num">1</span><span class="hl opt">) {</span>
+            slack_remaining<span class="hl opt">++;</span>
+            grid<span class="hl opt">[</span>target_r<span class="hl opt">][</span>target_c<span class="hl opt">] =</span> <span class="hl num">0</span><span class="hl opt">;</span>
+            first_empty_hint <span class="hl opt">=</span> saved_hint<span class="hl opt">;</span>
+            <span class="hl kwa">return</span> <span class="hl opt">-</span><span class="hl num">1</span><span class="hl opt">;</span>
+        <span class="hl opt">}</span>
+
+        slack_remaining<span class="hl opt">++;</span>
+        grid<span class="hl opt">[</span>target_r<span class="hl opt">][</span>target_c<span class="hl opt">] =</span> <span class="hl num">0</span><span class="hl opt">;</span>
+        first_empty_hint <span class="hl opt">=</span> saved_hint<span class="hl opt">;</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl kwa">return</span> <span class="hl num">0</span><span class="hl opt">;</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">int</span> <span class="hl kwd">compare_by_placements</span><span class="hl opt">(</span><span class="hl kwb">const void</span> <span class="hl opt">*</span>a<span class="hl opt">,</span> <span class="hl kwb">const void</span> <span class="hl opt">*</span>b<span class="hl opt">) {</span>
+    <span class="hl kwb">int</span> ia <span class="hl opt">= *(</span><span class="hl kwb">const int</span> <span class="hl opt">*)</span>a<span class="hl opt">;</span>
+    <span class="hl kwb">int</span> ib <span class="hl opt">= *(</span><span class="hl kwb">const int</span> <span class="hl opt">*)</span>b<span class="hl opt">;</span>
+    <span class="hl kwa">return</span> placement_counts<span class="hl opt">[</span>ia<span class="hl opt">] -</span> placement_counts<span class="hl opt">[</span>ib<span class="hl opt">];</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">int</span> <span class="hl kwd">solve_region</span><span class="hl opt">(</span><span class="hl kwb">int</span> width<span class="hl opt">,</span> <span class="hl kwb">int</span> height<span class="hl opt">,</span> <span class="hl kwb">int</span> <span class="hl opt">*</span>shape_counts<span class="hl opt">,</span> <span class="hl kwb">int</span> shape_count_len<span class="hl opt">) {</span>
+    <span class="hl kwb">int</span> shapes_needed<span class="hl opt">[</span>MAX_SHAPES<span class="hl opt">];</span>
+    <span class="hl kwb">int</span> shapes_needed_count <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> shape_count_len<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(</span>shape_counts<span class="hl opt">[</span>i<span class="hl opt">] &gt;</span> <span class="hl num">0</span><span class="hl opt">) {</span>
+            shapes_needed<span class="hl opt">[</span>shapes_needed_count<span class="hl opt">++] =</span> i<span class="hl opt">;</span>
+        <span class="hl opt">}</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl kwa">if</span> <span class="hl opt">(</span>shapes_needed_count <span class="hl opt">==</span> <span class="hl num">0</span><span class="hl opt">)</span> <span class="hl kwa">return</span> <span class="hl num">1</span><span class="hl opt">;</span>
+
+    <span class="hl kwb">int</span> total_cells <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> shapes_needed_count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        <span class="hl kwb">int</span> idx <span class="hl opt">=</span> shapes_needed<span class="hl opt">[</span>i<span class="hl opt">];</span>
+        total_cells <span class="hl opt">+=</span> all_orientations<span class="hl opt">[</span>idx<span class="hl opt">].</span>orientations<span class="hl opt">[</span><span class="hl num">0</span><span class="hl opt">].</span>count <span class="hl opt">*</span> shape_counts<span class="hl opt">[</span>idx<span class="hl opt">];</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl kwb">int</span> region_area <span class="hl opt">=</span> width <span class="hl opt">*</span> height<span class="hl opt">;</span>
+    <span class="hl kwa">if</span> <span class="hl opt">(</span>total_cells <span class="hl opt">&gt;</span> region_area<span class="hl opt">)</span> <span class="hl kwa">return</span> <span class="hl num">0</span><span class="hl opt">;</span>
+
+    <span class="hl kwb">int</span> slack <span class="hl opt">=</span> region_area <span class="hl opt">-</span> total_cells<span class="hl opt">;</span>
+
+    <span class="hl slc">// Clear covering index for this region size</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> r <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> r <span class="hl opt">&lt;</span> height<span class="hl opt">;</span> r<span class="hl opt">++) {</span>
+        <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> c <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> c <span class="hl opt">&lt;</span> width<span class="hl opt">;</span> c<span class="hl opt">++) {</span>
+            <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> si <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> si <span class="hl opt">&lt;</span> shapes_needed_count<span class="hl opt">;</span> si<span class="hl opt">++) {</span>
+                covering_counts<span class="hl opt">[</span>r<span class="hl opt">][</span>c<span class="hl opt">][</span>shapes_needed<span class="hl opt">[</span>si<span class="hl opt">]] =</span> <span class="hl num">0</span><span class="hl opt">;</span>
+            <span class="hl opt">}</span>
+        <span class="hl opt">}</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl slc">// Build placements and covering index</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> shapes_needed_count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        <span class="hl kwb">int</span> shape_idx <span class="hl opt">=</span> shapes_needed<span class="hl opt">[</span>i<span class="hl opt">];</span>
+        placement_counts<span class="hl opt">[</span>shape_idx<span class="hl opt">] =</span> <span class="hl num">0</span><span class="hl opt">;</span>
+
+        ShapeOrientations <span class="hl opt">*</span>so <span class="hl opt">= &amp;</span>all_orientations<span class="hl opt">[</span>shape_idx<span class="hl opt">];</span>
+        <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> oi <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> oi <span class="hl opt">&lt;</span> so<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span> oi<span class="hl opt">++) {</span>
+            Shape <span class="hl opt">*</span>orient <span class="hl opt">= &amp;</span>so<span class="hl opt">-&gt;</span>orientations<span class="hl opt">[</span>oi<span class="hl opt">];</span>
+            <span class="hl kwb">int</span> max_r <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">,</span> max_c <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+            <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> ci <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> ci <span class="hl opt">&lt;</span> orient<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span> ci<span class="hl opt">++) {</span>
+                <span class="hl kwa">if</span> <span class="hl opt">(</span>orient<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>ci<span class="hl opt">].</span>r <span class="hl opt">&gt;</span> max_r<span class="hl opt">)</span> max_r <span class="hl opt">=</span> orient<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>ci<span class="hl opt">].</span>r<span class="hl opt">;</span>
+                <span class="hl kwa">if</span> <span class="hl opt">(</span>orient<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>ci<span class="hl opt">].</span>c <span class="hl opt">&gt;</span> max_c<span class="hl opt">)</span> max_c <span class="hl opt">=</span> orient<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>ci<span class="hl opt">].</span>c<span class="hl opt">;</span>
+            <span class="hl opt">}</span>
+
+            <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> row <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> row <span class="hl opt">&lt;</span> height <span class="hl opt">-</span> max_r<span class="hl opt">;</span> row<span class="hl opt">++) {</span>
+                <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> col <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> col <span class="hl opt">&lt;</span> width <span class="hl opt">-</span> max_c<span class="hl opt">;</span> col<span class="hl opt">++) {</span>
+                    <span class="hl kwa">if</span> <span class="hl opt">(</span>placement_counts<span class="hl opt">[</span>shape_idx<span class="hl opt">] &gt;=</span> MAX_PLACEMENTS<span class="hl opt">)</span> <span class="hl kwa">break</span><span class="hl opt">;</span>
+                    <span class="hl kwb">int</span> pi <span class="hl opt">=</span> placement_counts<span class="hl opt">[</span>shape_idx<span class="hl opt">]++;</span>
+                    Placement <span class="hl opt">*</span>p <span class="hl opt">= &amp;</span>all_placements<span class="hl opt">[</span>shape_idx<span class="hl opt">][</span>pi<span class="hl opt">];</span>
+                    p<span class="hl opt">-&gt;</span>cell_count <span class="hl opt">=</span> orient<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span>
+                    <span class="hl kwd">memcpy</span><span class="hl opt">(</span>p<span class="hl opt">-&gt;</span>cells<span class="hl opt">,</span> orient<span class="hl opt">-&gt;</span>cells<span class="hl opt">,</span> orient<span class="hl opt">-&gt;</span>count <span class="hl opt">*</span> <span class="hl kwa">sizeof</span><span class="hl opt">(</span>Coord<span class="hl opt">));</span>
+                    p<span class="hl opt">-&gt;</span>row <span class="hl opt">=</span> row<span class="hl opt">;</span>
+                    p<span class="hl opt">-&gt;</span>col <span class="hl opt">=</span> col<span class="hl opt">;</span>
+
+                    <span class="hl slc">// Add to covering index for each cell this placement covers</span>
+                    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> ci <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> ci <span class="hl opt">&lt;</span> orient<span class="hl opt">-&gt;</span>count<span class="hl opt">;</span> ci<span class="hl opt">++) {</span>
+                        <span class="hl kwb">int</span> cr <span class="hl opt">=</span> row <span class="hl opt">+</span> orient<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>ci<span class="hl opt">].</span>r<span class="hl opt">;</span>
+                        <span class="hl kwb">int</span> cc <span class="hl opt">=</span> col <span class="hl opt">+</span> orient<span class="hl opt">-&gt;</span>cells<span class="hl opt">[</span>ci<span class="hl opt">].</span>c<span class="hl opt">;</span>
+                        <span class="hl kwb">int</span> idx <span class="hl opt">=</span> covering_counts<span class="hl opt">[</span>cr<span class="hl opt">][</span>cc<span class="hl opt">][</span>shape_idx<span class="hl opt">]++;</span>
+                        <span class="hl kwa">if</span> <span class="hl opt">(</span>idx <span class="hl opt">&lt;</span> MAX_COVERING<span class="hl opt">) {</span>
+                            covering<span class="hl opt">[</span>cr<span class="hl opt">][</span>cc<span class="hl opt">][</span>shape_idx<span class="hl opt">][</span>idx<span class="hl opt">] =</span> pi<span class="hl opt">;</span>
+                        <span class="hl opt">}</span>
+                    <span class="hl opt">}</span>
+                <span class="hl opt">}</span>
+            <span class="hl opt">}</span>
+        <span class="hl opt">}</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl slc">// Sort shapes by placement count (fewer placements first = fail-first)</span>
+    <span class="hl kwd">qsort</span><span class="hl opt">(</span>shapes_needed<span class="hl opt">,</span> shapes_needed_count<span class="hl opt">,</span> <span class="hl kwa">sizeof</span><span class="hl opt">(</span><span class="hl kwb">int</span><span class="hl opt">),</span> compare_by_placements<span class="hl opt">);</span>
+
+    <span class="hl kwd">memset</span><span class="hl opt">(</span>grid<span class="hl opt">,</span> <span class="hl num">0</span><span class="hl opt">,</span> <span class="hl kwa">sizeof</span><span class="hl opt">(</span>grid<span class="hl opt">));</span>
+    total_remaining <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> shapes_needed_count<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        remaining<span class="hl opt">[</span>shapes_needed<span class="hl opt">[</span>i<span class="hl opt">]] =</span> shape_counts<span class="hl opt">[</span>shapes_needed<span class="hl opt">[</span>i<span class="hl opt">]];</span>
+        total_remaining <span class="hl opt">+=</span> shape_counts<span class="hl opt">[</span>shapes_needed<span class="hl opt">[</span>i<span class="hl opt">]];</span>
+    <span class="hl opt">}</span>
+    slack_remaining <span class="hl opt">=</span> slack<span class="hl opt">;</span>
+    iterations <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+    first_empty_hint <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+
+    <span class="hl kwa">return</span> <span class="hl kwd">backtrack</span><span class="hl opt">(</span>width<span class="hl opt">,</span> height<span class="hl opt">,</span> shapes_needed<span class="hl opt">,</span> shapes_needed_count<span class="hl opt">);</span>
+<span class="hl opt">}</span>
+
+<span class="hl kwb">int</span> <span class="hl kwd">main</span><span class="hl opt">(</span><span class="hl kwb">void</span><span class="hl opt">) {</span>
+    <span class="hl kwd">parse_input</span><span class="hl opt">(</span><span class="hl sng">&quot;../input/12.txt&quot;</span><span class="hl opt">);</span>
+    <span class="hl kwd">printf</span><span class="hl opt">(</span><span class="hl sng">&quot;Parsed</span> <span class="hl ipl">%d</span> <span class="hl sng">shapes and</span> <span class="hl ipl">%d</span> <span class="hl sng">regions</span><span class="hl esc">\n</span><span class="hl sng">&quot;</span><span class="hl opt">,</span> num_shapes<span class="hl opt">,</span> num_regions<span class="hl opt">);</span>
+    <span class="hl kwd">fflush</span><span class="hl opt">(</span>stdout<span class="hl opt">);</span>
+
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> num_shapes<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        <span class="hl kwd">get_all_orientations</span><span class="hl opt">(</span>i<span class="hl opt">);</span>
+        <span class="hl kwd">printf</span><span class="hl opt">(</span><span class="hl sng">&quot;Shape</span> <span class="hl ipl">%d</span><span class="hl sng">:</span> <span class="hl ipl">%d</span> <span class="hl sng">cells,</span> <span class="hl ipl">%d</span> <span class="hl sng">orientations</span><span class="hl esc">\n</span><span class="hl sng">&quot;</span><span class="hl opt">,</span>
+               i<span class="hl opt">,</span> shapes<span class="hl opt">[</span>i<span class="hl opt">].</span>count<span class="hl opt">,</span> all_orientations<span class="hl opt">[</span>i<span class="hl opt">].</span>count<span class="hl opt">);</span>
+        <span class="hl kwd">fflush</span><span class="hl opt">(</span>stdout<span class="hl opt">);</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl kwb">int</span> count <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+    <span class="hl kwb">int</span> unknown <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span>
+
+    <span class="hl kwa">for</span> <span class="hl opt">(</span><span class="hl kwb">int</span> i <span class="hl opt">=</span> <span class="hl num">0</span><span class="hl opt">;</span> i <span class="hl opt">&lt;</span> num_regions<span class="hl opt">;</span> i<span class="hl opt">++) {</span>
+        Region <span class="hl opt">*</span>reg <span class="hl opt">= &amp;</span>regions<span class="hl opt">[</span>i<span class="hl opt">];</span>
+        <span class="hl kwb">int</span> result <span class="hl opt">=</span> <span class="hl kwd">solve_region</span><span class="hl opt">(</span>reg<span class="hl opt">-&gt;</span>width<span class="hl opt">,</span> reg<span class="hl opt">-&gt;</span>height<span class="hl opt">,</span>
+                                  reg<span class="hl opt">-&gt;</span>shape_counts<span class="hl opt">,</span> reg<span class="hl opt">-&gt;</span>shape_count<span class="hl opt">);</span>
+        <span class="hl kwa">if</span> <span class="hl opt">(</span>result <span class="hl opt">==</span> <span class="hl num">1</span><span class="hl opt">) {</span>
+            count<span class="hl opt">++;</span>
+        <span class="hl opt">}</span> <span class="hl kwa">else if</span> <span class="hl opt">(</span>result <span class="hl opt">== -</span><span class="hl num">1</span><span class="hl opt">) {</span>
+            unknown<span class="hl opt">++;</span>
+        <span class="hl opt">}</span>
+
+        <span class="hl kwa">if</span> <span class="hl opt">((</span>i <span class="hl opt">+</span> <span class="hl num">1</span><span class="hl opt">) %</span> <span class="hl num">50</span> <span class="hl opt">==</span> <span class="hl num">0</span><span class="hl opt">) {</span>
+            <span class="hl kwd">printf</span><span class="hl opt">(</span><span class="hl sng">&quot;Processed</span> <span class="hl ipl">%d</span><span class="hl sng">/</span><span class="hl ipl">%d</span><span class="hl sng">:</span> <span class="hl ipl">%d</span> <span class="hl sng">yes,</span> <span class="hl ipl">%d</span> <span class="hl sng">unknown,</span> <span class="hl ipl">%d</span> <span class="hl sng">no</span><span class="hl esc">\n</span><span class="hl sng">&quot;</span><span class="hl opt">,</span>
+                   i <span class="hl opt">+</span> <span class="hl num">1</span><span class="hl opt">,</span> num_regions<span class="hl opt">,</span> count<span class="hl opt">,</span> unknown<span class="hl opt">,</span> i <span class="hl opt">+</span> <span class="hl num">1</span> <span class="hl opt">-</span> count <span class="hl opt">-</span> unknown<span class="hl opt">);</span>
+            <span class="hl kwd">fflush</span><span class="hl opt">(</span>stdout<span class="hl opt">);</span>
+        <span class="hl opt">}</span>
+    <span class="hl opt">}</span>
+
+    <span class="hl kwd">printf</span><span class="hl opt">(</span><span class="hl sng">&quot;</span><span class="hl esc">\n</span><span class="hl sng">Results:</span> <span class="hl ipl">%d</span> <span class="hl sng">yes,</span> <span class="hl ipl">%d</span> <span class="hl sng">unknown,</span> <span class="hl ipl">%d</span> <span class="hl sng">no</span><span class="hl esc">\n</span><span class="hl sng">&quot;</span><span class="hl opt">,</span>
+           count<span class="hl opt">,</span> unknown<span class="hl opt">,</span> num_regions <span class="hl opt">-</span> count <span class="hl opt">-</span> unknown<span class="hl opt">);</span>
+    <span class="hl kwd">printf</span><span class="hl opt">(</span><span class="hl sng">&quot;Part 1:</span> <span class="hl ipl">%d</span><span class="hl sng"></span><span class="hl esc">\n</span><span class="hl sng">&quot;</span><span class="hl opt">,</span> count<span class="hl opt">);</span>
+    <span class="hl kwd">fflush</span><span class="hl opt">(</span>stdout<span class="hl opt">);</span>
+
+    <span class="hl kwa">return</span> <span class="hl num">0</span><span class="hl opt">;</span>
+<span class="hl opt">}</span>
+</pre>
+</body>
+</html>
+<!--HTML generated by highlight 4.10, http://www.andre-simon.de/-->

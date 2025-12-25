@@ -3,16 +3,15 @@
 #include <string.h>
 #include <stdbool.h>
 #include <sys/stat.h>
-#include <omp.h>
 
 #define MAX_SHAPES 20
 #define MAX_CELLS 50
-#define MAX_SHAPE_CELLS 8  // Actual shapes have 5-7 cells
+#define MAX_SHAPE_CELLS 8
 #define MAX_ORIENTATIONS 8
 #define MAX_REGIONS 1000
 #define MAX_PLACEMENTS 5000
-#define MAX_WIDTH 50
-#define MAX_HEIGHT 50
+#define MAX_WIDTH 100
+#define MAX_HEIGHT 100
 #define MAX_ITERATIONS 3000000
 
 typedef struct {
@@ -237,12 +236,11 @@ void parse_input(const char *filename) {
     fclose(f);
 }
 
-// Per-thread state structure
-// Grid encoding: 0 = empty, otherwise (piece_id << 8) | (shape_id + 1)
-// piece_id is unique per placed piece, shape_id determines color
+// Grid encoding
 #define GRID_SHAPE(cell) (((cell) & 0xFF) - 1)
 #define GRID_PIECE(cell) ((cell) >> 8)
 #define MAKE_GRID_VAL(piece_id, shape_id) (((piece_id) << 8) | ((shape_id) + 1))
+#define SLACK_SHAPE_ID 99
 
 typedef struct {
     int grid[MAX_HEIGHT][MAX_WIDTH];
@@ -255,59 +253,71 @@ typedef struct {
     int first_empty_hint;
     int covering[MAX_HEIGHT][MAX_WIDTH][MAX_SHAPES][100];
     int covering_counts[MAX_HEIGHT][MAX_WIDTH][MAX_SHAPES];
-    int next_piece_id;  // Counter for unique piece IDs
+    int next_piece_id;
 } ThreadState;
 
-#define MAX_THREADS 16
 #define MAX_COVERING 100
-static ThreadState thread_states[MAX_THREADS];
+static ThreadState ts;
 
-bool can_place(ThreadState *ts, Placement *p) {
+bool can_place(Placement *p) {
     for (int i = 0; i < p->cell_count; i++) {
-        if (ts->grid[p->row + p->cells[i].r][p->col + p->cells[i].c] != 0) return false;
+        if (ts.grid[p->row + p->cells[i].r][p->col + p->cells[i].c] != 0) return false;
     }
     return true;
 }
 
-// Shape ID for slack cells (used in GRID_SHAPE)
-#define SLACK_SHAPE_ID 99
-
-void place(ThreadState *ts, Placement *p, int shape_id) {
-    int piece_id = ts->next_piece_id++;
+void place(Placement *p, int shape_id) {
+    int piece_id = ts.next_piece_id++;
     for (int i = 0; i < p->cell_count; i++) {
-        ts->grid[p->row + p->cells[i].r][p->col + p->cells[i].c] = MAKE_GRID_VAL(piece_id, shape_id);
+        ts.grid[p->row + p->cells[i].r][p->col + p->cells[i].c] = MAKE_GRID_VAL(piece_id, shape_id);
     }
 }
 
-void unplace(ThreadState *ts, Placement *p) {
+void unplace(Placement *p) {
     for (int i = 0; i < p->cell_count; i++) {
-        ts->grid[p->row + p->cells[i].r][p->col + p->cells[i].c] = 0;
+        ts.grid[p->row + p->cells[i].r][p->col + p->cells[i].c] = 0;
     }
 }
 
 // Nord color palette
 static const unsigned char shape_colors[][3] = {
-    {191, 97, 106},   // Shape 0: Nord Red    (#BF616A)
-    {208, 135, 112},  // Shape 1: Nord Orange (#D08770)
-    {235, 203, 139},  // Shape 2: Nord Yellow (#EBCB8B)
-    {163, 190, 140},  // Shape 3: Nord Green  (#A3BE8C)
-    {136, 192, 208},  // Shape 4: Nord Cyan   (#88C0D0)
-    {180, 142, 173},  // Shape 5: Nord Purple (#B48EAD)
+    {191, 97, 106},   // Shape 0: Nord Red
+    {208, 135, 112},  // Shape 1: Nord Orange
+    {235, 203, 139},  // Shape 2: Nord Yellow
+    {163, 190, 140},  // Shape 3: Nord Green
+    {136, 192, 208},  // Shape 4: Nord Cyan
+    {180, 142, 173},  // Shape 5: Nord Purple
 };
-static const unsigned char slack_color[3] = {76, 86, 106};    // Nord Gray (#4C566A)
-static const unsigned char empty_color[3] = {236, 239, 244};  // Nord Snow (#ECEFF4)
-static const unsigned char border_color[3] = {46, 52, 64};    // Nord Dark (#2E3440)
+static const unsigned char empty_color[3] = {236, 239, 244};
+static const unsigned char border_color[3] = {46, 52, 64};
 
-#define DRAW_BORDERS 0
 #define CELL_SIZE 20
-#define BORDER_WIDTH 1
 
-void save_solution_ppm(ThreadState *ts, int width, int height, int region_idx) {
-    char filename[256];
-    snprintf(filename, sizeof(filename), "imgs/region_%04d.ppm", region_idx);
+// Compute actual bounding box of placed pieces (excluding slack/empty)
+void get_actual_bounds(int width, int height, int *out_min_r, int *out_max_r, int *out_min_c, int *out_max_c) {
+    int min_r = height, max_r = -1, min_c = width, max_c = -1;
+    for (int r = 0; r < height; r++) {
+        for (int c = 0; c < width; c++) {
+            int cell = ts.grid[r][c];
+            if (cell != 0 && GRID_SHAPE(cell) != SLACK_SHAPE_ID) {
+                if (r < min_r) min_r = r;
+                if (r > max_r) max_r = r;
+                if (c < min_c) min_c = c;
+                if (c > max_c) max_c = c;
+            }
+        }
+    }
+    *out_min_r = min_r;
+    *out_max_r = max_r;
+    *out_min_c = min_c;
+    *out_max_c = max_c;
+}
 
-    int img_w = width * CELL_SIZE;
-    int img_h = height * CELL_SIZE;
+void save_solution_ppm_bounds(int min_r, int max_r, int min_c, int max_c, const char *filename) {
+    int actual_w = max_c - min_c + 1;
+    int actual_h = max_r - min_r + 1;
+    int img_w = actual_w * CELL_SIZE;
+    int img_h = actual_h * CELL_SIZE;
 
     FILE *f = fopen(filename, "wb");
     if (!f) return;
@@ -316,49 +326,43 @@ void save_solution_ppm(ThreadState *ts, int width, int height, int region_idx) {
 
     for (int py = 0; py < img_h; py++) {
         for (int px = 0; px < img_w; px++) {
-            int cell_r = py / CELL_SIZE;
-            int cell_c = px / CELL_SIZE;
+            int local_cell_r = py / CELL_SIZE;
+            int local_cell_c = px / CELL_SIZE;
+            int cell_r = min_r + local_cell_r;
+            int cell_c = min_c + local_cell_c;
             int local_y = py % CELL_SIZE;
             int local_x = px % CELL_SIZE;
 
-            int cell = ts->grid[cell_r][cell_c];
+            int cell = ts.grid[cell_r][cell_c];
             const unsigned char *color;
 
-            // Check for shape outline (1px border where pieces meet different cells)
-            // Draw border on left/top edges only to avoid double-width borders
             int shape_id = (cell == 0) ? -1 : GRID_SHAPE(cell);
             bool is_shape = (cell != 0 && shape_id != SLACK_SHAPE_ID);
             bool is_outline = false;
 
-            // Get adjacent cells (treat out-of-bounds as empty)
-            int left_cell = (cell_c > 0) ? ts->grid[cell_r][cell_c - 1] : 0;
-            int top_cell = (cell_r > 0) ? ts->grid[cell_r - 1][cell_c] : 0;
+            int left_cell = (cell_c > min_c) ? ts.grid[cell_r][cell_c - 1] : 0;
+            int top_cell = (cell_r > min_r) ? ts.grid[cell_r - 1][cell_c] : 0;
             int left_shape = (left_cell == 0) ? -1 : GRID_SHAPE(left_cell);
             int top_shape = (top_cell == 0) ? -1 : GRID_SHAPE(top_cell);
             bool left_is_shape = (left_cell != 0 && left_shape != SLACK_SHAPE_ID);
             bool top_is_shape = (top_cell != 0 && top_shape != SLACK_SHAPE_ID);
 
-            // Draw border on left edge if either side is a shape and they differ
             if (local_x == 0 && (is_shape || left_is_shape) && cell != left_cell) {
                 is_outline = true;
             }
-            // Draw border on top edge if either side is a shape and they differ
             if (local_y == 0 && (is_shape || top_is_shape) && cell != top_cell) {
                 is_outline = true;
             }
-            // Draw border on right edge at region boundary (only if this is a shape)
-            if (local_x == CELL_SIZE - 1 && cell_c == width - 1 && is_shape) {
+            if (local_x == CELL_SIZE - 1 && local_cell_c == actual_w - 1 && is_shape) {
                 is_outline = true;
             }
-            // Draw border on bottom edge at region boundary (only if this is a shape)
-            if (local_y == CELL_SIZE - 1 && cell_r == height - 1 && is_shape) {
+            if (local_y == CELL_SIZE - 1 && local_cell_r == actual_h - 1 && is_shape) {
                 is_outline = true;
             }
 
             if (is_outline) {
                 color = border_color;
             } else if (!is_shape) {
-                // Empty or slack - same color
                 color = empty_color;
             } else if (shape_id < 6) {
                 color = shape_colors[shape_id];
@@ -375,16 +379,16 @@ void save_solution_ppm(ThreadState *ts, int width, int height, int region_idx) {
     fclose(f);
 }
 
-bool find_first_empty(ThreadState *ts, int width, int height, int *out_r, int *out_c) {
-    int start_r = ts->first_empty_hint / width;
-    int start_c = ts->first_empty_hint % width;
+bool find_first_empty(int width, int height, int *out_r, int *out_c) {
+    int start_r = ts.first_empty_hint / width;
+    int start_c = ts.first_empty_hint % width;
 
     for (int r = start_r; r < height; r++) {
         for (int c = (r == start_r ? start_c : 0); c < width; c++) {
-            if (ts->grid[r][c] == 0) {
+            if (ts.grid[r][c] == 0) {
                 *out_r = r;
                 *out_c = c;
-                ts->first_empty_hint = r * width + c;
+                ts.first_empty_hint = r * width + c;
                 return true;
             }
         }
@@ -392,75 +396,75 @@ bool find_first_empty(ThreadState *ts, int width, int height, int *out_r, int *o
     return false;
 }
 
-int backtrack(ThreadState *ts, int width, int height, int *shapes_needed, int shapes_needed_count) {
-    ts->iterations++;
-    if (ts->iterations > MAX_ITERATIONS) return -1;
+int backtrack(int width, int height, int *shapes_needed, int shapes_needed_count) {
+    ts.iterations++;
+    if (ts.iterations > MAX_ITERATIONS) return -1;
 
-    if (ts->total_remaining == 0) return 1;
+    if (ts.total_remaining == 0) return 1;
 
     int target_r, target_c;
-    if (!find_first_empty(ts, width, height, &target_r, &target_c)) {
-        return (ts->total_remaining == 0) ? 1 : 0;
+    if (!find_first_empty(width, height, &target_r, &target_c)) {
+        return (ts.total_remaining == 0) ? 1 : 0;
     }
 
-    int saved_hint = ts->first_empty_hint;
+    int saved_hint = ts.first_empty_hint;
 
-    // Use precomputed index of placements covering this cell
     for (int si = 0; si < shapes_needed_count; si++) {
         int shape_idx = shapes_needed[si];
-        if (ts->remaining[shape_idx] == 0) continue;
+        if (ts.remaining[shape_idx] == 0) continue;
 
-        int num_covering = ts->covering_counts[target_r][target_c][shape_idx];
+        int num_covering = ts.covering_counts[target_r][target_c][shape_idx];
         for (int ci = 0; ci < num_covering; ci++) {
-            int pi = ts->covering[target_r][target_c][shape_idx][ci];
-            Placement *p = &ts->all_placements[shape_idx][pi];
+            int pi = ts.covering[target_r][target_c][shape_idx][ci];
+            Placement *p = &ts.all_placements[shape_idx][pi];
 
-            if (can_place(ts, p)) {
-                place(ts, p, shape_idx);
-                ts->remaining[shape_idx]--;
-                ts->total_remaining--;
+            if (can_place(p)) {
+                place(p, shape_idx);
+                ts.remaining[shape_idx]--;
+                ts.total_remaining--;
 
-                int result = backtrack(ts, width, height, shapes_needed, shapes_needed_count);
+                int result = backtrack(width, height, shapes_needed, shapes_needed_count);
                 if (result == 1) return 1;
                 if (result == -1) {
-                    ts->remaining[shape_idx]++;
-                    ts->total_remaining++;
-                    unplace(ts, p);
-                    ts->first_empty_hint = saved_hint;
+                    ts.remaining[shape_idx]++;
+                    ts.total_remaining++;
+                    unplace(p);
+                    ts.first_empty_hint = saved_hint;
                     return -1;
                 }
 
-                ts->remaining[shape_idx]++;
-                ts->total_remaining++;
-                unplace(ts, p);
-                ts->first_empty_hint = saved_hint;
+                ts.remaining[shape_idx]++;
+                ts.total_remaining++;
+                unplace(p);
+                ts.first_empty_hint = saved_hint;
             }
         }
     }
 
-    if (ts->slack_remaining > 0) {
-        int slack_piece_id = ts->next_piece_id++;
-        ts->grid[target_r][target_c] = MAKE_GRID_VAL(slack_piece_id, SLACK_SHAPE_ID);
-        ts->slack_remaining--;
+    // Allow slack if available
+    if (ts.slack_remaining > 0) {
+        int slack_piece_id = ts.next_piece_id++;
+        ts.grid[target_r][target_c] = MAKE_GRID_VAL(slack_piece_id, SLACK_SHAPE_ID);
+        ts.slack_remaining--;
 
-        int result = backtrack(ts, width, height, shapes_needed, shapes_needed_count);
+        int result = backtrack(width, height, shapes_needed, shapes_needed_count);
         if (result == 1) return 1;
         if (result == -1) {
-            ts->slack_remaining++;
-            ts->grid[target_r][target_c] = 0;
-            ts->first_empty_hint = saved_hint;
+            ts.slack_remaining++;
+            ts.grid[target_r][target_c] = 0;
+            ts.first_empty_hint = saved_hint;
             return -1;
         }
 
-        ts->slack_remaining++;
-        ts->grid[target_r][target_c] = 0;
-        ts->first_empty_hint = saved_hint;
+        ts.slack_remaining++;
+        ts.grid[target_r][target_c] = 0;
+        ts.first_empty_hint = saved_hint;
     }
 
     return 0;
 }
 
-int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int shape_count_len) {
+int solve_region_with_slack(int width, int height, int *shape_counts, int shape_count_len, int allowed_slack) {
     int shapes_needed[MAX_SHAPES];
     int shapes_needed_count = 0;
 
@@ -479,15 +483,14 @@ int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int 
     }
 
     int region_area = width * height;
-    if (total_cells > region_area) return 0;
-
     int slack = region_area - total_cells;
+    if (slack < 0 || slack > allowed_slack) return 0;
 
-    // Clear covering index for this region size
+    // Clear covering index
     for (int r = 0; r < height; r++) {
         for (int c = 0; c < width; c++) {
             for (int si = 0; si < shapes_needed_count; si++) {
-                ts->covering_counts[r][c][shapes_needed[si]] = 0;
+                ts.covering_counts[r][c][shapes_needed[si]] = 0;
             }
         }
     }
@@ -495,7 +498,7 @@ int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int 
     // Build placements and covering index
     for (int i = 0; i < shapes_needed_count; i++) {
         int shape_idx = shapes_needed[i];
-        ts->placement_counts[shape_idx] = 0;
+        ts.placement_counts[shape_idx] = 0;
 
         ShapeOrientations *so = &all_orientations[shape_idx];
         for (int oi = 0; oi < so->count; oi++) {
@@ -506,23 +509,22 @@ int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int 
                 if (orient->cells[ci].c > max_c) max_c = orient->cells[ci].c;
             }
 
-            for (int row = 0; row < height - max_r; row++) {
-                for (int col = 0; col < width - max_c; col++) {
-                    if (ts->placement_counts[shape_idx] >= MAX_PLACEMENTS) break;
-                    int pi = ts->placement_counts[shape_idx]++;
-                    Placement *p = &ts->all_placements[shape_idx][pi];
+            for (int row = 0; row <= height - max_r - 1; row++) {
+                for (int col = 0; col <= width - max_c - 1; col++) {
+                    if (ts.placement_counts[shape_idx] >= MAX_PLACEMENTS) break;
+                    int pi = ts.placement_counts[shape_idx]++;
+                    Placement *p = &ts.all_placements[shape_idx][pi];
                     p->cell_count = orient->count;
                     memcpy(p->cells, orient->cells, orient->count * sizeof(Coord));
                     p->row = row;
                     p->col = col;
 
-                    // Add to covering index for each cell this placement covers
                     for (int ci = 0; ci < orient->count; ci++) {
                         int cr = row + orient->cells[ci].r;
                         int cc = col + orient->cells[ci].c;
-                        int idx = ts->covering_counts[cr][cc][shape_idx]++;
+                        int idx = ts.covering_counts[cr][cc][shape_idx]++;
                         if (idx < MAX_COVERING) {
-                            ts->covering[cr][cc][shape_idx][idx] = pi;
+                            ts.covering[cr][cc][shape_idx][idx] = pi;
                         }
                     }
                 }
@@ -530,11 +532,10 @@ int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int 
         }
     }
 
-    // Sort shapes by placement count (fewer placements first = fail-first)
-    // Note: using thread-local placement_counts for comparison
+    // Sort shapes by placement count
     for (int i = 0; i < shapes_needed_count - 1; i++) {
         for (int j = i + 1; j < shapes_needed_count; j++) {
-            if (ts->placement_counts[shapes_needed[j]] < ts->placement_counts[shapes_needed[i]]) {
+            if (ts.placement_counts[shapes_needed[j]] < ts.placement_counts[shapes_needed[i]]) {
                 int tmp = shapes_needed[i];
                 shapes_needed[i] = shapes_needed[j];
                 shapes_needed[j] = tmp;
@@ -542,65 +543,115 @@ int solve_region(ThreadState *ts, int width, int height, int *shape_counts, int 
         }
     }
 
-    memset(ts->grid, 0, sizeof(ts->grid));
-    ts->next_piece_id = 1;  // Reset piece counter for each region
-    ts->total_remaining = 0;
+    memset(ts.grid, 0, sizeof(ts.grid));
+    ts.next_piece_id = 1;
+    ts.total_remaining = 0;
     for (int i = 0; i < shapes_needed_count; i++) {
-        ts->remaining[shapes_needed[i]] = shape_counts[shapes_needed[i]];
-        ts->total_remaining += shape_counts[shapes_needed[i]];
+        ts.remaining[shapes_needed[i]] = shape_counts[shapes_needed[i]];
+        ts.total_remaining += shape_counts[shapes_needed[i]];
     }
-    ts->slack_remaining = slack;
-    ts->iterations = 0;
-    ts->first_empty_hint = 0;
+    ts.slack_remaining = slack;
+    ts.iterations = 0;
+    ts.first_empty_hint = 0;
 
-    return backtrack(ts, width, height, shapes_needed, shapes_needed_count);
+    return backtrack(width, height, shapes_needed, shapes_needed_count);
 }
 
-int solve_region_and_save(ThreadState *ts, int width, int height, int *shape_counts,
-                          int shape_count_len, int region_idx) {
-    int result = solve_region(ts, width, height, shape_counts, shape_count_len);
-    if (result == 1) {
-        save_solution_ppm(ts, width, height, region_idx);
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        printf("Usage: %s <region_idx> [max_slack]\n", argv[0]);
+        printf("Finds minimum bounding box for a region's pieces.\n");
+        printf("  max_slack: maximum extra cells allowed (default 0)\n");
+        return 1;
     }
-    return result;
-}
 
-int main(void) {
+    int region_idx = atoi(argv[1]);
+    int max_slack = (argc >= 3) ? atoi(argv[2]) : 0;
+
     parse_input("../input/12.txt");
-    printf("Parsed %d shapes and %d regions\n", num_shapes, num_regions);
-    fflush(stdout);
-
     for (int i = 0; i < num_shapes; i++) {
         get_all_orientations(i);
-        printf("Shape %d: %d cells, %d orientations\n",
-               i, shapes[i].count, all_orientations[i].count);
-        fflush(stdout);
     }
 
-    // Create imgs directory
+    if (region_idx < 0 || region_idx >= num_regions) {
+        printf("Invalid region index. Valid range: 0-%d\n", num_regions - 1);
+        return 1;
+    }
+
+    Region *reg = &regions[region_idx];
+
+    // Calculate exact area needed
+    int total_cells = 0;
+    for (int i = 0; i < reg->shape_count; i++) {
+        total_cells += all_orientations[i].orientations[0].count * reg->shape_counts[i];
+    }
+
+    int original_area = reg->width * reg->height;
+
+    printf("Region %d:\n", region_idx);
+    printf("  Original: %dx%d = %d cells\n", reg->width, reg->height, original_area);
+    printf("  Pieces need: %d cells (minimum possible)\n", total_cells);
+    printf("  Shape counts:");
+    for (int i = 0; i < reg->shape_count; i++) {
+        if (reg->shape_counts[i] > 0) {
+            printf(" [%d]x%d", i, reg->shape_counts[i]);
+        }
+    }
+    printf("\n\n");
+
     mkdir("imgs", 0755);
 
-    int count = 0;
-    int unknown = 0;
+    // Search from smallest possible area upward until we find something
+    printf("Searching for tightest fit...\n");
+    for (int area = total_cells; area < original_area; area++) {
+        // Try all width/height combinations for this area
+        for (int w = 1; w <= area; w++) {
+            if (area % w != 0) continue;
+            int h = area / w;
 
-    #pragma omp parallel for reduction(+:count,unknown) schedule(dynamic)
-    for (int i = 0; i < num_regions; i++) {
-        int tid = omp_get_thread_num();
-        ThreadState *ts = &thread_states[tid];
-        Region *reg = &regions[i];
-        int result = solve_region_and_save(ts, reg->width, reg->height,
-                                           reg->shape_counts, reg->shape_count, i);
-        if (result == 1) {
-            count++;
-        } else if (result == -1) {
-            unknown++;
+            if (w > MAX_WIDTH || h > MAX_HEIGHT) continue;
+
+            // Skip very narrow shapes (min dimension < 5 for large areas)
+            if (area > 100 && (w < 5 || h < 5)) continue;
+
+            int slack = area - total_cells;
+            int result = solve_region_with_slack(w, h, reg->shape_counts, reg->shape_count, slack);
+            if (result == 1) {
+                // Compute actual tight bounding box
+                int min_r, max_r, min_c, max_c;
+                get_actual_bounds(w, h, &min_r, &max_r, &min_c, &max_c);
+                int actual_w = max_c - min_c + 1;
+                int actual_h = max_r - min_r + 1;
+                int actual_area = actual_w * actual_h;
+
+                printf("\nFound solution at %dx%d (slack %d)\n", w, h, slack);
+                printf("  Actual tight bounds: %dx%d = %d cells\n", actual_w, actual_h, actual_area);
+                printf("  Reduction: %d -> %d (%.1f%% of original)\n",
+                       original_area, actual_area, 100.0 * actual_area / original_area);
+
+                char filename[256];
+                snprintf(filename, sizeof(filename), "imgs/shrink_%04d_%dx%d.ppm", region_idx, actual_w, actual_h);
+                save_solution_ppm_bounds(min_r, max_r, min_c, max_c, filename);
+
+                char cmd[512];
+                snprintf(cmd, sizeof(cmd), "convert %s %.*s.png 2>/dev/null", filename, (int)(strlen(filename)-4), filename);
+                if (system(cmd) == 0) {
+                    remove(filename);
+                    printf("  Saved: %.*s.png\n", (int)(strlen(filename)-4), filename);
+                } else {
+                    printf("  Saved: %s\n", filename);
+                }
+                return 0;
+            } else if (result == -1) {
+                // Timeout - skip this dimension
+            }
+        }
+        // Progress indicator
+        if ((area - total_cells) % 50 == 0 && area > total_cells) {
+            printf("  Checked up to area %d (slack %d)...\n", area, area - total_cells);
         }
     }
 
-    printf("\nResults: %d yes, %d unknown, %d no\n",
-           count, unknown, num_regions - count - unknown);
-    printf("Part 1: %d\n", count);
-    fflush(stdout);
-
+    printf("No tighter fit found - original is already optimal or too constrained\n");
     return 0;
 }

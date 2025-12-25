@@ -55,8 +55,8 @@
 (test (part-2 data) 173229689350551)
 
 (defn main [&]
-
   (def ans1 (part-1 data))
   (print "Answer1: " ans1)
   (def ans2 (part-2 data))
   (print "Answer2: " ans2))
+
