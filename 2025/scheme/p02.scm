@@ -24,18 +24,16 @@
 (define (inc x) (+ x 1))
 (define (dec x) (- x 1))
 
-(define (invalid-ids segment)
+(define (invalid-sum segment)
   (let ((lo (car segment))
         (hi (cadr segment)))
-    (define (iter cur ids)
-      (if (> cur hi) ids
-          (iter (inc cur)
-                (if (invalid? cur) (cons cur ids) ids))))
-    (iter lo '())))
+    (define (iter cur acc)
+      (if (> cur hi) acc
+          (iter (inc cur) (if (invalid? cur) (+ acc cur) acc))))
+    (iter lo 0)))
 
 (define (invalid-id-total data)
-  (apply + (map (lambda (segment) (apply + (invalid-ids segment)))
-                data)))
+  (apply + (map invalid-sum data)))
 
 
 (test (invalid-id-total test-data) 1227775554)
@@ -63,7 +61,7 @@
           (or (and (zero? (modulo n x))
                    (repeated? s x))
               (iter (dec x)))))
-    (iter (dec n))))
+    (iter (floor (/ n 2)))))
 
 (test (invalid-id-total test-data) 4174379265)
 
