@@ -1,7 +1,7 @@
 ;; # Advent of Code 2025 - Day 2
 
 (ns p02
-  (:require [clojure.test :as test] 
+  (:require [clojure.test :as test]
             [clojure.string :as str]))
 
 (def data-string (slurp "../input/02.txt"))
@@ -10,7 +10,7 @@
 824824821-824824827,2121212118-2121212124")
 
 (defn process [s]
- (map
+  (map
    (fn [row] (map parse-long (str/split (str/trim row) #"-")))
    (str/split s #",")))
 
@@ -20,13 +20,13 @@
 (defn repeats-block? [s x]
   (let [l (count s)]
     (and (zero? (mod l x))
-      (= s (apply str (repeat (/ l x) (subs s 0 x)))))))
+         (= s (apply str (repeat (/ l x) (subs s 0 x)))))))
 
 (defn invalid? [n]
   (let [s (str n)
         l (count s)]
-   (and (even? l)
-        (repeats-block? s (quot l 2)))))
+    (and (even? l)
+         (repeats-block? s (quot l 2)))))
 
 (defn solve [pred data]
   (->> data
@@ -41,12 +41,12 @@
 
 (def ans-1 (part-1 data))
 
+;; ## Part 2
 
 (defn invalid?-2 [n]
   (let [s (str n)]
-    (some (partial repeats-block? s) 
+    (some (partial repeats-block? s)
           (range 1 (inc (quot (count s) 2))))))
-    
 
 (def part-2 (partial solve invalid?-2))
 
