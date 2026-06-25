@@ -18,7 +18,7 @@ L82")
 (defn process [s]
   (map
     (fn [row] [(keyword (subs row 0 1))
-               (Integer/parseInt (subs row 1))])
+               (parse-long (subs row 1))])
     (str/split s #"\n")))
 
 (def data (process data-string))
@@ -38,19 +38,12 @@ L82")
 
 ;; ## Part 2
 
-(defn step-with-zeros [[loc zeros] [dir amt]]
-  (let [op (if (= dir :L) - +)]
-   (loop [zeros zeros
-          loc loc
-          amt amt]
-     (if (< amt 0) [loc zeros]
-       (recur (if (zero? loc) (inc zeros) zeros)
-              (mod (op loc 1) 100)
-              (dec amt))))))
-
 
 (defn part-2 [data]
-  (second (reduce step-with-zeros [50 0] data)))
+ (part-1 
+   (mapcat 
+     (fn [[dir amt]] (repeat amt [dir 1])) 
+     data)))
 
 (test/deftest test-part-1
   (test/is (= 6 (part-2 test-data))))
