@@ -17,22 +17,24 @@
 (def test-data (process test-string))
 (def data (process data-string))
 
-(str 123)
+(defn repeats-block? [s x]
+  (let [l (count s)]
+    (and (zero? (mod l x))
+      (= s (apply str (repeat (/ l x) (subs s 0 x)))))))
 
 (defn invalid? [n]
   (let [s (str n)
         l (count s)]
    (and (even? l)
-        (= s (apply str (repeat 2 (subs s 0 (/ l 2))))))))
+        (repeats-block? s (quot l 2)))))
 
-(defn part-1 [data]
-  (reduce + (filter invalid? (mapcat (fn [[lo hi]] (range lo (inc hi))) data))))
-
-(defn part-1 [data]
+(defn solve [pred data]
   (->> data
        (mapcat (fn [[lo hi]] (range lo (inc hi))))
-       (filter invalid?)
+       (filter pred)
        (reduce +)))
+
+(def part-1 (partial solve invalid?))
 
 (test/deftest test-part-1
   (test/is (= 1227775554 (part-1 test-data))))
@@ -40,27 +42,22 @@
 (def ans-1 (part-1 data))
 
 
-(defn invalid? 
-  ([n] 
-   (invalid? n (quot (count (str n)) 2)))
-  ([n x]
-   (if (zero? x) false
-       (let [s (str n)
-             l (count s)]
-         (or
-           (and (zero? (mod l x))
-             (= s (apply str (repeat (/ l x) (subs s 0 x)))))
-           (invalid? n (dec x)))))))
+(defn invalid?-2 [n]
+  (let [s (str n)]
+    (some (partial repeats-block? s) 
+          (range 1 (inc (quot (count s) 2))))))
     
 
-(test/deftest test-part-2
-  (test/is (= 4174379265 (part-1 test-data))))
+(def part-2 (partial solve invalid?-2))
 
-(def ans-2 (part-1 data))
+(test/deftest test-part-2
+  (test/is (= 4174379265 (part-2 test-data))))
+
+(def ans-2 (part-2 data))
 
 (defn -main []
   (println "Answer 1: " ans-1)
-  (println "Answer 1: " ans-2))
+  (println "Answer 2: " ans-2))
 
 
 
