@@ -1,0 +1,67 @@
+;; # Advent of Code 2025 - Day 2
+
+(ns p02
+  (:require [clojure.test :as test] 
+            [clojure.string :as str]))
+
+(def data-string (slurp "../input/02.txt"))
+(def test-string "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,
+1698522-1698528,446443-446449,38593856-38593862,565653-565659,
+824824821-824824827,2121212118-2121212124")
+
+(defn process [s]
+ (map
+   (fn [row] (map parse-long (str/split (str/trim row) #"-")))
+   (str/split s #",")))
+
+(def test-data (process test-string))
+(def data (process data-string))
+
+(str 123)
+
+(defn invalid? [n]
+  (let [s (str n)
+        l (count s)]
+   (and (even? l)
+        (= s (apply str (repeat 2 (subs s 0 (/ l 2))))))))
+
+(defn part-1 [data]
+  (reduce + (filter invalid? (mapcat (fn [[lo hi]] (range lo (inc hi))) data))))
+
+(defn part-1 [data]
+  (->> data
+       (mapcat (fn [[lo hi]] (range lo (inc hi))))
+       (filter invalid?)
+       (reduce +)))
+
+(test/deftest test-part-1
+  (test/is (= 1227775554 (part-1 test-data))))
+
+(def ans-1 (part-1 data))
+
+
+(defn invalid? 
+  ([n] 
+   (invalid? n (quot (count (str n)) 2)))
+  ([n x]
+   (if (zero? x) false
+       (let [s (str n)
+             l (count s)]
+         (or
+           (and (zero? (mod l x))
+             (= s (apply str (repeat (/ l x) (subs s 0 x)))))
+           (invalid? n (dec x)))))))
+    
+
+(test/deftest test-part-2
+  (test/is (= 4174379265 (part-1 test-data))))
+
+(def ans-2 (part-1 data))
+
+(defn -main []
+  (println "Answer 1: " ans-1)
+  (println "Answer 1: " ans-2))
+
+
+
+
