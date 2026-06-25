@@ -6,28 +6,30 @@
 
 (def data-string (slurp "../input/01.txt"))
 (def test-string `L68
-L30
-R48
-L5
-R60
-L55
-L1
-L99
-R14
-L82`)
+ L30
+ R48
+ L5
+ R60
+ L55
+ L1
+ L99
+ R14
+ L82`)
 
 (defn read-line [s]
   [(keyword (string/slice s 0 1))
    (scan-number (string/slice s 1))])
 
 (defn split-lines [s]
-  (string/split "\n" (string/trim s)))
+  (map string/trim (string/split "\n" (string/trim s))))
+
 
 (defn parse [s]
   (map read-line (split-lines s)))
 
 
 (def data (parse data-string))
+
 (def test-data (parse test-string))
 
 
@@ -78,6 +80,7 @@ L82`)
 
 (defn part-2 [data]
   (get (reduce step-zeros [INIT 0] data) 1))
+
 
 (test (part-2 test-data) 6)
 

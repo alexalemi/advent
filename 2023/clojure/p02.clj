@@ -98,3 +98,5 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green")
 (defn -main []
   (println "Answer1:" ans1)
   (println "Answer2:" ans2))
+
+(-main)

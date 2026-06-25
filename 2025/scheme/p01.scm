@@ -1,8 +1,6 @@
 ;; # Advent of Code 2025 - Day 1
 
-(load "batteries.scm")
 (load "prelude.scm")
-(load "judge.scm")
 
 (define raw-data (string-split (slurp "../input/01.txt") "\n"))
 
@@ -17,8 +15,8 @@ L99
 R14
 L82" "\n"))
 
-(let ((inst (test-data 0)))
-  (string->number (substring inst 1)))
+(let ((inst (list-ref test-data 0)))
+  (string->number (string-drop inst 1)))
 
 (define (right x y) (modulo (+ x y) 100))
 (define (left x y) (modulo (- x y) 100))
@@ -27,8 +25,8 @@ L82" "\n"))
   (define (iter loc insts zeros)
     (if (empty? insts) zeros
         (let* ((inst (first insts))
-               (dir (inst 0))
-               (amt (string->number (substring inst 1)))
+               (dir (string-ref inst 0))
+               (amt (string->number (string-drop inst 1)))
                (new-zeros (if (= loc 0) (inc zeros) zeros)))
           (cond 
             ((char=? #\L dir) (iter (left loc amt) (rest insts) new-zeros))
@@ -59,8 +57,8 @@ L82" "\n"))
   (define (iter loc insts zeros)
     (if (empty? insts) zeros
         (let* ((inst (first insts))
-               (dir (inst 0))
-               (amt (string->number (substring inst 1))))
+               (dir (string-ref inst 0))
+               (amt (string->number (string-drop inst 1))))
           (cond 
             ((char=? #\L dir) (iter (left loc amt) (rest insts) (+ zeros (count-zeros loc - amt))))
             ((char=? #\R dir) (iter (right loc amt) (rest insts) (+ zeros (count-zeros loc + amt))))
