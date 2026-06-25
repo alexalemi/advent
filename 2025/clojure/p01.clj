@@ -45,7 +45,7 @@ L82")
      (fn [[dir amt]] (repeat amt [dir 1])) 
      data)))
 
-(test/deftest test-part-1
+(test/deftest test-part-2
   (test/is (= 6 (part-2 test-data))))
 
 (def ans-2 (part-2 data))
